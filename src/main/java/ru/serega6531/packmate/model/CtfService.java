@@ -2,14 +2,12 @@ package ru.serega6531.packmate.model;
 
 import lombok.Data;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.util.List;
 
 @Data
 @Entity
+@Table(name = "service")
 public class CtfService {
 
     @Id

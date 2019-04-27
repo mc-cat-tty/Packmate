@@ -7,3 +7,4 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+interface-name: enp0s31f6

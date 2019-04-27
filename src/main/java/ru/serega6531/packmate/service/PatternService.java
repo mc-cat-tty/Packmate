@@ -2,7 +2,6 @@ package ru.serega6531.packmate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.*;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.repository.PatternRepository;
 
