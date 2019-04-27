@@ -23,7 +23,13 @@ public class Stream {
     @GeneratedValue(generator = "stream_generator")
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "service_id", nullable = false)
+    private CtfService service;
+
     @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Packet> packet;
+    private List<Packet> packets;
+
+    private long timestamp;
 
 }
