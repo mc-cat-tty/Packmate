@@ -31,4 +31,15 @@ public class UnfinishedStream {
 
         return (ipEq1 || ipEq2) && (portEq1 || portEq2) && protocol == o.protocol;
     }
+
+    @Override
+    public int hashCode() {
+        final int PRIME = 59;
+
+        int result = firstIp.hashCode() * secondIp.hashCode();
+        result = result * PRIME + (firstPort * secondPort);
+        result = result * PRIME + protocol.hashCode();
+
+        return result;
+    }
 }

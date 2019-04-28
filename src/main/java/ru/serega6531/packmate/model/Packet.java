@@ -1,5 +1,6 @@
 package ru.serega6531.packmate.model;
 
+import lombok.Builder;
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -16,16 +17,23 @@ import javax.persistence.*;
                 @org.hibernate.annotations.Parameter(name = "increment_size", value = "1")
         }
 )
+@Builder
 public class Packet {
 
     @Id
     @GeneratedValue(generator = "packet_generator")
     private Long id;
 
+    @Transient
+    private Long tempId;
+
     @ManyToOne
     @JoinColumn(name = "stream_id", nullable = false)
     private Stream stream;
 
     private long timestamp;
+
+    @Lob
+    private byte[] content;
 
 }
