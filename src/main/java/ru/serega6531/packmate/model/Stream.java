@@ -2,6 +2,7 @@ package ru.serega6531.packmate.model;
 
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
+import ru.serega6531.packmate.Protocol;
 
 import javax.persistence.*;
 import java.util.List;
@@ -26,6 +27,8 @@ public class Stream {
     @ManyToOne
     @JoinColumn(name = "service_id", nullable = false)
     private CtfService service;
+
+    private Protocol protocol;
 
     @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Packet> packets;

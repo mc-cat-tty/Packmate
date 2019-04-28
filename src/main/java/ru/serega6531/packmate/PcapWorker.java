@@ -14,13 +14,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.CtfService;
+import ru.serega6531.packmate.model.UnfinishedStream;
 import ru.serega6531.packmate.service.PacketService;
 import ru.serega6531.packmate.service.PatternService;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
 import javax.annotation.PreDestroy;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
@@ -39,6 +42,8 @@ public class PcapWorker {
     private final ExecutorService executorService;
 
     private final String localIp;
+
+    private final Set<UnfinishedStream> unfinishedStreams = new HashSet<>();
 
     @Autowired
     public PcapWorker(ServicesService servicesService,
