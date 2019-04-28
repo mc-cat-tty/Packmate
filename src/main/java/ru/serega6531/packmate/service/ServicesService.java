@@ -7,6 +7,7 @@ import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.repository.ServiceRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -19,12 +20,16 @@ public class ServicesService {
         this.repository = repository;
     }
 
+    public Optional<CtfService> findByPort(int port) {
+        return repository.findById(port);
+    }
+
     public List<CtfService> findAll() {
         return repository.findAll();
     }
 
-    public void deleteById(int id) {
-        repository.deleteById(id);
+    public void deleteByPort(int port) {
+        repository.deleteById(port);
     }
 
     public CtfService save(CtfService service) {

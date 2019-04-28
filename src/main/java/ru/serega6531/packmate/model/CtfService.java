@@ -1,6 +1,7 @@
 package ru.serega6531.packmate.model;
 
 import lombok.Data;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "service")
+@ToString(of = {"port", "name"})
 public class CtfService {
 
     @Id

@@ -25,7 +25,7 @@ public class ServiceController {
 
     @DeleteMapping("/{port}")
     public void deleteService(@PathVariable int port) {
-        service.deleteById(port);
+        service.deleteByPort(port);
     }
 
     @PostMapping
