@@ -47,8 +47,8 @@ public class PcapWorker {
     private final Map<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> unfinishedStreams = new HashMap<>();
 
     // в следующих мапах в листах srcIp соответствующего пакета
-    private final Map<UnfinishedStream, List<String>> fins = new HashMap<>();
-    private final Map<UnfinishedStream, List<String>> acks = new HashMap<>();
+    private final Map<UnfinishedStream, Set<String>> fins = new HashMap<>();
+    private final Map<UnfinishedStream, Set<String>> acks = new HashMap<>();
 
     @Autowired
     public PcapWorker(ServicesService servicesService,
@@ -115,6 +115,7 @@ public class PcapWorker {
         Protocol protocol = null;
         boolean ack = false;
         boolean fin = false;
+        boolean rst = false;
 
         if(rawPacket.contains(IpV4Packet.class)){
             final IpV4Packet.IpV4Header header = rawPacket.get(IpV4Packet.class).getHeader();
@@ -131,6 +132,7 @@ public class PcapWorker {
             destPort = header.getDstPort().valueAsInt();
             ack = header.getAck();
             fin = header.getFin();
+            rst = header.getRst();
             content = packet.getRawData();
             protocol = Protocol.TCP;
         } else if(rawPacket.contains(UdpPacket.class)) {
@@ -152,6 +154,9 @@ public class PcapWorker {
             }
 
             if(serviceOptional.isPresent()) {
+                String sourceIpAndPort = sourceIpString + ":" + sourcePort;
+                String destIpAndPort = destIpString + ":" + destPort;
+
                 UnfinishedStream stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
 
                 ru.serega6531.packmate.model.Packet packet = ru.serega6531.packmate.model.Packet.builder()
@@ -168,27 +173,35 @@ public class PcapWorker {
                     unfinishedStreams.put(stream, packets);
                 }
 
+                log.info("{} {} {}:{} -> {}:{}, номер пакета {}",
+                        packet.getTempId(), serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
+                        unfinishedStreams.get(stream).size());
+
                 if(protocol == Protocol.TCP) {
                     if(!fins.containsKey(stream)) {
-                        fins.put(stream, new ArrayList<>());
+                        fins.put(stream, new HashSet<>());
                     }
 
                     if(!acks.containsKey(stream)) {
-                        acks.put(stream, new ArrayList<>());
+                        acks.put(stream, new HashSet<>());
                     }
 
-                    if(ack && fins.get(stream).contains(destIpString)) {  // проверяем destIp, потому что ищем ответ на его fin
-                        //TODO
+                    final Set<String> finsForStream = fins.get(stream);
+                    final Set<String> acksForStream = acks.get(stream);
+
+                    if(fin) {
+                        finsForStream.add(sourceIpAndPort);
                     }
 
-                    if(fin && acks.get(stream).contains(destIpString)) {
+                    if(ack && finsForStream.contains(destIpAndPort)) {  // проверяем destIp, потому что ищем ответ на его fin
+                        acksForStream.add(sourceIpAndPort);
+                    }
+
+                    if(rst || (acksForStream.contains(sourceIpAndPort) && acksForStream.contains(destIpAndPort))) {
+                        log.info("Конец стрима");
                         //TODO
                     }
                 }
-
-                log.info("{} {}:{} -> {}:{}, stream size {}, {} {}",
-                        serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
-                        unfinishedStreams.get(stream).size(), ack ? "ask" : "", fin ? "fin" : "");
             }
         }
     }
