@@ -1,7 +1,10 @@
 package ru.serega6531.packmate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -17,6 +20,8 @@ import javax.persistence.*;
                 @org.hibernate.annotations.Parameter(name = "increment_size", value = "1")
         }
 )
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Packet {
 
@@ -25,10 +30,12 @@ public class Packet {
     private Long id;
 
     @Transient
+    @JsonIgnore
     private Long tempId;
 
     @ManyToOne
     @JoinColumn(name = "stream_id", nullable = false)
+    @JsonIgnore
     private Stream stream;
 
     private long timestamp;

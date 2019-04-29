@@ -7,6 +7,7 @@ import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.repository.StreamRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -23,6 +24,10 @@ public class StreamService {
         final Stream saved = repository.save(stream);
         log.info("Создан стрим с id {}", saved.getId());
         return saved;
+    }
+
+    public Optional<Stream> find(long id) {
+        return repository.findById(id);
     }
 
     public List<Stream> findAll() {

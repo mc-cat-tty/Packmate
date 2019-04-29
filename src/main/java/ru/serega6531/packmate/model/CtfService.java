@@ -1,5 +1,6 @@
 package ru.serega6531.packmate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 
@@ -18,6 +19,7 @@ public class CtfService {
     private String name;
 
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Stream> streams;
 
 }
