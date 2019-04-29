@@ -1,5 +1,6 @@
 package ru.serega6531.packmate.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.Stream;
@@ -8,6 +9,7 @@ import ru.serega6531.packmate.repository.StreamRepository;
 import java.util.List;
 
 @Service
+@Slf4j
 public class StreamService {
 
     private final StreamRepository repository;
@@ -15,6 +17,12 @@ public class StreamService {
     @Autowired
     public StreamService(StreamRepository repository) {
         this.repository = repository;
+    }
+
+    public Stream save(Stream stream) {
+        final Stream saved = repository.save(stream);
+        log.info("Создан стрим с id {}", saved.getId());
+        return saved;
     }
 
     public List<Stream> findAll() {

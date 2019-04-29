@@ -33,6 +33,8 @@ public class Stream {
     @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Packet> packets;
 
-    private long timestamp;
+    private long startTimestamp;
+
+    private long endTimestamp;
 
 }

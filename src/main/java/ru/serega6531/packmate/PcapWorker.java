@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.CtfService;
+import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.UnfinishedStream;
 import ru.serega6531.packmate.service.PacketService;
 import ru.serega6531.packmate.service.PatternService;
@@ -145,13 +146,7 @@ public class PcapWorker {
         }
 
         if(sourceIpString != null && sourcePort != -1) {
-            Optional<CtfService> serviceOptional = Optional.empty();
-
-            if(sourceIpString.equals(localIp)) {
-                serviceOptional = servicesService.findByPort(sourcePort);
-            } else if(destIpString.equals(localIp)) {
-                serviceOptional = servicesService.findByPort(destPort);
-            }
+            final Optional<CtfService> serviceOptional = findService(sourceIpString, sourcePort, destIpString, destPort);
 
             if(serviceOptional.isPresent()) {
                 String sourceIpAndPort = sourceIpString + ":" + sourcePort;
@@ -174,7 +169,7 @@ public class PcapWorker {
                 }
 
                 log.info("{} {} {}:{} -> {}:{}, номер пакета {}",
-                        packet.getTempId(), serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
+                        protocol.name().toLowerCase(), serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
                         unfinishedStreams.get(stream).size());
 
                 if(protocol == Protocol.TCP) {
@@ -198,11 +193,46 @@ public class PcapWorker {
                     }
 
                     if(rst || (acksForStream.contains(sourceIpAndPort) && acksForStream.contains(destIpAndPort))) {
+                        final Stream finishedStream = saveStream(stream);
                         log.info("Конец стрима");
-                        //TODO
+                        //TODO send to ws
                     }
                 }
             }
         }
+    }
+
+    private Stream saveStream(UnfinishedStream unfinishedStream) {
+        final List<ru.serega6531.packmate.model.Packet> packets = unfinishedStreams.get(unfinishedStream);
+
+        Stream stream = new Stream();
+        stream.setProtocol(unfinishedStream.getProtocol());
+        stream.setStartTimestamp(packets.get(0).getTimestamp());
+        stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
+        stream.setService(findService(
+                unfinishedStream.getFirstIp().getHostAddress(),
+                unfinishedStream.getFirstPort(),
+                unfinishedStream.getSecondIp().getHostAddress(),
+                unfinishedStream.getSecondPort()
+        ).get());
+
+        final Stream saved = streamService.save(stream);
+
+        for (ru.serega6531.packmate.model.Packet packet : packets) {
+            packet.setStream(saved);
+            packetService.save(packet);
+        }
+
+        return saved;
+    }
+
+    private Optional<CtfService> findService(String firstIp, int firstPort, String secondIp, int secondPort) {
+        if(firstIp.equals(localIp)) {
+            return servicesService.findByPort(firstPort);
+        } else if(secondIp.equals(localIp)) {
+            return servicesService.findByPort(secondPort);
+        }
+
+        return Optional.empty();
     }
 }

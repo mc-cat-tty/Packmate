@@ -33,7 +33,6 @@ public class Packet {
 
     private long timestamp;
 
-    @Lob
     private byte[] content;
 
 }
