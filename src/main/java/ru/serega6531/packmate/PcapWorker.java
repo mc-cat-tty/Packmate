@@ -16,10 +16,7 @@ import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.UnfinishedStream;
-import ru.serega6531.packmate.service.PacketService;
-import ru.serega6531.packmate.service.PatternService;
-import ru.serega6531.packmate.service.ServicesService;
-import ru.serega6531.packmate.service.StreamService;
+import ru.serega6531.packmate.service.*;
 
 import javax.annotation.PreDestroy;
 import java.net.Inet4Address;
@@ -36,6 +33,7 @@ public class PcapWorker {
     private final StreamService streamService;
     private final PacketService packetService;
     private final PatternService patternService;
+    private final PacketsSubscriptionService subscriptionService;
 
     private final PcapNetworkInterface device;
     private PcapHandle pcap = null;
@@ -56,12 +54,14 @@ public class PcapWorker {
                       StreamService streamService,
                       PacketService packetService,
                       PatternService patternService,
+                      PacketsSubscriptionService subscriptionService,
                       @Value("${interface-name}") String interfaceName,
                       @Value("${local-ip}") String localIp) throws PcapNativeException {
         this.servicesService = servicesService;
         this.streamService = streamService;
         this.packetService = packetService;
         this.patternService = patternService;
+        this.subscriptionService = subscriptionService;
 
         this.localIp = localIp;
 
@@ -195,7 +195,7 @@ public class PcapWorker {
                     if(rst || (acksForStream.contains(sourceIpAndPort) && acksForStream.contains(destIpAndPort))) {
                         final Stream finishedStream = saveStream(stream);
                         log.info("Конец стрима");
-                        //TODO send to ws
+                        subscriptionService.broadcastNewStream(finishedStream);
                     }
                 }
             }

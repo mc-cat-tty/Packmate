@@ -23,6 +23,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.boot:spring-boot-starter-websocket"
     implementation 'org.springframework.session:spring-session-core'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'
     compile 'org.pcap4j:pcap4j-core:1.+'
