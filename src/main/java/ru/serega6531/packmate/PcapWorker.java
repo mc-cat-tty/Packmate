@@ -14,9 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.CtfService;
-import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.UnfinishedStream;
-import ru.serega6531.packmate.service.*;
+import ru.serega6531.packmate.service.ServicesService;
+import ru.serega6531.packmate.service.StreamService;
 
 import javax.annotation.PreDestroy;
 import java.net.Inet4Address;
@@ -31,8 +31,6 @@ public class PcapWorker {
 
     private final ServicesService servicesService;
     private final StreamService streamService;
-    private final PacketService packetService;
-    private final StreamSubscriptionService subscriptionService;
 
     private final PcapNetworkInterface device;
     private PcapHandle pcap = null;
@@ -51,14 +49,10 @@ public class PcapWorker {
     @Autowired
     public PcapWorker(ServicesService servicesService,
                       StreamService streamService,
-                      PacketService packetService,
-                      StreamSubscriptionService subscriptionService,
                       @Value("${interface-name}") String interfaceName,
                       @Value("${local-ip}") String localIp) throws PcapNativeException {
         this.servicesService = servicesService;
         this.streamService = streamService;
-        this.packetService = packetService;
-        this.subscriptionService = subscriptionService;
 
         this.localIp = localIp;
 
@@ -115,7 +109,7 @@ public class PcapWorker {
         boolean fin = false;
         boolean rst = false;
 
-        if(rawPacket.contains(IpV4Packet.class)){
+        if (rawPacket.contains(IpV4Packet.class)) {
             final IpV4Packet.IpV4Header header = rawPacket.get(IpV4Packet.class).getHeader();
             sourceIp = header.getSrcAddr();
             destIp = header.getDstAddr();
@@ -123,7 +117,7 @@ public class PcapWorker {
             destIpString = header.getDstAddr().getHostAddress();
         }
 
-        if(rawPacket.contains(TcpPacket.class)) {
+        if (rawPacket.contains(TcpPacket.class)) {
             final TcpPacket packet = rawPacket.get(TcpPacket.class);
             final TcpPacket.TcpHeader header = packet.getHeader();
             sourcePort = header.getSrcPort().valueAsInt();
@@ -133,7 +127,7 @@ public class PcapWorker {
             rst = header.getRst();
             content = packet.getRawData();
             protocol = Protocol.TCP;
-        } else if(rawPacket.contains(UdpPacket.class)) {
+        } else if (rawPacket.contains(UdpPacket.class)) {
             final UdpPacket packet = rawPacket.get(UdpPacket.class);
             final UdpPacket.UdpHeader header = packet.getHeader();
             sourcePort = header.getSrcPort().valueAsInt();
@@ -142,10 +136,11 @@ public class PcapWorker {
             protocol = Protocol.UDP;
         }
 
-        if(sourceIpString != null && sourcePort != -1) {
-            final Optional<CtfService> serviceOptional = findService(sourceIpString, sourcePort, destIpString, destPort);
+        if (sourceIpString != null && sourcePort != -1) {
+            final Optional<CtfService> serviceOptional =
+                    servicesService.findService(localIp, sourceIpString, sourcePort, destIpString, destPort);
 
-            if(serviceOptional.isPresent()) {
+            if (serviceOptional.isPresent()) {
                 String sourceIpAndPort = sourceIpString + ":" + sourcePort;
                 String destIpAndPort = destIpString + ":" + destPort;
 
@@ -157,7 +152,7 @@ public class PcapWorker {
                         .content(content)
                         .build();
 
-                if(unfinishedStreams.containsKey(stream)) {
+                if (unfinishedStreams.containsKey(stream)) {
                     unfinishedStreams.get(stream).add(packet);
                 } else {
                     List<ru.serega6531.packmate.model.Packet> packets = new ArrayList<>();
@@ -169,69 +164,35 @@ public class PcapWorker {
                         protocol.name().toLowerCase(), serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
                         unfinishedStreams.get(stream).size());
 
-                if(protocol == Protocol.TCP) {
-                    if(!fins.containsKey(stream)) {
+                if (protocol == Protocol.TCP) {
+                    if (!fins.containsKey(stream)) {
                         fins.put(stream, new HashSet<>());
                     }
 
-                    if(!acks.containsKey(stream)) {
+                    if (!acks.containsKey(stream)) {
                         acks.put(stream, new HashSet<>());
                     }
 
                     final Set<String> finsForStream = fins.get(stream);
                     final Set<String> acksForStream = acks.get(stream);
 
-                    if(fin) {
+                    if (fin) {
                         finsForStream.add(sourceIpAndPort);
                     }
 
-                    if(ack && finsForStream.contains(destIpAndPort)) {  // проверяем destIp, потому что ищем ответ на его fin
+                    if (ack && finsForStream.contains(destIpAndPort)) {  // проверяем destIp, потому что ищем ответ на его fin
                         acksForStream.add(sourceIpAndPort);
                     }
 
-                    if(rst || (acksForStream.contains(sourceIpAndPort) && acksForStream.contains(destIpAndPort))) {
-                        log.info("Конец стрима");
-                        saveStream(stream);
+                    if (rst || (acksForStream.contains(sourceIpAndPort) && acksForStream.contains(destIpAndPort))) {
+                        streamService.saveNewStream(stream, unfinishedStreams.get(stream));
+
+                        unfinishedStreams.remove(stream);
+                        fins.remove(stream);
+                        acks.remove(stream);
                     }
                 }
             }
         }
-    }
-
-    private void saveStream(UnfinishedStream unfinishedStream) {
-        final List<ru.serega6531.packmate.model.Packet> packets = unfinishedStreams.get(unfinishedStream);
-
-        Stream stream = new Stream();
-        stream.setProtocol(unfinishedStream.getProtocol());
-        stream.setStartTimestamp(packets.get(0).getTimestamp());
-        stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
-        stream.setService(findService(
-                unfinishedStream.getFirstIp().getHostAddress(),
-                unfinishedStream.getFirstPort(),
-                unfinishedStream.getSecondIp().getHostAddress(),
-                unfinishedStream.getSecondPort()
-        ).get());
-
-        Stream savedStream = streamService.save(stream);
-
-        List<ru.serega6531.packmate.model.Packet> savedPackets = new ArrayList<>();
-        for (ru.serega6531.packmate.model.Packet packet : packets) {
-            packet.setStream(savedStream);
-            savedPackets.add(packetService.save(packet));
-        }
-
-        savedStream.setPackets(savedPackets);
-        savedStream = streamService.save(savedStream);
-        subscriptionService.broadcastNewStream(savedStream);
-    }
-
-    private Optional<CtfService> findService(String firstIp, int firstPort, String secondIp, int secondPort) {
-        if(firstIp.equals(localIp)) {
-            return servicesService.findByPort(firstPort);
-        } else if(secondIp.equals(localIp)) {
-            return servicesService.findByPort(secondPort);
-        }
-
-        return Optional.empty();
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "service")
-@ToString(of = {"port", "name"})
+@ToString(exclude = "streams")
 public class CtfService {
 
     @Id

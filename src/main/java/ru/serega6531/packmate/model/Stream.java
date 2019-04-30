@@ -2,14 +2,15 @@ package ru.serega6531.packmate.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
 import ru.serega6531.packmate.Protocol;
 
 import javax.persistence.*;
 import java.util.List;
-import java.util.Set;
 
 @Data
+@ToString(exclude = "packets")
 @Entity
 @GenericGenerator(
         name = "stream_generator",
@@ -40,6 +41,7 @@ public class Stream {
 
     private long endTimestamp;
 
-    private Set<Pattern> foundPatterns;
+    @ManyToMany(cascade = CascadeType.ALL)
+    private List<Pattern> foundPatterns;
 
 }

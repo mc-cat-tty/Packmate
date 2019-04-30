@@ -20,6 +20,16 @@ public class ServicesService {
         this.repository = repository;
     }
 
+    public Optional<CtfService> findService(String localIp, String firstIp, int firstPort, String secondIp, int secondPort) {
+        if(firstIp.equals(localIp)) {
+            return findByPort(firstPort);
+        } else if(secondIp.equals(localIp)) {
+            return findByPort(secondPort);
+        }
+
+        return Optional.empty();
+    }
+
     public Optional<CtfService> findByPort(int port) {
         return repository.findById(port);
     }
