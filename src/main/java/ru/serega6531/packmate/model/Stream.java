@@ -7,6 +7,7 @@ import ru.serega6531.packmate.Protocol;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Entity
@@ -38,5 +39,7 @@ public class Stream {
     private long startTimestamp;
 
     private long endTimestamp;
+
+    private Set<Pattern> foundPatterns;
 
 }

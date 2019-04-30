@@ -32,8 +32,7 @@ public class PcapWorker {
     private final ServicesService servicesService;
     private final StreamService streamService;
     private final PacketService packetService;
-    private final PatternService patternService;
-    private final PacketsSubscriptionService subscriptionService;
+    private final StreamSubscriptionService subscriptionService;
 
     private final PcapNetworkInterface device;
     private PcapHandle pcap = null;
@@ -53,14 +52,12 @@ public class PcapWorker {
     public PcapWorker(ServicesService servicesService,
                       StreamService streamService,
                       PacketService packetService,
-                      PatternService patternService,
-                      PacketsSubscriptionService subscriptionService,
+                      StreamSubscriptionService subscriptionService,
                       @Value("${interface-name}") String interfaceName,
                       @Value("${local-ip}") String localIp) throws PcapNativeException {
         this.servicesService = servicesService;
         this.streamService = streamService;
         this.packetService = packetService;
-        this.patternService = patternService;
         this.subscriptionService = subscriptionService;
 
         this.localIp = localIp;
@@ -193,16 +190,15 @@ public class PcapWorker {
                     }
 
                     if(rst || (acksForStream.contains(sourceIpAndPort) && acksForStream.contains(destIpAndPort))) {
-                        final Stream finishedStream = saveStream(stream);
                         log.info("Конец стрима");
-                        subscriptionService.broadcastNewStream(finishedStream);
+                        saveStream(stream);
                     }
                 }
             }
         }
     }
 
-    private Stream saveStream(UnfinishedStream unfinishedStream) {
+    private void saveStream(UnfinishedStream unfinishedStream) {
         final List<ru.serega6531.packmate.model.Packet> packets = unfinishedStreams.get(unfinishedStream);
 
         Stream stream = new Stream();
@@ -216,14 +212,17 @@ public class PcapWorker {
                 unfinishedStream.getSecondPort()
         ).get());
 
-        final Stream saved = streamService.save(stream);
+        Stream savedStream = streamService.save(stream);
 
+        List<ru.serega6531.packmate.model.Packet> savedPackets = new ArrayList<>();
         for (ru.serega6531.packmate.model.Packet packet : packets) {
-            packet.setStream(saved);
-            packetService.save(packet);
+            packet.setStream(savedStream);
+            savedPackets.add(packetService.save(packet));
         }
 
-        return saved;
+        savedStream.setPackets(savedPackets);
+        savedStream = streamService.save(savedStream);
+        subscriptionService.broadcastNewStream(savedStream);
     }
 
     private Optional<CtfService> findService(String firstIp, int firstPort, String secondIp, int secondPort) {

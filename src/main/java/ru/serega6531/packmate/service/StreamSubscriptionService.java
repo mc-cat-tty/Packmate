@@ -15,14 +15,14 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class PacketsSubscriptionService {
+public class StreamSubscriptionService {
 
     private List<WebSocketSession> subscribers = new ArrayList<>();
 
     private final ObjectMapper mapper;
 
     @Autowired
-    public PacketsSubscriptionService(ObjectMapper mapper) {
+    public StreamSubscriptionService(ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
