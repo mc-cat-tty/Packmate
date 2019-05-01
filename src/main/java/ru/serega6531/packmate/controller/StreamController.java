@@ -1,34 +1,43 @@
 package ru.serega6531.packmate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.serega6531.packmate.model.CtfService;
+import ru.serega6531.packmate.model.Pagination;
 import ru.serega6531.packmate.model.Stream;
+import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/stream/")
 public class StreamController {
 
-    private final StreamService service;
+    private final StreamService streamService;
+    private final ServicesService servicesService;
 
     @Autowired
-    public StreamController(StreamService service) {
-        this.service = service;
+    public StreamController(StreamService streamService, ServicesService servicesService) {
+        this.streamService = streamService;
+        this.servicesService = servicesService;
     }
 
-    @GetMapping("/all")
-    public List<Stream> getStreams() {
-        return service.findAll();
+    @PostMapping("/all")
+    public List<Stream> getStreams(@RequestBody Pagination pagination) {
+        return streamService.findAll(pagination);
     }
 
-    @GetMapping("/{port}")
-    public List<Stream> getStreams(@PathVariable int port) {
-        return service.findAllByServicePort(port);
+    @PostMapping("/{port}")
+    public List<Stream> getStreams(@PathVariable int port, @RequestBody Pagination pagination) {
+        final Optional<CtfService> serviceOptional = servicesService.findByPort(port);
+        if(serviceOptional.isPresent()) {
+            return streamService.findAllByService(pagination, serviceOptional.get());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
 }

@@ -3,6 +3,8 @@ package ru.serega6531.packmate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.*;
@@ -93,12 +95,32 @@ public class StreamService {
         return repository.findById(id);
     }
 
-    public List<Stream> findAll() {
-        return repository.findAll();
+    public List<Stream> findAll(Pagination pagination) {
+        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
+
+        if(pagination.isFetchLatest()) { // последние стримы
+            return repository.findAll(page).getContent();
+        } else {
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByIdGreaterThan(pagination.getStartingFrom(), page);
+            } else {  // более старые стримы
+                return repository.findAllByIdLessThan(pagination.getStartingFrom(), page);
+            }
+        }
     }
 
-    public List<Stream> findAllByServicePort(int port) {
-        return repository.findAllByService_Port(port);
+    public List<Stream> findAllByService(Pagination pagination, CtfService service) {
+        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
+
+        if(pagination.isFetchLatest()) { // последние стримы
+            return repository.findAllByService(service, page);
+        } else {
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByServiceAndIdGreaterThan(service, pagination.getStartingFrom(), page);
+            } else {  // более старые стримы
+                return repository.findAllByServiceAndIdLessThan(service, pagination.getStartingFrom(), page);
+            }
+        }
     }
 
 }
