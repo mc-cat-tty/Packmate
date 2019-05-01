@@ -16,7 +16,7 @@ public class UdpStreamsSaver {
         this.pcapWorker = pcapWorker;
     }
 
-    @Scheduled(fixedRateString = "PT${udp-stream-check-interval}S")
+    @Scheduled(fixedRateString = "PT${udp-stream-check-interval}S", initialDelayString = "PT${udp-stream-check-interval}S")
     public void saveStreams() {
         final int streamsClosed = pcapWorker.closeUdpStreams();
         if(streamsClosed > 0) {

@@ -2,7 +2,6 @@ package ru.serega6531.packmate.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import ru.serega6531.packmate.Protocol;
 
 import java.net.Inet4Address;
 

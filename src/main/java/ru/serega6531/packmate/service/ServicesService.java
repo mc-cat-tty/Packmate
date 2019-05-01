@@ -39,6 +39,7 @@ public class ServicesService {
     }
 
     public void deleteByPort(int port) {
+        log.info("Удален сервис на порту {}", port);
         repository.deleteById(port);
     }
 

@@ -1,6 +1,7 @@
 package ru.serega6531.packmate;
 
 import org.pcap4j.core.PcapNativeException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -11,14 +12,19 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class PackmateApplication {
 
+    @Value("${enable-capture}")
+    private boolean enableCapture;
+
     public static void main(String[] args) {
         SpringApplication.run(PackmateApplication.class, args);
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void afterStartup(ApplicationReadyEvent event) throws PcapNativeException {
-        final PcapWorker pcapWorker = event.getApplicationContext().getBean(PcapWorker.class);
-        pcapWorker.start();
+        if(enableCapture) {
+            final PcapWorker pcapWorker = event.getApplicationContext().getBean(PcapWorker.class);
+            pcapWorker.start();
+        }
     }
 
 }

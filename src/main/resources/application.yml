@@ -11,6 +11,8 @@ spring:
       hibernate:
         temp:
           use_jdbc_metadata_defaults: false
+
+enable-capture: false
 interface-name: enp0s31f6
 local-ip: "192.168.0.125"
 account-login: BinaryBears

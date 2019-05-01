@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.serega6531.packmate.model.Packet;
-import ru.serega6531.packmate.model.Pattern;
-import ru.serega6531.packmate.model.Stream;
-import ru.serega6531.packmate.model.UnfinishedStream;
+import ru.serega6531.packmate.model.*;
 import ru.serega6531.packmate.repository.StreamRepository;
 
 import java.util.*;
@@ -42,17 +39,25 @@ public class StreamService {
 
     @Transactional
     public void saveNewStream(UnfinishedStream unfinishedStream, List<Packet> packets) {
-        Stream stream = new Stream();
-        stream.setProtocol(unfinishedStream.getProtocol());
-        stream.setStartTimestamp(packets.get(0).getTimestamp());
-        stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
-        stream.setService(servicesService.findService(
+        final Optional<CtfService> serviceOptional = servicesService.findService(
                 localIp,
                 unfinishedStream.getFirstIp().getHostAddress(),
                 unfinishedStream.getFirstPort(),
                 unfinishedStream.getSecondIp().getHostAddress(),
                 unfinishedStream.getSecondPort()
-        ).get());
+        );
+
+        if (!serviceOptional.isPresent()) {
+            log.info("Не удалось сохранить стрим: сервиса на порту {} или {} не существует",
+                    unfinishedStream.getFirstPort(), unfinishedStream.getSecondPort());
+            return;
+        }
+
+        Stream stream = new Stream();
+        stream.setProtocol(unfinishedStream.getProtocol());
+        stream.setStartTimestamp(packets.get(0).getTimestamp());
+        stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
+        stream.setService(serviceOptional.get());
 
         Stream savedStream = save(stream);
 
@@ -74,7 +79,7 @@ public class StreamService {
 
     public Stream save(Stream stream) {
         Stream saved;
-        if(stream.getId() == null) {
+        if (stream.getId() == null) {
             saved = repository.save(stream);
             log.info("Создан стрим с id {}", saved.getId());
         } else {
