@@ -1,6 +1,8 @@
 package ru.serega6531.packmate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.model.Pagination;
@@ -20,7 +22,17 @@ public class PacketService {
     }
 
     public List<Packet> getPacketsForStream(Pagination pagination, Stream stream) {
-        return repository.findAll();
+        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
+
+        if(pagination.isFetchLatest()) { // последние пакеты
+            return repository.findAllByStream(stream, page);
+        } else {
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые пакеты
+                return repository.findAllByStreamAndIdGreaterThan(stream, pagination.getStartingFrom(), page);
+            } else {  // более старые пакеты
+                return repository.findAllByStreamAndIdLessThan(stream, pagination.getStartingFrom(), page);
+            }
+        }
     }
 
     public Packet save(Packet packet) {

@@ -26,7 +26,7 @@ public class PacketController {
     }
 
     @PostMapping("/{streamId}")
-    public List<Packet> getPacketsForStream(@PathVariable int streamId, @RequestBody Pagination pagination) {
+    public List<Packet> getPacketsForStream(@PathVariable long streamId, @RequestBody Pagination pagination) {
         final Optional<Stream> stream = streamService.find(streamId);
         if(stream.isPresent()) {
             return packetService.getPacketsForStream(pagination, stream.get());
