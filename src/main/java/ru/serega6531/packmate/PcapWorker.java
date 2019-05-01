@@ -23,6 +23,7 @@ import java.net.Inet4Address;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Component
@@ -37,6 +38,7 @@ public class PcapWorker {
     private final ExecutorService executorService;
 
     private final String localIp;
+    private final int udpStreamTimeout;
 
     private long packetIdCounter = 0;  // оно однопоточное, так что пусть будет без atomic
 
@@ -50,11 +52,13 @@ public class PcapWorker {
     public PcapWorker(ServicesService servicesService,
                       StreamService streamService,
                       @Value("${interface-name}") String interfaceName,
-                      @Value("${local-ip}") String localIp) throws PcapNativeException {
+                      @Value("${local-ip}") String localIp,
+                      @Value("${udp-stream-timeout}") int udpStreamTimeout) throws PcapNativeException {
         this.servicesService = servicesService;
         this.streamService = streamService;
 
         this.localIp = localIp;
+        this.udpStreamTimeout = udpStreamTimeout;
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
                 .namingPattern("pcap-worker").build();
@@ -195,4 +199,26 @@ public class PcapWorker {
             }
         }
     }
+
+    public int closeUdpStreams() {
+        int streamsClosed = 0;
+        final Iterator<Map.Entry<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>>> iterator = unfinishedStreams.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            final Map.Entry<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> entry = iterator.next();
+            final UnfinishedStream stream = entry.getKey();
+
+            if(stream.getProtocol() == Protocol.UDP) {
+                final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
+                if(System.currentTimeMillis() - packets.get(packets.size() - 1).getTimestamp() > TimeUnit.SECONDS.toMillis(udpStreamTimeout)) {
+                    iterator.remove();
+                    streamService.saveNewStream(stream, packets);
+                    streamsClosed++;
+                }
+            }
+        }
+
+        return streamsClosed;
+    }
+
 }
