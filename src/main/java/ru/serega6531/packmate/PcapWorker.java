@@ -130,14 +130,14 @@ public class PcapWorker {
             ack = header.getAck();
             fin = header.getFin();
             rst = header.getRst();
-            content = packet.getRawData();
+            content = packet.getPayload() != null ? packet.getPayload().getRawData() : new byte[0];
             protocol = Protocol.TCP;
         } else if (rawPacket.contains(UdpPacket.class)) {
             final UdpPacket packet = rawPacket.get(UdpPacket.class);
             final UdpPacket.UdpHeader header = packet.getHeader();
             sourcePort = header.getSrcPort().valueAsInt();
             destPort = header.getDstPort().valueAsInt();
-            content = packet.getRawData();
+            content = packet.getPayload() != null ? packet.getPayload().getRawData() : new byte[0];
             protocol = Protocol.UDP;
         }
 
@@ -157,9 +157,11 @@ public class PcapWorker {
                         .content(content)
                         .build();
 
+
                 if (unfinishedStreams.containsKey(stream)) {
                     unfinishedStreams.get(stream).add(packet);
                 } else {
+                    log.info("Начат новый стрим");
                     List<ru.serega6531.packmate.model.Packet> packets = new ArrayList<>();
                     packets.add(packet);
                     unfinishedStreams.put(stream, packets);

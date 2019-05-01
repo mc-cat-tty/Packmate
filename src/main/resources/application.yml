@@ -12,10 +12,11 @@ spring:
         temp:
           use_jdbc_metadata_defaults: false
 
-enable-capture: false
+enable-capture: true
 interface-name: enp0s31f6
 local-ip: "192.168.0.125"
 account-login: BinaryBears
 account-password: 123456
 udp-stream-timeout: 20 # секунд
 udp-stream-check-interval: 10
+ignore-empty-packets: true

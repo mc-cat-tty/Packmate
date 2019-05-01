@@ -23,6 +23,7 @@ public class StreamService {
     private final StreamSubscriptionService subscriptionService;
 
     private final String localIp;
+    private final boolean ignoreEmptyPackets;
 
     @Autowired
     public StreamService(StreamRepository repository,
@@ -30,13 +31,15 @@ public class StreamService {
                          ServicesService servicesService,
                          PacketService packetService,
                          StreamSubscriptionService subscriptionService,
-                         @Value("${local-ip}") String localIp) {
+                         @Value("${local-ip}") String localIp,
+                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
         this.packetService = packetService;
         this.subscriptionService = subscriptionService;
         this.localIp = localIp;
+        this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
     @Transactional
@@ -60,6 +63,15 @@ public class StreamService {
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(serviceOptional.get());
+
+        if(ignoreEmptyPackets) {
+            packets.removeIf(packet -> packet.getContent().length == 0);
+
+            if(packets.isEmpty()) {
+                log.info("Стрим состоит только из пустых пакетов и не будет сохранен");
+                return;
+            }
+        }
 
         Stream savedStream = save(stream);
 
