@@ -40,4 +40,14 @@ public class StreamController {
         }
     }
 
+    @PostMapping("/{id}/favorite")
+    public void favoriteStream(@PathVariable long id) {
+        streamService.setFavorite(id, true);
+    }
+
+    @PostMapping("/{id}/unfavorite")
+    public void unfavoriteStream(@PathVariable long id) {
+        streamService.setFavorite(id, false);
+    }
+
 }

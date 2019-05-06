@@ -14,4 +14,6 @@ public class Pagination {
 
     private int pageSize;
 
+    private boolean favorites; // только для стримов, определяет, искать только избранные стримы или все
+
 }

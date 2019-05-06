@@ -9,14 +9,16 @@ import java.util.List;
 
 public interface StreamRepository extends JpaRepository<Stream, Long> {
 
-    List<Stream> findAllByIdGreaterThan(long streamId, Pageable pageable);
+    List<Stream> findAllByFavorite(Pageable pageable, boolean favorite);
 
-    List<Stream> findAllByIdLessThan(long streamId, Pageable pageable);
+    List<Stream> findAllByIdGreaterThanAndFavorite(long streamId, boolean favorite, Pageable pageable);
 
-    List<Stream> findAllByService(CtfService service, Pageable pageable);
+    List<Stream> findAllByIdLessThanAndFavorite(long streamId, boolean favorite, Pageable pageable);
 
-    List<Stream> findAllByServiceAndIdGreaterThan(CtfService service, long streamId, Pageable pageable);
+    List<Stream> findAllByServiceAndFavorite(CtfService service, boolean favorite, Pageable pageable);
 
-    List<Stream> findAllByServiceAndIdLessThan(CtfService service, long streamId, Pageable pageable);
+    List<Stream> findAllByServiceAndIdGreaterThanAndFavorite(CtfService service, long streamId, boolean favorite, Pageable pageable);
+
+    List<Stream> findAllByServiceAndIdLessThanAndFavorite(CtfService service, long streamId, boolean favorite, Pageable pageable);
 
 }

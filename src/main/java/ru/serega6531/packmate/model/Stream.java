@@ -43,4 +43,6 @@ public class Stream {
     @ManyToMany(cascade = CascadeType.ALL)
     private List<Pattern> foundPatterns;
 
+    private boolean favorite;
+
 }
