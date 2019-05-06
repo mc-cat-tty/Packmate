@@ -42,6 +42,8 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
         http.csrf()
                 .disable()
                 .authorizeRequests()
+                .antMatchers("/site.webmanifest")
+                .permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic();
