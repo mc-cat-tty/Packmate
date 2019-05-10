@@ -56,6 +56,8 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(webSocketHandler, "/api/ws").withSockJS();
+        registry.addHandler(webSocketHandler, "/api/ws")
+                .setAllowedOrigins("*")
+                .withSockJS();
     }
 }
