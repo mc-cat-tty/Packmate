@@ -30,6 +30,8 @@ public class Pattern {
 
     private String color;  // для вставки в css
 
+    private boolean isRegex;
+
     @ManyToMany(mappedBy = "foundPatterns", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Stream> matchedStreams;
