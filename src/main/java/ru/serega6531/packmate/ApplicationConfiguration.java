@@ -46,7 +46,11 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
                 .permitAll()
                 .anyRequest().authenticated()
                 .and()
-                .httpBasic();
+                .httpBasic()
+                .and()
+                .headers()
+                .frameOptions()
+                .sameOrigin();
     }
 
     @Bean
