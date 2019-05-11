@@ -149,14 +149,16 @@ public class PcapWorker {
                 String sourceIpAndPort = sourceIpString + ":" + sourcePort;
                 String destIpAndPort = destIpString + ":" + destPort;
 
+                boolean incoming = destIpString.equals(localIp);
+
                 UnfinishedStream stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
 
                 ru.serega6531.packmate.model.Packet packet = ru.serega6531.packmate.model.Packet.builder()
                         .tempId(packetIdCounter++)
                         .timestamp(System.currentTimeMillis())
+                        .incoming(incoming)
                         .content(content)
                         .build();
-
 
                 if (unfinishedStreams.containsKey(stream)) {
                     unfinishedStreams.get(stream).add(packet);
@@ -211,9 +213,9 @@ public class PcapWorker {
             final Map.Entry<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> entry = iterator.next();
             final UnfinishedStream stream = entry.getKey();
 
-            if(stream.getProtocol() == Protocol.UDP) {
+            if (stream.getProtocol() == Protocol.UDP) {
                 final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
-                if(System.currentTimeMillis() - packets.get(packets.size() - 1).getTimestamp() > TimeUnit.SECONDS.toMillis(udpStreamTimeout)) {
+                if (System.currentTimeMillis() - packets.get(packets.size() - 1).getTimestamp() > TimeUnit.SECONDS.toMillis(udpStreamTimeout)) {
                     iterator.remove();
                     streamService.saveNewStream(stream, packets);
                     streamsClosed++;

@@ -40,6 +40,8 @@ public class Packet {
 
     private long timestamp;
 
+    private boolean incoming; // true если от клиента к серверу, иначе false
+
     private byte[] content;
 
 }
