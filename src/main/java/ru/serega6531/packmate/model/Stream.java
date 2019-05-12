@@ -40,7 +40,7 @@ public class Stream {
 
     private long endTimestamp;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Pattern> foundPatterns;
 
     private boolean favorite;

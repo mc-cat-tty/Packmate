@@ -45,7 +45,7 @@ public class PcapWorker {
 
     private final Map<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> unfinishedStreams = new HashMap<>();
 
-    // в следующих мапах в листах srcIp соответствующего пакета
+    // в следующих мапах в сетах srcIp соответствующего пакета
     private final Map<UnfinishedStream, Set<String>> fins = new HashMap<>();
     private final Map<UnfinishedStream, Set<String>> acks = new HashMap<>();
 

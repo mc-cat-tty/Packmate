@@ -3,8 +3,11 @@ package ru.serega6531.packmate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.Pattern;
+import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.repository.PatternRepository;
 
 import java.util.HashMap;
@@ -18,12 +21,14 @@ import java.util.stream.Collectors;
 public class PatternService {
 
     private final PatternRepository repository;
+    private final StreamService streamService;
 
     private Map<String, java.util.regex.Pattern> compiledPatterns = new HashMap<>();
 
     @Autowired
-    public PatternService(PatternRepository repository) {
+    public PatternService(PatternRepository repository, @Lazy StreamService streamService) {
         this.repository = repository;
+        this.streamService = streamService;
     }
 
     public List<Pattern> findAll() {
@@ -47,11 +52,19 @@ public class PatternService {
         }
     }
 
+    @Transactional
     public void deleteById(int id) {
         final Optional<Pattern> optional = repository.findById(id);
         if(optional.isPresent()) {
             final Pattern pattern = optional.get();
             log.info("Удален паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+
+            for (Stream stream : pattern.getMatchedStreams()) {
+                stream.getFoundPatterns().remove(pattern);
+                streamService.save(stream);
+            }
+
+            pattern.getMatchedStreams().clear();
             repository.delete(pattern);
         }
     }
