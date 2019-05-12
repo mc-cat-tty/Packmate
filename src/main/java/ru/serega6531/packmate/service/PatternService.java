@@ -10,6 +10,7 @@ import ru.serega6531.packmate.repository.PatternRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,7 +48,12 @@ public class PatternService {
     }
 
     public void deleteById(int id) {
-        repository.deleteById(id);
+        final Optional<Pattern> optional = repository.findById(id);
+        if(optional.isPresent()) {
+            final Pattern pattern = optional.get();
+            log.info("Удален паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+            repository.delete(pattern);
+        }
     }
 
     public Pattern save(Pattern pattern) {
@@ -55,7 +61,7 @@ public class PatternService {
         return repository.save(pattern);
     }
 
-    public java.util.regex.Pattern compilePattern(Pattern pattern) {
+    private java.util.regex.Pattern compilePattern(Pattern pattern) {
         return compiledPatterns.computeIfAbsent(pattern.getValue(), java.util.regex.Pattern::compile);
     }
 

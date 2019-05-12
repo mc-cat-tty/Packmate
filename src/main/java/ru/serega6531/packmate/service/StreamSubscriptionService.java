@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.sockjs.SockJsTransportFailureException;
 import ru.serega6531.packmate.model.Stream;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class StreamSubscriptionService {
         subscribers.forEach(s -> {
             try {
                 s.sendMessage(objectToTextMessage(stream));
-            } catch (IOException e) {
+            } catch (IOException | SockJsTransportFailureException e) {
                 e.printStackTrace();
             }
         });
