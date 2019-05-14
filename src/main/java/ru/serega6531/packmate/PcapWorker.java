@@ -1,11 +1,9 @@
 package ru.serega6531.packmate;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.PcapNativeException;
-import org.pcap4j.core.PcapNetworkInterface;
-import org.pcap4j.core.Pcaps;
+import org.pcap4j.core.*;
 import org.pcap4j.packet.IpV4Packet;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
@@ -24,11 +22,10 @@ import java.net.Inet4Address;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
 
 @Component
 @Slf4j
-public class PcapWorker {
+public class PcapWorker implements PacketListener {
 
     private final ServicesService servicesService;
     private final StreamService streamService;
@@ -70,17 +67,9 @@ public class PcapWorker {
         executorService.execute(() -> {
             try {
                 log.info("Intercept started");
-                while (true) {
-                    if (pcap.isOpen()) {
-                        try {
-                            final Packet packet = pcap.getNextPacketEx();
-                            processPacket(packet);
-                        } catch (TimeoutException ignored) {
-                        }
-                    } else {
-                        break;
-                    }
-                }
+                pcap.loop(-1, this);   // использовать другой executor?
+            } catch (InterruptedException ignored) {
+                // выходим
             } catch (Exception e) {
                 log.error("Error while capturing packet", e);
                 stop();
@@ -89,15 +78,17 @@ public class PcapWorker {
     }
 
     @PreDestroy
+    @SneakyThrows
     public void stop() {
         if (pcap != null && pcap.isOpen()) {
+            pcap.breakLoop();
             pcap.close();
         }
 
         log.info("Intercept stopped");
     }
 
-    private void processPacket(Packet rawPacket) {
+    public void gotPacket(Packet rawPacket) {
         Inet4Address sourceIp = null;
         Inet4Address destIp = null;
         String sourceIpString = null;
