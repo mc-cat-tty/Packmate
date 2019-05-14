@@ -42,8 +42,11 @@ public class StreamService {
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
+    /**
+     * @return был ли сохранен стрим
+     */
     @Transactional
-    public void saveNewStream(UnfinishedStream unfinishedStream, List<Packet> packets) {
+    public boolean saveNewStream(UnfinishedStream unfinishedStream, List<Packet> packets) {
         final Optional<CtfService> serviceOptional = servicesService.findService(
                 localIp,
                 unfinishedStream.getFirstIp().getHostAddress(),
@@ -55,7 +58,7 @@ public class StreamService {
         if (!serviceOptional.isPresent()) {
             log.warn("Не удалось сохранить стрим: сервиса на порту {} или {} не существует",
                     unfinishedStream.getFirstPort(), unfinishedStream.getSecondPort());
-            return;
+            return false;
         }
 
         Stream stream = new Stream();
@@ -69,7 +72,7 @@ public class StreamService {
 
             if(packets.isEmpty()) {
                 log.debug("Стрим состоит только из пустых пакетов и не будет сохранен");
-                return;
+                return false;
             }
         }
 
@@ -89,6 +92,7 @@ public class StreamService {
         savedStream = save(savedStream);
 
         subscriptionService.broadcastNewStream(savedStream);
+        return true;
     }
 
     public Stream save(Stream stream) {

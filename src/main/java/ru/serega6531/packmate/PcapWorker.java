@@ -203,9 +203,16 @@ public class PcapWorker implements PacketListener {
             if (stream.getProtocol() == protocol) {
                 final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
                 if (System.currentTimeMillis() - packets.get(packets.size() - 1).getTimestamp() > timeoutMillis) {
+                    if(streamService.saveNewStream(stream, packets)) {
+                        streamsClosed++;
+                    }
+
                     iterator.remove();
-                    streamService.saveNewStream(stream, packets);
-                    streamsClosed++;
+
+                    if(protocol == Protocol.TCP) {
+                        fins.remove(stream);
+                        acks.remove(stream);
+                    }
                 }
             }
         }
