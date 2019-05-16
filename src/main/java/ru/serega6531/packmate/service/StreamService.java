@@ -144,7 +144,7 @@ public class StreamService {
 
         if (pagination.getPattern() != null) { // задан паттерн для поиска
             if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByServiceAndIdGreaterThanAndFavoriteAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern() page);
+                return repository.findAllByServiceAndIdGreaterThanAndFavoriteAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
             } else {  // более старые стримы
                 return repository.findAllByServiceAndIdLessThanAndFavoriteAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
             }
