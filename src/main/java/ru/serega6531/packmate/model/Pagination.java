@@ -16,4 +16,6 @@ public class Pagination {
 
     private boolean favorites; // только для стримов, определяет, искать только избранные стримы или все
 
+    private Pattern pattern; // только для стримов, если не null, ищем стримы с этим паттерном
+
 }
