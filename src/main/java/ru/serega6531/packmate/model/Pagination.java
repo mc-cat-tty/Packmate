@@ -6,8 +6,6 @@ import org.springframework.data.domain.Sort;
 @Data
 public class Pagination {
 
-    private boolean fetchLatest;
-
     private Sort.Direction direction;
 
     private long startingFrom;

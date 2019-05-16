@@ -67,10 +67,10 @@ public class StreamService {
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(serviceOptional.get());
 
-        if(ignoreEmptyPackets) {
+        if (ignoreEmptyPackets) {
             packets.removeIf(packet -> packet.getContent().length == 0);
 
-            if(packets.isEmpty()) {
+            if (packets.isEmpty()) {
                 log.debug("Стрим состоит только из пустых пакетов и не будет сохранен");
                 return false;
             }
@@ -114,7 +114,7 @@ public class StreamService {
     @Transactional
     public void setFavorite(long id, boolean favorite) {
         final Optional<Stream> streamOptional = repository.findById(id);
-        if(streamOptional.isPresent()) {
+        if (streamOptional.isPresent()) {
             final Stream stream = streamOptional.get();
             stream.setFavorite(favorite);
             repository.save(stream);
@@ -124,8 +124,12 @@ public class StreamService {
     public List<Stream> findAll(Pagination pagination) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
-        if(pagination.isFetchLatest()) { // последние стримы
-            return repository.findAllByFavorite(page, pagination.isFavorites());
+        if (pagination.getPattern() != null) { // задан паттерн для поиска
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByIdGreaterThanAndFavoriteAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
+            } else {  // более старые стримы
+                return repository.findAllByIdLessThanAndFavoriteAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
+            }
         } else {
             if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
                 return repository.findAllByIdGreaterThanAndFavorite(pagination.getStartingFrom(), pagination.isFavorites(), page);
@@ -138,8 +142,12 @@ public class StreamService {
     public List<Stream> findAllByService(Pagination pagination, CtfService service) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
-        if(pagination.isFetchLatest()) { // последние стримы
-            return repository.findAllByServiceAndFavorite(service, pagination.isFavorites(), page);
+        if (pagination.getPattern() != null) { // задан паттерн для поиска
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByServiceAndIdGreaterThanAndFavoriteAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern() page);
+            } else {  // более старые стримы
+                return repository.findAllByServiceAndIdLessThanAndFavoriteAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
+            }
         } else {
             if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
                 return repository.findAllByServiceAndIdGreaterThanAndFavorite(service, pagination.getStartingFrom(), pagination.isFavorites(), page);
