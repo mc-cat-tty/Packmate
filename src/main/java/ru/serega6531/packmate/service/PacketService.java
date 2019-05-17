@@ -24,14 +24,10 @@ public class PacketService {
     public List<Packet> getPacketsForStream(Pagination pagination, Stream stream) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
-        if(pagination.isFetchLatest()) { // последние пакеты
-            return repository.findAllByStream(stream, page);
-        } else {
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые пакеты
-                return repository.findAllByStreamAndIdGreaterThan(stream, pagination.getStartingFrom(), page);
-            } else {  // более старые пакеты
-                return repository.findAllByStreamAndIdLessThan(stream, pagination.getStartingFrom(), page);
-            }
+        if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые пакеты
+            return repository.findAllByStreamAndIdGreaterThan(stream, pagination.getStartingFrom(), page);
+        } else {  // более старые пакеты
+            return repository.findAllByStreamAndIdLessThan(stream, pagination.getStartingFrom(), page);
         }
     }
 
