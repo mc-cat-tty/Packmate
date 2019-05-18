@@ -168,20 +168,56 @@ public class StreamService {
         }
     }
 
+    public List<Stream> findFavorites(Pagination pagination) {
+        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
+
+        if (pagination.getPattern() != null) { // задан паттерн для поиска
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByIdGreaterThanAndFavoriteIsTrueAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
+            } else {  // более старые стримы
+                return repository.findAllByIdLessThanAndFavoriteIsTrueAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
+            }
+        } else {
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByIdGreaterThanAndFavoriteIsTrue(pagination.getStartingFrom(), page);
+            } else {  // более старые стримы
+                return repository.findAllByIdLessThanAndFavoriteIsTrue(pagination.getStartingFrom(), page);
+            }
+        }
+    }
+
+    public List<Stream> findFavoritesByService(Pagination pagination, CtfService service) {
+        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
+
+        if (pagination.getPattern() != null) { // задан паттерн для поиска
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByServiceAndIdGreaterThanAndFavoriteIsTrueAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
+            } else {  // более старые стримы
+                return repository.findAllByServiceAndIdLessThanAndFavoriteIsTrueAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
+            }
+        } else {
+            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
+                return repository.findAllByServiceAndIdGreaterThanAndFavoriteIsTrue(service, pagination.getStartingFrom(), page);
+            } else {  // более старые стримы
+                return repository.findAllByServiceAndIdLessThanAndFavoriteIsTrue(service, pagination.getStartingFrom(), page);
+            }
+        }
+    }
+
     public List<Stream> findAll(Pagination pagination) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
         if (pagination.getPattern() != null) { // задан паттерн для поиска
             if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByIdGreaterThanAndFavoriteAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
+                return repository.findAllByIdGreaterThanAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
             } else {  // более старые стримы
-                return repository.findAllByIdLessThanAndFavoriteAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
+                return repository.findAllByIdLessThanAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
             }
         } else {
             if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByIdGreaterThanAndFavorite(pagination.getStartingFrom(), pagination.isFavorites(), page);
+                return repository.findAllByIdGreaterThan(pagination.getStartingFrom(), page);
             } else {  // более старые стримы
-                return repository.findAllByIdLessThanAndFavorite(pagination.getStartingFrom(), pagination.isFavorites(), page);
+                return repository.findAllByIdLessThan(pagination.getStartingFrom(), page);
             }
         }
     }
@@ -191,15 +227,15 @@ public class StreamService {
 
         if (pagination.getPattern() != null) { // задан паттерн для поиска
             if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByServiceAndIdGreaterThanAndFavoriteAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
+                return repository.findAllByServiceAndIdGreaterThanAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
             } else {  // более старые стримы
-                return repository.findAllByServiceAndIdLessThanAndFavoriteAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.isFavorites(), pagination.getPattern(), page);
+                return repository.findAllByServiceAndIdLessThanAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
             }
         } else {
             if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByServiceAndIdGreaterThanAndFavorite(service, pagination.getStartingFrom(), pagination.isFavorites(), page);
+                return repository.findAllByServiceAndIdGreaterThan(service, pagination.getStartingFrom(), page);
             } else {  // более старые стримы
-                return repository.findAllByServiceAndIdLessThanAndFavorite(service, pagination.getStartingFrom(), pagination.isFavorites(), page);
+                return repository.findAllByServiceAndIdLessThan(service, pagination.getStartingFrom(), page);
             }
         }
     }

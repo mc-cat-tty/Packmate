@@ -27,14 +27,22 @@ public class StreamController {
 
     @PostMapping("/all")
     public List<Stream> getStreams(@RequestBody Pagination pagination) {
-        return streamService.findAll(pagination);
+        if (pagination.isFavorites()) {
+            return streamService.findFavorites(pagination);
+        } else {
+            return streamService.findAll(pagination);
+        }
     }
 
     @PostMapping("/{port}")
     public List<Stream> getStreams(@PathVariable int port, @RequestBody Pagination pagination) {
         final Optional<CtfService> serviceOptional = servicesService.findByPort(port);
-        if(serviceOptional.isPresent()) {
-            return streamService.findAllByService(pagination, serviceOptional.get());
+        if (serviceOptional.isPresent()) {
+            if (pagination.isFavorites()) {
+                return streamService.findFavoritesByService(pagination, serviceOptional.get());
+            } else {
+                return streamService.findAllByService(pagination, serviceOptional.get());
+            }
         } else {
             return Collections.emptyList();
         }
