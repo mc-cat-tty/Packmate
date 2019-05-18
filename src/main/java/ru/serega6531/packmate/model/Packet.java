@@ -42,6 +42,8 @@ public class Packet {
 
     private boolean incoming; // true если от клиента к серверу, иначе false
 
+    private boolean ungzipped;
+
     private byte[] content;
 
 }

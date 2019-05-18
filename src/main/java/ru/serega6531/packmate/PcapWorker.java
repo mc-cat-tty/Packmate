@@ -150,13 +150,13 @@ public class PcapWorker implements PacketListener {
                 if (unfinishedStreams.containsKey(stream)) {
                     unfinishedStreams.get(stream).add(packet);
                 } else {
-                    log.info("Начат новый стрим");
+                    log.debug("Начат новый стрим");
                     List<ru.serega6531.packmate.model.Packet> packets = new ArrayList<>();
                     packets.add(packet);
                     unfinishedStreams.put(stream, packets);
                 }
 
-                log.info("{} {} {}:{} -> {}:{}, номер пакета {}",
+                log.debug("{} {} {}:{} -> {}:{}, номер пакета {}",
                         protocol.name().toLowerCase(), serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
                         unfinishedStreams.get(stream).size());
 
