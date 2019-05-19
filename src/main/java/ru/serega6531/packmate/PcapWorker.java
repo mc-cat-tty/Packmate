@@ -188,6 +188,8 @@ public class PcapWorker implements PacketListener {
                         acks.remove(stream);
                     }
                 }
+            } else {
+                log.trace("{} {}:{} -> {}:{}", protocol.name().toLowerCase(), sourceIpString, sourcePort, destIpString, destPort);
             }
         }
     }

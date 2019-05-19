@@ -21,3 +21,4 @@ udp-stream-timeout: 20 # секунд
 tcp-stream-timeout: 120 # секунд
 timeout-stream-check-interval: 10 # секунд
 ignore-empty-packets: true
+unpack-gzipped-http: true

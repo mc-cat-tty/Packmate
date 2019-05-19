@@ -12,7 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.*;
 import ru.serega6531.packmate.repository.StreamRepository;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipException;
 
 @Service
 @Slf4j
@@ -25,6 +29,7 @@ public class StreamService {
     private final StreamSubscriptionService subscriptionService;
 
     private final String localIp;
+    private final boolean unpackGzippedHttp;
     private final boolean ignoreEmptyPackets;
 
     private final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
@@ -36,6 +41,7 @@ public class StreamService {
                          PacketService packetService,
                          StreamSubscriptionService subscriptionService,
                          @Value("${local-ip}") String localIp,
+                         @Value("${unpack-gzipped-http}") boolean unpackGzippedHttp,
                          @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
@@ -43,6 +49,7 @@ public class StreamService {
         this.packetService = packetService;
         this.subscriptionService = subscriptionService;
         this.localIp = localIp;
+        this.unpackGzippedHttp = unpackGzippedHttp;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
@@ -80,47 +87,49 @@ public class StreamService {
             }
         }
 
-        boolean gzipStarted = false;
-        byte[] gzipContent = null;
-        int gzipStartPacket = 0;
-        int gzipEndPacket = 0;
+        if(unpackGzippedHttp) {
+            boolean gzipStarted = false;
+            //byte[] gzipContent = null;
+            int gzipStartPacket = 0;
+            int gzipEndPacket = 0;
 
-        for (int i = 0; i < packets.size(); i++) {
-            Packet packet = packets.get(i);
+            for (int i = 0; i < packets.size(); i++) {
+                Packet packet = packets.get(i);
 
-            if (packet.isIncoming() && gzipStarted) {
-                gzipStarted = false;
-                gzipEndPacket = i - 1;
-                //TODO end and read gzip stream
-            } else if (!packet.isIncoming()) {
-                String content = new String(packet.getContent());
-
-                int contentPos = content.indexOf("\r\n\r\n");
-                boolean http = content.startsWith("HTTP/");
-
-                if(http && gzipStarted) {
+                if (packet.isIncoming() && gzipStarted) {
+                    gzipStarted = false;
                     gzipEndPacket = i - 1;
                     //TODO end and read gzip stream
-                }
+                } else if (!packet.isIncoming()) {
+                    String content = new String(packet.getContent());
 
-                if (contentPos != -1) {   // начало body
-                    String headers = content.substring(0, contentPos);
-                    boolean gziped = headers.contains("Content-Encoding: gzip\r\n");
-                    if (gziped) {
-                        gzipStarted = true;
-                        gzipStartPacket = i;
-                        int gzipStart = Bytes.indexOf(packet.getContent(), GZIP_HEADER);
-                        gzipContent = Arrays.copyOfRange(packet.getContent(), gzipStart, packet.getContent().length);
+                    int contentPos = content.indexOf("\r\n\r\n");
+                    boolean http = content.startsWith("HTTP/");
+
+                    if (http && gzipStarted) {
+                        gzipEndPacket = i - 1;
+                        //TODO end and read gzip stream
                     }
-                } else if (gzipStarted) {  // продолжение body
-                    gzipContent = ArrayUtils.addAll(gzipContent, packet.getContent());
+
+                    if (contentPos != -1) {   // начало body
+                        String headers = content.substring(0, contentPos);
+                        boolean gziped = headers.contains("Content-Encoding: gzip\r\n");
+                        if (gziped) {
+                            gzipStarted = true;
+                            gzipStartPacket = i;
+                            //int gzipStart = Bytes.indexOf(packet.getContent(), GZIP_HEADER);
+                            //gzipContent = Arrays.copyOfRange(packet.getContent(), gzipStart, packet.getContent().length);
+                        }
+                    } else if (gzipStarted) {  // продолжение body
+                        //gzipContent = ArrayUtils.addAll(gzipContent, packet.getContent());
+                    }
                 }
             }
-        }
 
-        if(gzipContent != null) {
-            gzipEndPacket = packets.size() - 1;
-            // TODO end and read gzip stream
+            if (gzipStarted) {
+                gzipEndPacket = packets.size() - 1;
+                // TODO end and read gzip stream
+            }
         }
 
         Stream savedStream = save(stream);
@@ -140,6 +149,27 @@ public class StreamService {
 
         subscriptionService.broadcastNewStream(savedStream);
         return true;
+    }
+
+    private Packet decompressGzipPackets(List<Packet> packets) {
+        final byte[] content = packets.stream()
+                .map(Packet::getContent)
+                .reduce(ArrayUtils::addAll)
+                .get();
+
+        final int gzipStart = Bytes.indexOf(content, GZIP_HEADER);
+        byte[] gzipBytes = Arrays.copyOfRange(content, gzipStart, content.length);
+
+        try {
+            final GZIPInputStream gzipStream = new GZIPInputStream(new ByteArrayInputStream(gzipBytes));
+
+        } catch (ZipException e) {
+            log.warn("Не удалось разархивировать gzip, оставляем как есть", e);
+        } catch (IOException e) {
+            log.error("decompress gzip", e);
+        }
+
+        return null;
     }
 
     public Stream save(Stream stream) {
