@@ -2,6 +2,7 @@ package ru.serega6531.packmate.service;
 
 import com.google.common.primitives.Bytes;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,8 +14,11 @@ import ru.serega6531.packmate.model.*;
 import ru.serega6531.packmate.repository.StreamRepository;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
@@ -91,15 +95,21 @@ public class StreamService {
             boolean gzipStarted = false;
             //byte[] gzipContent = null;
             int gzipStartPacket = 0;
-            int gzipEndPacket = 0;
+            int gzipEndPacket;
 
             for (int i = 0; i < packets.size(); i++) {
                 Packet packet = packets.get(i);
 
                 if (packet.isIncoming() && gzipStarted) {
-                    gzipStarted = false;
                     gzipEndPacket = i - 1;
-                    //TODO end and read gzip stream
+
+                    List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
+
+                    Packet decompressed = decompressGzipPackets(cut);
+                    packets.removeAll(cut);
+                    packets.add(gzipStartPacket, decompressed);
+                    gzipStarted = false;
+                    i = gzipStartPacket + 1;
                 } else if (!packet.isIncoming()) {
                     String content = new String(packet.getContent());
 
@@ -108,7 +118,13 @@ public class StreamService {
 
                     if (http && gzipStarted) {
                         gzipEndPacket = i - 1;
-                        //TODO end and read gzip stream
+                        List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
+
+                        Packet decompressed = decompressGzipPackets(cut);
+                        packets.removeAll(cut);
+                        packets.add(gzipStartPacket, decompressed);
+                        gzipStarted = false;
+                        i = gzipStartPacket + 1;
                     }
 
                     if (contentPos != -1) {   // начало body
@@ -117,18 +133,18 @@ public class StreamService {
                         if (gziped) {
                             gzipStarted = true;
                             gzipStartPacket = i;
-                            //int gzipStart = Bytes.indexOf(packet.getContent(), GZIP_HEADER);
-                            //gzipContent = Arrays.copyOfRange(packet.getContent(), gzipStart, packet.getContent().length);
                         }
-                    } else if (gzipStarted) {  // продолжение body
-                        //gzipContent = ArrayUtils.addAll(gzipContent, packet.getContent());
                     }
                 }
             }
 
             if (gzipStarted) {
                 gzipEndPacket = packets.size() - 1;
-                // TODO end and read gzip stream
+                List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
+
+                Packet decompressed = decompressGzipPackets(cut);
+                packets.removeAll(cut);
+                packets.add(gzipStartPacket, decompressed);
             }
         }
 
@@ -158,11 +174,21 @@ public class StreamService {
                 .get();
 
         final int gzipStart = Bytes.indexOf(content, GZIP_HEADER);
+        byte[] httpHeader = Arrays.copyOfRange(content, 0, gzipStart);
         byte[] gzipBytes = Arrays.copyOfRange(content, gzipStart, content.length);
 
         try {
             final GZIPInputStream gzipStream = new GZIPInputStream(new ByteArrayInputStream(gzipBytes));
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            IOUtils.copy(gzipStream, out);
+            byte[] newContent = ArrayUtils.addAll(httpHeader, out.toByteArray());
 
+            return Packet.builder()
+                    .incoming(false)
+                    .timestamp(packets.get(0).getTimestamp())
+                    .ungzipped(true)
+                    .content(newContent)
+                    .build();
         } catch (ZipException e) {
             log.warn("Не удалось разархивировать gzip, оставляем как есть", e);
         } catch (IOException e) {

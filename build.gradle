@@ -26,6 +26,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-websocket"
     implementation 'org.springframework.session:spring-session-core'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile group: 'com.google.guava', name: 'guava', version: '11.0.2'
     compile 'org.pcap4j:pcap4j-core:1.+'
     compile 'org.pcap4j:pcap4j-packetfactory-static:1.+'
