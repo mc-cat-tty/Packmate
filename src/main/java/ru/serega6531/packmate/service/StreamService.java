@@ -16,9 +16,7 @@ import ru.serega6531.packmate.repository.StreamRepository;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
@@ -106,10 +104,12 @@ public class StreamService {
                     List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
 
                     Packet decompressed = decompressGzipPackets(cut);
-                    packets.removeAll(cut);
-                    packets.add(gzipStartPacket, decompressed);
-                    gzipStarted = false;
-                    i = gzipStartPacket + 1;
+                    if(decompressed != null) {
+                        packets.removeAll(cut);
+                        packets.add(gzipStartPacket, decompressed);
+                        gzipStarted = false;
+                        i = gzipStartPacket + 1;
+                    }
                 } else if (!packet.isIncoming()) {
                     String content = new String(packet.getContent());
 
@@ -121,10 +121,12 @@ public class StreamService {
                         List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
 
                         Packet decompressed = decompressGzipPackets(cut);
-                        packets.removeAll(cut);
-                        packets.add(gzipStartPacket, decompressed);
-                        gzipStarted = false;
-                        i = gzipStartPacket + 1;
+                        if(decompressed != null) {
+                            packets.removeAll(cut);
+                            packets.add(gzipStartPacket, decompressed);
+                            gzipStarted = false;
+                            i = gzipStartPacket + 1;
+                        }
                     }
 
                     if (contentPos != -1) {   // начало body
@@ -143,8 +145,10 @@ public class StreamService {
                 List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
 
                 Packet decompressed = decompressGzipPackets(cut);
-                packets.removeAll(cut);
-                packets.add(gzipStartPacket, decompressed);
+                if(decompressed != null) {
+                    packets.removeAll(cut);
+                    packets.add(gzipStartPacket, decompressed);
+                }
             }
         }
 
