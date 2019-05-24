@@ -95,6 +95,7 @@ public class PcapWorker implements PacketListener {
         String destIpString = null;
         int sourcePort = -1;
         int destPort = -1;
+        byte ttl = 0;
         byte[] content = null;
         Protocol protocol = null;
         boolean ack = false;
@@ -107,6 +108,7 @@ public class PcapWorker implements PacketListener {
             destIp = header.getDstAddr();
             sourceIpString = header.getSrcAddr().getHostAddress();
             destIpString = header.getDstAddr().getHostAddress();
+            ttl = header.getTtl();
         }
 
         if (rawPacket.contains(TcpPacket.class)) {
@@ -142,6 +144,7 @@ public class PcapWorker implements PacketListener {
 
                 ru.serega6531.packmate.model.Packet packet = ru.serega6531.packmate.model.Packet.builder()
                         .tempId(packetIdCounter++)
+                        .ttl(ttl)
                         .timestamp(System.currentTimeMillis())
                         .incoming(incoming)
                         .content(content)

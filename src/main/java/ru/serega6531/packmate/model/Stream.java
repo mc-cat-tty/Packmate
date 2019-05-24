@@ -45,4 +45,6 @@ public class Stream {
 
     private boolean favorite;
 
+    private byte ttl;
+
 }

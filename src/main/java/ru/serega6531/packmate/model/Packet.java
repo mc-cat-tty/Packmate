@@ -33,6 +33,10 @@ public class Packet {
     @JsonIgnore
     private Long tempId;
 
+    @Transient
+    @JsonIgnore
+    private byte ttl;
+
     @ManyToOne
     @JoinColumn(name = "stream_id", nullable = false)
     @JsonIgnore

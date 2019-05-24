@@ -76,8 +76,13 @@ public class StreamService {
             return false;
         }
 
+        Optional<Packet> firstIncoming = packets.stream()
+                .filter(Packet::isIncoming)
+                .findFirst();
+
         Stream stream = new Stream();
         stream.setProtocol(unfinishedStream.getProtocol());
+        stream.setTtl(firstIncoming.isPresent() ? firstIncoming.get().getTtl() : 0);
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(serviceOptional.get());
@@ -182,6 +187,8 @@ public class StreamService {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             IOUtils.copy(gzipStream, out);
             byte[] newContent = ArrayUtils.addAll(httpHeader, out.toByteArray());
+
+            log.debug("Разархивирован gzip: {} -> {} байт", gzipBytes.length, out.size());
 
             return Packet.builder()
                     .incoming(false)
