@@ -47,4 +47,6 @@ public class Stream {
 
     private byte ttl;
 
+    private String userAgentHash;
+
 }

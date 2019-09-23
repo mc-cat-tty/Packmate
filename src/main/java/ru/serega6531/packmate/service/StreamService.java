@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
@@ -35,6 +36,7 @@ public class StreamService {
     private final boolean ignoreEmptyPackets;
 
     private final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
+    private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\n");
 
     @Autowired
     public StreamService(StreamRepository repository,
@@ -96,7 +98,6 @@ public class StreamService {
 
         if(unpackGzippedHttp) {
             boolean gzipStarted = false;
-            //byte[] gzipContent = null;
             int gzipStartPacket = 0;
             int gzipEndPacket;
 
@@ -157,6 +158,20 @@ public class StreamService {
             }
         }
 
+        String ua = null;
+        for (Packet packet : packets) {
+            String content = new String(packet.getContent());
+            final Matcher matcher = userAgentPattern.matcher(content);
+            if(matcher.find()) {
+                ua = matcher.group(1);
+                break;
+            }
+        }
+
+        if(ua != null) {
+            stream.setUserAgentHash(calculateUserAgentHash(ua));
+        }
+
         Stream savedStream = save(stream);
 
         List<ru.serega6531.packmate.model.Packet> savedPackets = new ArrayList<>();
@@ -177,6 +192,7 @@ public class StreamService {
     }
 
     private Packet decompressGzipPackets(List<Packet> packets) {
+        //noinspection OptionalGetWithoutIsPresent
         final byte[] content = packets.stream()
                 .map(Packet::getContent)
                 .reduce(ArrayUtils::addAll)
@@ -223,6 +239,13 @@ public class StreamService {
 
     public Optional<Stream> find(long id) {
         return repository.findById(id);
+    }
+
+    private String calculateUserAgentHash(String ua) {
+        char[] alphabet = "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+        int l = alphabet.length;
+        final int hash = Math.abs(ua.hashCode()) % (l * l * l);
+        return "" + alphabet[hash % l] + alphabet[(hash / l) % l] + alphabet[(hash / (l * l)) % l];
     }
 
     @Transactional
