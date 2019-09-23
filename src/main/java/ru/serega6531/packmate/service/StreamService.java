@@ -165,7 +165,7 @@ public class StreamService {
         for (ru.serega6531.packmate.model.Packet packet : packets) {
             packet.setStream(savedStream);
             savedPackets.add(packetService.save(packet));
-            matches.addAll(patternService.findMatching(packet.getContent()));
+            matches.addAll(patternService.findMatching(packet.getContent(), packet.isIncoming()));
         }
 
         savedStream.setFoundPatterns(new ArrayList<>(matches));

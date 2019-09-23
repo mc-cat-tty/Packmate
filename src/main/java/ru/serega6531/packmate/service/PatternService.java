@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.Pattern;
+import ru.serega6531.packmate.model.PatternType;
 import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.repository.PatternRepository;
 
@@ -35,10 +36,10 @@ public class PatternService {
         return repository.findAll();
     }
 
-    public List<Pattern> findMatching(byte[] bytes) {
+    public List<Pattern> findMatching(byte[] bytes, boolean incoming) {
         String content = new String(bytes);
 
-        return findAll().stream()
+        return repository.findAllByTypeEqualsOrTypeEquals(incoming ? PatternType.INPUT : PatternType.OUTPUT, PatternType.BOTH).stream()
                 .filter(pattern -> matches(pattern, content))
                 .collect(Collectors.toList());
     }

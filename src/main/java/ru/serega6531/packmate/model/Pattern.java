@@ -34,6 +34,8 @@ public class Pattern {
 
     private boolean isRegex;
 
+    private PatternType type;
+
     @ManyToMany(mappedBy = "foundPatterns", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Stream> matchedStreams;
