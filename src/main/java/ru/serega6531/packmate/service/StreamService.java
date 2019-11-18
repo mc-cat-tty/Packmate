@@ -233,7 +233,7 @@ public class StreamService {
         if (stream.getId() == null) {
             saved = repository.save(stream);
             cachePackets(saved);
-            log.info("Создан стрим с id {}", saved.getId());
+            log.debug("Создан стрим с id {}", saved.getId());
         } else {
             saved = repository.save(stream);
         }
