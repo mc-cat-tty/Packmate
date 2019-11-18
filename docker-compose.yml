@@ -1,0 +1,25 @@
+version: "3.4"
+services:
+  packmate:
+    container_name: packmate-app
+    build:
+      context: .
+      dockerfile: Dockerfile_app
+      network: host
+    image: packmate-app:v1
+    ports:
+      - "65000:65000"
+    links:
+      - db
+    depends_on:
+      - db
+    restart: always
+  db:
+    container_name: packmate-db
+    build:
+      context: .
+      dockerfile: Dockerfile_db
+    image: packmate-db:v1
+    restart: always
+
+

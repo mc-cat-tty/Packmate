@@ -1,0 +1,5 @@
+FROM postgres:12.0-alpine
+
+ENV POSTGRES_USER ${PACKMATE_DB_USER:-packmate}
+ENV POSTGRES_PASSWORD ${PACKMATE_DB_PASSWORD:-packmate_secret_password}
+ENV POSTGRES_DB ${PACKMATE_DB_DB:-packmate}
