@@ -1,8 +1,14 @@
 FROM openjdk:8-jdk-alpine
 
-RUN apk add gradle libpcap
+RUN apk add gradle libpcap npm
 
 COPY ./ /app/
+
+WORKDIR /app/frontend
+
+RUN npm install && npm run build
+
+RUN cp -rf ./dist/* ../src/main/resources/static/
 
 WORKDIR /app/
 
@@ -13,8 +19,7 @@ RUN cp build/libs/packmate-*.jar app.jar
 ENV DB_USER ${PACKMATE_DB_USER:-packmate}
 ENV DB_PASSWORD ${PACKMATE_DB_PASSWORD:-packmate_secret_password}
 ENV DB_NAME ${PACKMATE_DB_DB:-packmate}
-#ENV IFACE ${PACKMATE_INTERFACE:-eth0}
-ENV LOCAL_IP ${PACKMATE_LOCAL_IP:-192.168.1.0}
+ENV LOCAL_IP ${PACKMATE_LOCAL_IP:-192.168.79.131}
 ENV WEB_LOGIN ${PACKMATE_WEB_LOGIN:-BinaryBears}
 ENV WEB_PASSWORD ${PACKMATE_WEB_PASSWORD:-123456}
 

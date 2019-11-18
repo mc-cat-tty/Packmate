@@ -5,12 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_app
-      network: host
+    network_mode: "host"
     image: packmate-app:v1
-    ports:
-      - "65000:65000"
-    links:
-      - db
     depends_on:
       - db
     restart: always
@@ -19,7 +15,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_db
+    network_mode: "host"
     image: packmate-db:v1
     restart: always
-
-

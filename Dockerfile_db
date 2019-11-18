@@ -3,3 +3,8 @@ FROM postgres:12.0-alpine
 ENV POSTGRES_USER ${PACKMATE_DB_USER:-packmate}
 ENV POSTGRES_PASSWORD ${PACKMATE_DB_PASSWORD:-packmate_secret_password}
 ENV POSTGRES_DB ${PACKMATE_DB_DB:-packmate}
+
+COPY postgresql.conf /tmp/postgresql.conf
+COPY update_db_config.sh /docker-entrypoint-initdb.d/_update_db_config.sh
+
+EXPOSE 65001:65001
