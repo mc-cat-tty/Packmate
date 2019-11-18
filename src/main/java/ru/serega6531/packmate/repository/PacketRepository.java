@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface PacketRepository extends JpaRepository<Packet, Long> {
 
-    List<Packet> findAllByStreamAndIdGreaterThan(Stream stream, long packetId, Pageable pageable);
-
-    List<Packet> findAllByStreamAndIdLessThan(Stream stream, long packetId, Pageable pageable);
+    List<Packet> findAllByStream(Stream stream);
 
 }

@@ -2,6 +2,9 @@ package ru.serega6531.packmate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.repository.ServiceRepository;
@@ -30,6 +33,7 @@ public class ServicesService {
         return Optional.empty();
     }
 
+    @Cacheable("services")
     public Optional<CtfService> findByPort(int port) {
         return repository.findById(port);
     }
@@ -38,11 +42,13 @@ public class ServicesService {
         return repository.findAll();
     }
 
+    @CacheEvict("services")
     public void deleteByPort(int port) {
         log.info("Удален сервис на порту {}", port);
         repository.deleteById(port);
     }
 
+    @CachePut("services")
     public CtfService save(CtfService service) {
         log.info("Добавлен новый сервис {} на порту {}", service.getName(), service.getPort());
         return repository.save(service);

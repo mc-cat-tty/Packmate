@@ -1,11 +1,9 @@
 package ru.serega6531.packmate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.Packet;
-import ru.serega6531.packmate.model.Pagination;
 import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.repository.PacketRepository;
 
@@ -21,14 +19,9 @@ public class PacketService {
         this.repository = repository;
     }
 
-    public List<Packet> getPacketsForStream(Pagination pagination, Stream stream) {
-        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
-
-        if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые пакеты
-            return repository.findAllByStreamAndIdGreaterThan(stream, pagination.getStartingFrom(), page);
-        } else {  // более старые пакеты
-            return repository.findAllByStreamAndIdLessThan(stream, pagination.getStartingFrom(), page);
-        }
+    @Cacheable(value = "packets", key = "#stream.id")
+    public List<Packet> getPacketsForStream(Stream stream) {
+        return repository.findAllByStream(stream);
     }
 
     public Packet save(Packet packet) {

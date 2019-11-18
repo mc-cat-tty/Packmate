@@ -6,6 +6,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -225,10 +227,12 @@ public class StreamService {
         return null;
     }
 
+    @CachePut(value = "streams", key = "#stream.id")
     public Stream save(Stream stream) {
         Stream saved;
         if (stream.getId() == null) {
             saved = repository.save(stream);
+            cachePackets(saved);
             log.info("Создан стрим с id {}", saved.getId());
         } else {
             saved = repository.save(stream);
@@ -237,6 +241,13 @@ public class StreamService {
         return saved;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
+    @CachePut(value = "packets", key = "#stream.id")
+    public List<Packet> cachePackets(Stream stream) {
+        return stream.getPackets();
+    }
+
+    @Cacheable("streams")
     public Optional<Stream> find(long id) {
         return repository.findById(id);
     }
@@ -248,14 +259,18 @@ public class StreamService {
         return "" + alphabet[hash % l] + alphabet[(hash / l) % l] + alphabet[(hash / (l * l)) % l];
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     @Transactional
-    public void setFavorite(long id, boolean favorite) {
+    @CachePut(value = "streams", key = "#id")
+    public Stream setFavorite(long id, boolean favorite) {
         final Optional<Stream> streamOptional = repository.findById(id);
         if (streamOptional.isPresent()) {
             final Stream stream = streamOptional.get();
             stream.setFavorite(favorite);
-            repository.save(stream);
+            return repository.save(stream);
         }
+
+        return null;
     }
 
     public List<Stream> findFavorites(Pagination pagination) {
