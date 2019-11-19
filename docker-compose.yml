@@ -1,0 +1,31 @@
+version: "3.4"
+services:
+  packmate:
+    container_name: packmate-app
+    build:
+      context: .
+      dockerfile: Dockerfile_app
+      args:
+        PACKMATE_DB_USER: ${PACKMATE_DB_USER}
+        PACKMATE_DB_PASSWORD: ${PACKMATE_DB_PASSWORD}
+        PACKMATE_DB_NAME: ${PACKMATE_DB_NAME}
+        PACKMATE_LOCAL_IP: ${PACKMATE_LOCAL_IP}
+        PACKMATE_WEB_LOGIN: ${PACKMATE_WEB_LOGIN}
+        PACKMATE_WEB_PASSWORD: ${PACKMATE_WEB_PASSWORD}
+    network_mode: "host"
+    image: packmate-app:v1
+    depends_on:
+      - db
+    restart: always
+  db:
+    container_name: packmate-db
+    build:
+      context: .
+      dockerfile: Dockerfile_db
+      args:
+        PACKMATE_DB_USER: ${PACKMATE_DB_USER}
+        PACKMATE_DB_PASSWORD: ${PACKMATE_DB_PASSWORD}
+        PACKMATE_DB_DB: ${PACKMATE_DB_NAME}
+    network_mode: "host"
+    image: packmate-db:v1
+    restart: always
