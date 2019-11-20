@@ -1,18 +1,19 @@
 FROM openjdk:8-jdk-alpine
 
-RUN apk add gradle libpcap npm
+RUN apk add libpcap npm
 
 COPY ./ /app/
 
-WORKDIR /app/frontend
+WORKDIR /app/frontend/
 
 RUN npm install && npm run build
 
-RUN cp -rf ./dist/* ../src/main/resources/static/
+RUN mkdir -p ../src/main/resources/static/ \
+	&& cp -rf ./dist/* ../src/main/resources/static/
 
 WORKDIR /app/
 
-RUN gradle --no-daemon build
+RUN ./gradlew --no-daemon build
 
 RUN cp build/libs/packmate-*.jar app.jar
 
