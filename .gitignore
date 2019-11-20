@@ -3,8 +3,6 @@ src/main/resources/static/*
 HELP.md
 .gradle
 /build/
-/gradle/
-/gradlew*
 
 ### STS ###
 .apt_generated
