@@ -9,6 +9,7 @@ services:
         PACKMATE_DB_USER: ${PACKMATE_DB_USER}
         PACKMATE_DB_PASSWORD: ${PACKMATE_DB_PASSWORD}
         PACKMATE_DB_NAME: ${PACKMATE_DB_NAME}
+        PACKMATE_INTERFACE: ${PACKMATE_INTERFACE}
         PACKMATE_LOCAL_IP: ${PACKMATE_LOCAL_IP}
         PACKMATE_WEB_LOGIN: ${PACKMATE_WEB_LOGIN}
         PACKMATE_WEB_PASSWORD: ${PACKMATE_WEB_PASSWORD}
@@ -16,7 +17,7 @@ services:
     image: packmate-app:v1
     depends_on:
       - db
-    restart: always
+    restart: on-failure
   db:
     container_name: packmate-db
     build:

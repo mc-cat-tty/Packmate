@@ -22,6 +22,7 @@ git submodule update --init --recursive
 Для сборки и запуска:
 ```bash
 export PACKMATE_LOCAL_IP='192.168...'  # IP хоста в перехватываемой сети
+export PACKMATE_INTERFACE='eth0'  # Сетевой интерфейс для перехвата пакетов
 
 # Дальше все экспорты опциональны
 export PACKMATE_WEB_LOGIN='BinaryBears'  # Имя пользователя для веб-интерфейса
