@@ -61,7 +61,7 @@ public class PcapWorker implements PacketListener {
     }
 
     public void start() throws PcapNativeException {
-        System.out.println("Using interface " + device.getName());
+        log.info("Using interface " + device.getName());
         pcap = device.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 100);
 
         executorService.execute(() -> {
