@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.service.PatternService;
 
-import java.util.List;
+import java.util.Collection;
 
 @RestController
 @RequestMapping("/api/pattern/")
@@ -19,7 +19,7 @@ public class PatternController {
     }
 
     @GetMapping
-    public List<Pattern> getPatterns() {
+    public Collection<Pattern> getPatterns() {
         return service.findAll();
     }
 

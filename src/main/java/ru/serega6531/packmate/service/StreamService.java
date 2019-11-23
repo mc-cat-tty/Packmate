@@ -6,8 +6,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -176,17 +174,15 @@ public class StreamService {
 
         Stream savedStream = save(stream);
 
-        List<ru.serega6531.packmate.model.Packet> savedPackets = new ArrayList<>();
         Set<Pattern> matches = new HashSet<>();
 
         for (ru.serega6531.packmate.model.Packet packet : packets) {
             packet.setStream(savedStream);
-            savedPackets.add(packetService.save(packet));
             matches.addAll(patternService.findMatching(packet.getContent(), packet.isIncoming()));
         }
 
         savedStream.setFoundPatterns(new ArrayList<>(matches));
-        savedStream.setPackets(savedPackets);
+        savedStream.setPackets(packetService.saveAll(packets));
         savedStream = save(savedStream);
 
         subscriptionService.broadcastNewStream(savedStream);
@@ -227,12 +223,10 @@ public class StreamService {
         return null;
     }
 
-    @CachePut(value = "streams", key = "#stream.id")
     public Stream save(Stream stream) {
         Stream saved;
         if (stream.getId() == null) {
             saved = repository.save(stream);
-            cachePackets(saved);
             log.debug("Создан стрим с id {}", saved.getId());
         } else {
             saved = repository.save(stream);
@@ -241,13 +235,6 @@ public class StreamService {
         return saved;
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    @CachePut(value = "packets", key = "#stream.id")
-    public List<Packet> cachePackets(Stream stream) {
-        return stream.getPackets();
-    }
-
-    @Cacheable("streams")
     public Optional<Stream> find(long id) {
         return repository.findById(id);
     }
@@ -261,7 +248,6 @@ public class StreamService {
 
     @SuppressWarnings("UnusedReturnValue")
     @Transactional
-    @CachePut(value = "streams", key = "#id")
     public Stream setFavorite(long id, boolean favorite) {
         final Optional<Stream> streamOptional = repository.findById(id);
         if (streamOptional.isPresent()) {

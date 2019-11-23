@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.service.ServicesService;
 
-import java.util.List;
+import java.util.Collection;
 
 @RestController
 @RequestMapping("/api/service/")
@@ -19,7 +19,7 @@ public class ServiceController {
     }
 
     @GetMapping
-    public List<CtfService> getServices() {
+    public Collection<CtfService> getServices() {
         return service.findAll();
     }
 
