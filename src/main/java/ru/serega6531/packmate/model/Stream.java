@@ -7,6 +7,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @ToString(exclude = "packets")
@@ -26,13 +27,13 @@ public class Stream {
     @GeneratedValue(generator = "stream_generator")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "service_id", nullable = false)
-    private CtfService service;
+    @Column(name = "service_id")
+    private int service;
 
     private Protocol protocol;
 
     @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderColumn
     @JsonIgnore
     private List<Packet> packets;
 
@@ -41,7 +42,7 @@ public class Stream {
     private long endTimestamp;
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Pattern> foundPatterns;
+    private Set<Pattern> foundPatterns;
 
     private boolean favorite;
 

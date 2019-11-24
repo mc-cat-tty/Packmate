@@ -50,9 +50,10 @@ public class ServicesService {
     }
 
     public CtfService save(CtfService service) {
-        log.info("Добавлен новый сервис {} на порту {}", service.getName(), service.getPort());
-        services.put(service.getPort(), service);
-        return repository.save(service);
+        log.info("Добавлен или изменен сервис {} на порту {}", service.getName(), service.getPort());
+        final CtfService saved = repository.save(service);
+        services.put(saved.getPort(), service);
+        return saved;
     }
 
 }

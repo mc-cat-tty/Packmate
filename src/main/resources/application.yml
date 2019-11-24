@@ -9,10 +9,10 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        format_sql: true
+#        format_sql: true
         temp:
           use_jdbc_metadata_defaults: false
-    show-sql: true
+#    show-sql: true
 
 
 enable-capture: true

@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
@@ -85,7 +86,7 @@ public class StreamService {
         stream.setTtl(firstIncoming.isPresent() ? firstIncoming.get().getTtl() : 0);
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
-        stream.setService(serviceOptional.get());
+        stream.setService(serviceOptional.get().getPort());
 
         if (ignoreEmptyPackets) {
             packets.removeIf(packet -> packet.getContent().length == 0);
@@ -174,14 +175,19 @@ public class StreamService {
 
         Stream savedStream = save(stream);
 
-        Set<Pattern> matches = new HashSet<>();
+        Set<Pattern> foundPatterns = new HashSet<>();
 
         for (ru.serega6531.packmate.model.Packet packet : packets) {
             packet.setStream(savedStream);
-            matches.addAll(patternService.findMatching(packet.getContent(), packet.isIncoming()));
+            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), packet.isIncoming());
+            packet.setMatches(matches);
+            foundPatterns.addAll(matches.stream()
+                    .map(FoundPattern::getPatternId)
+                    .map(patternService::find)
+                    .collect(Collectors.toList()));
         }
 
-        savedStream.setFoundPatterns(new ArrayList<>(matches));
+        savedStream.setFoundPatterns(foundPatterns);
         savedStream.setPackets(packetService.saveAll(packets));
         savedStream = save(savedStream);
 
@@ -277,7 +283,7 @@ public class StreamService {
         }
     }
 
-    public List<Stream> findFavoritesByService(Pagination pagination, CtfService service) {
+    public List<Stream> findFavoritesByService(Pagination pagination, int service) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
         if (pagination.getPattern() != null) { // задан паттерн для поиска
@@ -313,7 +319,7 @@ public class StreamService {
         }
     }
 
-    public List<Stream> findAllByService(Pagination pagination, CtfService service) {
+    public List<Stream> findAllByService(Pagination pagination, int service) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
         if (pagination.getPattern() != null) { // задан паттерн для поиска

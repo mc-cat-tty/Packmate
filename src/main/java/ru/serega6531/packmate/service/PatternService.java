@@ -6,12 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.model.PatternType;
 import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.repository.PatternRepository;
 
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,26 +34,61 @@ public class PatternService {
         log.info("Loaded {} patterns", patterns.size());
     }
 
+    public Pattern find(int id) {
+        return patterns.get(id);
+    }
+
     public Collection<Pattern> findAll() {
         return patterns.values();
     }
 
-    public List<Pattern> findMatching(byte[] bytes, boolean incoming) {
+    public Set<FoundPattern> findMatches(byte[] bytes, boolean incoming) {
         String content = new String(bytes);
 
         return patterns.values().stream()
                 .filter(p -> p.getType() == (incoming ? PatternType.INPUT : PatternType.OUTPUT)
                         || p.getType() == PatternType.BOTH)
-                .filter(pattern -> matches(pattern, content))
-                .collect(Collectors.toList());
+                .map(pattern -> match(pattern, content))
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
     }
 
-    private boolean matches(Pattern pattern, String content) {
+    private List<FoundPattern> match(Pattern pattern, String content) {
+        List<FoundPattern> found = new ArrayList<>();
+
         if (pattern.isRegex()) {
             final java.util.regex.Pattern regex = compilePattern(pattern);
-            return regex.matcher(content).find();
+            final Matcher matcher = regex.matcher(content);
+
+            while (matcher.find()) {
+                found.add(FoundPattern.builder()
+                        .patternId(pattern.getId())
+                        .startPosition(matcher.start())
+                        .endPosition(matcher.end())
+                        .build());
+            }
+
+            return found;
         } else {
-            return StringUtils.containsIgnoreCase(content, pattern.getValue());
+            int startSearch = 0;
+
+            final String value = pattern.getValue();
+            while (true) {
+                int start = StringUtils.indexOfIgnoreCase(content, value, startSearch);
+
+                if (start == -1) {
+                    return found;
+                }
+
+                int end = start + value.length() - 1;
+                found.add(FoundPattern.builder()
+                        .patternId(pattern.getId())
+                        .startPosition(start)
+                        .endPosition(end)
+                        .build());
+
+                startSearch = end + 1;
+            }
         }
     }
 
@@ -68,7 +105,7 @@ public class PatternService {
             }
 
             pattern.getMatchedStreams().clear();
-            patterns.remove(pattern.getId());
+            patterns.remove(id);
             compiledPatterns.remove(pattern.getValue());
             repository.delete(pattern);
         }
@@ -76,8 +113,9 @@ public class PatternService {
 
     public Pattern save(Pattern pattern) {
         log.info("Добавлен новый паттерн {} со значением {}", pattern.getName(), pattern.getValue());
-        patterns.put(pattern.getId(), pattern);
-        return repository.save(pattern);
+        final Pattern saved = repository.save(pattern);
+        patterns.put(saved.getId(), pattern);
+        return saved;
     }
 
     private java.util.regex.Pattern compilePattern(Pattern pattern) {

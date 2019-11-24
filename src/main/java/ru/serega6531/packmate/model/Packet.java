@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Data
 @Entity
@@ -41,6 +42,9 @@ public class Packet {
     @JoinColumn(name = "stream_id", nullable = false)
     @JsonIgnore
     private Stream stream;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private Set<FoundPattern> matches;
 
     private long timestamp;
 
