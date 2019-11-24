@@ -2,8 +2,8 @@ package ru.serega6531.packmate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.serega6531.packmate.model.Pagination;
 import ru.serega6531.packmate.model.Stream;
+import ru.serega6531.packmate.model.pojo.Pagination;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.util.List;

@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.CtfService;
-import ru.serega6531.packmate.model.Protocol;
-import ru.serega6531.packmate.model.UnfinishedStream;
+import ru.serega6531.packmate.model.enums.Protocol;
+import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
@@ -208,13 +208,13 @@ public class PcapWorker implements PacketListener {
             if (stream.getProtocol() == protocol) {
                 final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
                 if (System.currentTimeMillis() - packets.get(packets.size() - 1).getTimestamp() > timeoutMillis) {
-                    if(streamService.saveNewStream(stream, packets)) {
+                    if (streamService.saveNewStream(stream, packets)) {
                         streamsClosed++;
                     }
 
                     iterator.remove();
 
-                    if(protocol == Protocol.TCP) {
+                    if (protocol == Protocol.TCP) {
                         fins.remove(stream);
                         acks.remove(stream);
                     }

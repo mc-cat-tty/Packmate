@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import ru.serega6531.packmate.model.Protocol;
+import ru.serega6531.packmate.model.enums.Protocol;
 
 import java.util.concurrent.TimeUnit;
 
@@ -29,12 +29,12 @@ public class TimeoutStreamsSaver {
     @Scheduled(fixedRateString = "PT${timeout-stream-check-interval}S", initialDelayString = "PT${timeout-stream-check-interval}S")
     public void saveStreams() {
         int streamsClosed = pcapWorker.closeTimeoutStreams(Protocol.UDP, udpStreamTimeoutMillis);
-        if(streamsClosed > 0) {
+        if (streamsClosed > 0) {
             log.info("Закрыто {} udp стримов", streamsClosed);
         }
 
         streamsClosed = pcapWorker.closeTimeoutStreams(Protocol.TCP, tcpStreamTimeoutMillis);
-        if(streamsClosed > 0) {
+        if (streamsClosed > 0) {
             log.info("Закрыто {} tcp стримов", streamsClosed);
         }
     }

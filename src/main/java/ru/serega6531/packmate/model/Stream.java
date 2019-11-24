@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
+import ru.serega6531.packmate.model.enums.Protocol;
 
 import javax.persistence.*;
 import java.util.List;

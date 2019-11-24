@@ -1,7 +1,8 @@
-package ru.serega6531.packmate.model;
+package ru.serega6531.packmate.model.pojo;
 
 import lombok.Data;
 import org.springframework.data.domain.Sort;
+import ru.serega6531.packmate.model.Pattern;
 
 @Data
 public class Pagination {

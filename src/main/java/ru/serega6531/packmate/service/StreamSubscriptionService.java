@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.sockjs.SockJsTransportFailureException;
-import ru.serega6531.packmate.model.Stream;
+import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,26 +28,26 @@ public class StreamSubscriptionService {
     }
 
     public void addSubscriber(WebSocketSession session) {
-        log.info("Подписан пользователь {}", session.getRemoteAddress().getHostName());
         subscribers.add(session);
+        log.info("Подписан пользователь {}", session.getRemoteAddress().getHostName());
     }
 
     public void removeSubscriber(WebSocketSession session) {
-        log.info("Отписан пользователь {}", session.getRemoteAddress().getHostName());
         subscribers.remove(session);
+        log.info("Отписан пользователь {}", session.getRemoteAddress().getHostName());
     }
 
-    public void broadcastNewStream(Stream stream) {
+    public void broadcast(SubscriptionMessage message) {
         subscribers.forEach(s -> {
             try {
-                s.sendMessage(objectToTextMessage(stream));
+                s.sendMessage(objectToTextMessage(message));
             } catch (IOException | SockJsTransportFailureException e) {
-                e.printStackTrace();
+                log.warn("WS", e);
             }
         });
     }
 
-    private TextMessage objectToTextMessage(Object object) throws JsonProcessingException {
+    private TextMessage objectToTextMessage(SubscriptionMessage object) throws JsonProcessingException {
         return new TextMessage(mapper.writeValueAsString(object));
     }
 

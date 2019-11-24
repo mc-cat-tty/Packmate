@@ -1,9 +1,11 @@
 package ru.serega6531.packmate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import ru.serega6531.packmate.model.Packet;
-import ru.serega6531.packmate.model.Pagination;
 import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.service.PacketService;
 import ru.serega6531.packmate.service.StreamService;
@@ -28,7 +30,7 @@ public class PacketController {
     @PostMapping("/{streamId}")
     public List<Packet> getPacketsForStream(@PathVariable long streamId) {
         final Optional<Stream> stream = streamService.find(streamId);
-        if(stream.isPresent()) {
+        if (stream.isPresent()) {
             return packetService.getPacketsForStream(stream.get());
         } else {
             return Collections.emptyList();

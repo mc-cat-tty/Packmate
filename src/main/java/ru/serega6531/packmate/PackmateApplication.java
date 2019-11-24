@@ -23,7 +23,7 @@ public class PackmateApplication {
 
     @EventListener(ApplicationReadyEvent.class)
     public void afterStartup(ApplicationReadyEvent event) throws PcapNativeException {
-        if(enableCapture) {
+        if (enableCapture) {
             final PcapWorker pcapWorker = event.getApplicationContext().getBean(PcapWorker.class);
             pcapWorker.start();
         }

@@ -1,7 +1,8 @@
-package ru.serega6531.packmate.model;
+package ru.serega6531.packmate.model.pojo;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import ru.serega6531.packmate.model.enums.Protocol;
 
 import java.net.Inet4Address;
 
@@ -17,7 +18,7 @@ public class UnfinishedStream {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof UnfinishedStream)) {
+        if (!(obj instanceof UnfinishedStream)) {
             return false;
         }
 

@@ -11,6 +11,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.*;
+import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
+import ru.serega6531.packmate.model.pojo.Pagination;
+import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
+import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.repository.StreamRepository;
 
 import java.io.ByteArrayInputStream;
@@ -97,7 +101,7 @@ public class StreamService {
             }
         }
 
-        if(unpackGzippedHttp) {
+        if (unpackGzippedHttp) {
             boolean gzipStarted = false;
             int gzipStartPacket = 0;
             int gzipEndPacket;
@@ -111,7 +115,7 @@ public class StreamService {
                     List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
 
                     Packet decompressed = decompressGzipPackets(cut);
-                    if(decompressed != null) {
+                    if (decompressed != null) {
                         packets.removeAll(cut);
                         packets.add(gzipStartPacket, decompressed);
                         gzipStarted = false;
@@ -128,7 +132,7 @@ public class StreamService {
                         List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
 
                         Packet decompressed = decompressGzipPackets(cut);
-                        if(decompressed != null) {
+                        if (decompressed != null) {
                             packets.removeAll(cut);
                             packets.add(gzipStartPacket, decompressed);
                             gzipStarted = false;
@@ -152,7 +156,7 @@ public class StreamService {
                 List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
 
                 Packet decompressed = decompressGzipPackets(cut);
-                if(decompressed != null) {
+                if (decompressed != null) {
                     packets.removeAll(cut);
                     packets.add(gzipStartPacket, decompressed);
                 }
@@ -163,13 +167,13 @@ public class StreamService {
         for (Packet packet : packets) {
             String content = new String(packet.getContent());
             final Matcher matcher = userAgentPattern.matcher(content);
-            if(matcher.find()) {
+            if (matcher.find()) {
                 ua = matcher.group(1);
                 break;
             }
         }
 
-        if(ua != null) {
+        if (ua != null) {
             stream.setUserAgentHash(calculateUserAgentHash(ua));
         }
 
@@ -191,7 +195,7 @@ public class StreamService {
         savedStream.setPackets(packetService.saveAll(packets));
         savedStream = save(savedStream);
 
-        subscriptionService.broadcastNewStream(savedStream);
+        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, savedStream));
         return true;
     }
 

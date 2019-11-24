@@ -2,7 +2,7 @@ package ru.serega6531.packmate.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.serega6531.packmate.model.Pattern;
-import ru.serega6531.packmate.model.PatternType;
+import ru.serega6531.packmate.model.enums.PatternType;
 
 import java.util.List;
 
