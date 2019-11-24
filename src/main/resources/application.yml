@@ -25,3 +25,4 @@ tcp-stream-timeout: 40 # секунд
 timeout-stream-check-interval: 10 # секунд
 ignore-empty-packets: true
 unpack-gzipped-http: true
+merge-adjacent-packets: true

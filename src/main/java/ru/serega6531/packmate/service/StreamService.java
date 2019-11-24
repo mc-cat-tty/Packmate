@@ -39,6 +39,7 @@ public class StreamService {
     private final String localIp;
     private final boolean unpackGzippedHttp;
     private final boolean ignoreEmptyPackets;
+    private final boolean mergeAdjacentPackets;
 
     private final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\n");
@@ -51,7 +52,8 @@ public class StreamService {
                          StreamSubscriptionService subscriptionService,
                          @Value("${local-ip}") String localIp,
                          @Value("${unpack-gzipped-http}") boolean unpackGzippedHttp,
-                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
+                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets,
+                         @Value("${merge-adjacent-packets}") boolean mergeAdjacentPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
@@ -60,6 +62,7 @@ public class StreamService {
         this.localIp = localIp;
         this.unpackGzippedHttp = unpackGzippedHttp;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
+        this.mergeAdjacentPackets = mergeAdjacentPackets;
     }
 
     /**
@@ -102,65 +105,11 @@ public class StreamService {
         }
 
         if (unpackGzippedHttp) {
-            boolean gzipStarted = false;
-            int gzipStartPacket = 0;
-            int gzipEndPacket;
+            unpackGzip(packets);
+        }
 
-            for (int i = 0; i < packets.size(); i++) {
-                Packet packet = packets.get(i);
-
-                if (packet.isIncoming() && gzipStarted) {
-                    gzipEndPacket = i - 1;
-
-                    List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
-
-                    Packet decompressed = decompressGzipPackets(cut);
-                    if (decompressed != null) {
-                        packets.removeAll(cut);
-                        packets.add(gzipStartPacket, decompressed);
-                        gzipStarted = false;
-                        i = gzipStartPacket + 1;
-                    }
-                } else if (!packet.isIncoming()) {
-                    String content = new String(packet.getContent());
-
-                    int contentPos = content.indexOf("\r\n\r\n");
-                    boolean http = content.startsWith("HTTP/");
-
-                    if (http && gzipStarted) {
-                        gzipEndPacket = i - 1;
-                        List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
-
-                        Packet decompressed = decompressGzipPackets(cut);
-                        if (decompressed != null) {
-                            packets.removeAll(cut);
-                            packets.add(gzipStartPacket, decompressed);
-                            gzipStarted = false;
-                            i = gzipStartPacket + 1;
-                        }
-                    }
-
-                    if (contentPos != -1) {   // начало body
-                        String headers = content.substring(0, contentPos);
-                        boolean gziped = headers.contains("Content-Encoding: gzip\r\n");
-                        if (gziped) {
-                            gzipStarted = true;
-                            gzipStartPacket = i;
-                        }
-                    }
-                }
-            }
-
-            if (gzipStarted) {
-                gzipEndPacket = packets.size() - 1;
-                List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
-
-                Packet decompressed = decompressGzipPackets(cut);
-                if (decompressed != null) {
-                    packets.removeAll(cut);
-                    packets.add(gzipStartPacket, decompressed);
-                }
-            }
+        if (mergeAdjacentPackets) {
+            mergeAdjacentPackets(packets);
         }
 
         String ua = null;
@@ -197,6 +146,104 @@ public class StreamService {
 
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, savedStream));
         return true;
+    }
+
+    private void mergeAdjacentPackets(List<Packet> packets) {
+        int start = 0;
+        int packetsInRow = 0;
+        boolean incoming = false;
+
+        for (int i = 0; i < packets.size(); i++) {
+            Packet packet = packets.get(i);
+            if (packet.isIncoming() != incoming || i == packets.size() - 1) {
+                if (packetsInRow > 1) {
+                    final List<Packet> cut = packets.subList(start, i);
+                    packets.removeAll(cut);
+                    //noinspection OptionalGetWithoutIsPresent
+                    final byte[] content = cut.stream()
+                            .map(Packet::getContent)
+                            .reduce(ArrayUtils::addAll)
+                            .get();
+
+                    packets.add(start, Packet.builder()
+                            .incoming(incoming)
+                            .timestamp(packets.get(0).getTimestamp())
+                            .ungzipped(cut.stream().anyMatch(Packet::isUngzipped))
+                            .content(content)
+                            .build());
+                }
+
+                start++;
+                i = start;
+                packetsInRow = 1;
+            } else {
+                packetsInRow++;
+            }
+
+            incoming = packet.isIncoming();
+        }
+    }
+
+    private void unpackGzip(List<Packet> packets) {
+        boolean gzipStarted = false;
+        int gzipStartPacket = 0;
+        int gzipEndPacket;
+
+        for (int i = 0; i < packets.size(); i++) {
+            Packet packet = packets.get(i);
+
+            if (packet.isIncoming() && gzipStarted) {
+                gzipEndPacket = i - 1;
+
+                List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
+
+                Packet decompressed = decompressGzipPackets(cut);
+                if (decompressed != null) {
+                    packets.removeAll(cut);
+                    packets.add(gzipStartPacket, decompressed);
+                    gzipStarted = false;
+                    i = gzipStartPacket + 1;
+                }
+            } else if (!packet.isIncoming()) {
+                String content = new String(packet.getContent());
+
+                int contentPos = content.indexOf("\r\n\r\n");
+                boolean http = content.startsWith("HTTP/");
+
+                if (http && gzipStarted) {
+                    gzipEndPacket = i - 1;
+                    List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
+
+                    Packet decompressed = decompressGzipPackets(cut);
+                    if (decompressed != null) {
+                        packets.removeAll(cut);
+                        packets.add(gzipStartPacket, decompressed);
+                        gzipStarted = false;
+                        i = gzipStartPacket + 1;
+                    }
+                }
+
+                if (contentPos != -1) {   // начало body
+                    String headers = content.substring(0, contentPos);
+                    boolean gziped = headers.contains("Content-Encoding: gzip\r\n");
+                    if (gziped) {
+                        gzipStarted = true;
+                        gzipStartPacket = i;
+                    }
+                }
+            }
+        }
+
+        if (gzipStarted) {
+            gzipEndPacket = packets.size() - 1;
+            List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
+
+            Packet decompressed = decompressGzipPackets(cut);
+            if (decompressed != null) {
+                packets.removeAll(cut);
+                packets.add(gzipStartPacket, decompressed);
+            }
+        }
     }
 
     private Packet decompressGzipPackets(List<Packet> packets) {
