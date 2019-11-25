@@ -155,32 +155,53 @@ public class StreamService {
 
         for (int i = 0; i < packets.size(); i++) {
             Packet packet = packets.get(i);
-            if (packet.isIncoming() != incoming || i == packets.size() - 1) {
+            if (packet.isIncoming() != incoming) {
                 if (packetsInRow > 1) {
                     final List<Packet> cut = packets.subList(start, i);
-                    packets.removeAll(cut);
+                    final long timestamp = cut.get(0).getTimestamp();
+                    final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
                     //noinspection OptionalGetWithoutIsPresent
                     final byte[] content = cut.stream()
                             .map(Packet::getContent)
                             .reduce(ArrayUtils::addAll)
                             .get();
 
+                    packets.removeAll(cut);
                     packets.add(start, Packet.builder()
                             .incoming(incoming)
-                            .timestamp(packets.get(0).getTimestamp())
-                            .ungzipped(cut.stream().anyMatch(Packet::isUngzipped))
+                            .timestamp(timestamp)
+                            .ungzipped(ungzipped)
                             .content(content)
                             .build());
-                }
 
-                start++;
-                i = start;
+                    i++;
+                }
+                start = i;
                 packetsInRow = 1;
             } else {
                 packetsInRow++;
             }
 
             incoming = packet.isIncoming();
+        }
+
+        if (packetsInRow > 1) {
+            final List<Packet> cut = packets.subList(start, packets.size());
+            final long timestamp = cut.get(0).getTimestamp();
+            final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
+            //noinspection OptionalGetWithoutIsPresent
+            final byte[] content = cut.stream()
+                    .map(Packet::getContent)
+                    .reduce(ArrayUtils::addAll)
+                    .get();
+
+            packets.removeAll(cut);
+            packets.add(Packet.builder()
+                    .incoming(incoming)
+                    .timestamp(timestamp)
+                    .ungzipped(ungzipped)
+                    .content(content)
+                    .build());
         }
     }
 
