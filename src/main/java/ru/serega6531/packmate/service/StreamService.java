@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.service;
 
-import com.google.common.primitives.Bytes;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -17,6 +16,7 @@ import ru.serega6531.packmate.model.pojo.Pagination;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.repository.StreamRepository;
+import ru.serega6531.packmate.utils.Bytes;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
