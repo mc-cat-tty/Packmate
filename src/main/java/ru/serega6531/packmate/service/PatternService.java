@@ -8,8 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
-import ru.serega6531.packmate.model.enums.PatternType;
+import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.Stream;
+import ru.serega6531.packmate.model.enums.PatternSearchType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.PatternRepository;
@@ -53,8 +54,8 @@ public class PatternService {
         String content = new String(bytes);
 
         return patterns.values().stream()
-                .filter(p -> p.getType() == (incoming ? PatternType.INPUT : PatternType.OUTPUT)
-                        || p.getType() == PatternType.BOTH)
+                .filter(p -> p.getDirectionType() == (incoming ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT)
+                        || p.getDirectionType() == PatternDirectionType.BOTH)
                 .map(pattern -> match(pattern, content))
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
@@ -63,7 +64,7 @@ public class PatternService {
     private List<FoundPattern> match(Pattern pattern, String content) {
         List<FoundPattern> found = new ArrayList<>();
 
-        if (pattern.isRegex()) {
+        if (pattern.getSearchType() == PatternSearchType.REGEX) {
             final java.util.regex.Pattern regex = compilePattern(pattern);
             final Matcher matcher = regex.matcher(content);
 
@@ -76,7 +77,7 @@ public class PatternService {
             }
 
             return found;
-        } else {
+        } else if (pattern.getSearchType() == PatternSearchType.SUBSTRING) {
             int startSearch = 0;
 
             final String value = pattern.getValue();
@@ -96,6 +97,9 @@ public class PatternService {
 
                 startSearch = end + 1;
             }
+        } else {  // SUBBYTES
+            // TODO
+            return found;
         }
     }
 

@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
-import ru.serega6531.packmate.model.enums.PatternType;
+import ru.serega6531.packmate.model.enums.PatternDirectionType;
+import ru.serega6531.packmate.model.enums.PatternSearchType;
 
 import javax.persistence.*;
 import java.util.List;
@@ -33,9 +34,9 @@ public class Pattern {
 
     private String color;  // для вставки в css
 
-    private boolean isRegex;
+    private PatternSearchType searchType;
 
-    private PatternType type;
+    private PatternDirectionType directionType;
 
     @ManyToMany(mappedBy = "foundPatterns", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
