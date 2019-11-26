@@ -68,13 +68,15 @@ public class PatternService {
             String content = new String(bytes);
             final java.util.regex.Pattern regex = compilePattern(pattern);
             final Matcher matcher = regex.matcher(content);
+            int startPos = 0;
 
-            while (matcher.find()) {
+            while (matcher.find(startPos)) {
                 found.add(FoundPattern.builder()
                         .patternId(pattern.getId())
                         .startPosition(matcher.start())
                         .endPosition(matcher.end())
                         .build());
+                startPos = matcher.end() + 1;
             }
 
             return found;

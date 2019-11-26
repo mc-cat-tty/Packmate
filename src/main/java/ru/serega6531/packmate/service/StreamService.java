@@ -43,7 +43,7 @@ public class StreamService {
     private final boolean ignoreEmptyPackets;
 
     private final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
-    private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\n");
+    private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\r\\n");
 
     @Autowired
     public StreamService(StreamRepository repository,
