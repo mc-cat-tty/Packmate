@@ -16,4 +16,10 @@ public class CtfService {
 
     private String name;
 
+    private boolean ungzipHttp;
+
+    private boolean urldecodeHttpRequests;
+
+    private boolean mergeAdjacentPackets;
+
 }

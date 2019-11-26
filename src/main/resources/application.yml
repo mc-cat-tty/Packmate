@@ -9,10 +9,8 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-#        format_sql: true
         temp:
           use_jdbc_metadata_defaults: false
-#    show-sql: true
 
 
 enable-capture: true
@@ -23,6 +21,3 @@ account-password: 123456
 udp-stream-timeout: 20 # секунд
 tcp-stream-timeout: 40 # секунд
 timeout-stream-check-interval: 10 # секунд
-ignore-empty-packets: true
-unpack-gzipped-http: true
-merge-adjacent-packets: true

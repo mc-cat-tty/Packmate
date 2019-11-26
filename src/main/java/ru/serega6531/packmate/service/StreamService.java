@@ -1,6 +1,7 @@
 package ru.serega6531.packmate.service;
 
 import com.google.common.primitives.Bytes;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -20,6 +21,8 @@ import ru.serega6531.packmate.repository.StreamRepository;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -37,9 +40,7 @@ public class StreamService {
     private final StreamSubscriptionService subscriptionService;
 
     private final String localIp;
-    private final boolean unpackGzippedHttp;
     private final boolean ignoreEmptyPackets;
-    private final boolean mergeAdjacentPackets;
 
     private final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\n");
@@ -51,18 +52,14 @@ public class StreamService {
                          PacketService packetService,
                          StreamSubscriptionService subscriptionService,
                          @Value("${local-ip}") String localIp,
-                         @Value("${unpack-gzipped-http}") boolean unpackGzippedHttp,
-                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets,
-                         @Value("${merge-adjacent-packets}") boolean mergeAdjacentPackets) {
+                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
         this.packetService = packetService;
         this.subscriptionService = subscriptionService;
         this.localIp = localIp;
-        this.unpackGzippedHttp = unpackGzippedHttp;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
-        this.mergeAdjacentPackets = mergeAdjacentPackets;
     }
 
     /**
@@ -83,6 +80,7 @@ public class StreamService {
                     unfinishedStream.getFirstPort(), unfinishedStream.getSecondPort());
             return false;
         }
+        CtfService service = serviceOptional.get();
 
         Optional<Packet> firstIncoming = packets.stream()
                 .filter(Packet::isIncoming)
@@ -93,7 +91,7 @@ public class StreamService {
         stream.setTtl(firstIncoming.isPresent() ? firstIncoming.get().getTtl() : 0);
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
-        stream.setService(serviceOptional.get().getPort());
+        stream.setService(service.getPort());
 
         if (ignoreEmptyPackets) {
             packets.removeIf(packet -> packet.getContent().length == 0);
@@ -104,11 +102,15 @@ public class StreamService {
             }
         }
 
-        if (unpackGzippedHttp) {
+        if (service.isUngzipHttp()) {
             unpackGzip(packets);
         }
 
-        if (mergeAdjacentPackets) {
+        if (service.isUrldecodeHttpRequests()) {
+            urldecodeRequests(packets);
+        }
+
+        if (service.isMergeAdjacentPackets()) {
             mergeAdjacentPackets(packets);
         }
 
@@ -151,7 +153,7 @@ public class StreamService {
     private void mergeAdjacentPackets(List<Packet> packets) {
         int start = 0;
         int packetsInRow = 0;
-        boolean incoming = false;
+        boolean incoming = true;
 
         for (int i = 0; i < packets.size(); i++) {
             Packet packet = packets.get(i);
@@ -202,6 +204,27 @@ public class StreamService {
                     .ungzipped(ungzipped)
                     .content(content)
                     .build());
+        }
+    }
+
+    @SneakyThrows
+    private void urldecodeRequests(List<Packet> packets) {
+        boolean httpStarted = false;
+
+        for (Packet packet : packets) {
+            if (packet.isIncoming()) {
+                String content = new String(packet.getContent());
+                if (content.startsWith("HTTP/")) {
+                    httpStarted = true;
+                }
+
+                if (httpStarted) {
+                    content = URLDecoder.decode(content, StandardCharsets.UTF_8.toString());
+                    packet.setContent(content.getBytes());
+                }
+            } else {
+                httpStarted = false;
+            }
         }
     }
 
