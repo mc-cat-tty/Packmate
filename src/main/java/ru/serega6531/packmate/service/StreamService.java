@@ -103,6 +103,21 @@ public class StreamService {
             }
         }
 
+        optimizeStream(packets, service);
+        processUserAgent(packets, stream);
+
+        Stream savedStream = save(stream);
+
+        Set<Pattern> foundPatterns = getFoundPatterns(packets, savedStream);
+        savedStream.setFoundPatterns(foundPatterns);
+        savedStream.setPackets(packetService.saveAll(packets));
+        savedStream = save(savedStream);
+
+        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, savedStream));
+        return true;
+    }
+
+    private void optimizeStream(List<Packet> packets, CtfService service) {
         if (service.isUngzipHttp()) {
             unpackGzip(packets);
         }
@@ -114,7 +129,9 @@ public class StreamService {
         if (service.isMergeAdjacentPackets()) {
             mergeAdjacentPackets(packets);
         }
+    }
 
+    private void processUserAgent(List<Packet> packets, Stream stream) {
         String ua = null;
         for (Packet packet : packets) {
             String content = new String(packet.getContent());
@@ -128,12 +145,12 @@ public class StreamService {
         if (ua != null) {
             stream.setUserAgentHash(calculateUserAgentHash(ua));
         }
+    }
 
-        Stream savedStream = save(stream);
-
+    private Set<Pattern> getFoundPatterns(List<Packet> packets, Stream savedStream) {
         Set<Pattern> foundPatterns = new HashSet<>();
 
-        for (ru.serega6531.packmate.model.Packet packet : packets) {
+        for (Packet packet : packets) {
             packet.setStream(savedStream);
             final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), packet.isIncoming());
             packet.setMatches(matches);
@@ -143,12 +160,7 @@ public class StreamService {
                     .collect(Collectors.toList()));
         }
 
-        savedStream.setFoundPatterns(foundPatterns);
-        savedStream.setPackets(packetService.saveAll(packets));
-        savedStream = save(savedStream);
-
-        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, savedStream));
-        return true;
+        return foundPatterns;
     }
 
     private void mergeAdjacentPackets(List<Packet> packets) {
@@ -161,21 +173,7 @@ public class StreamService {
             if (packet.isIncoming() != incoming) {
                 if (packetsInRow > 1) {
                     final List<Packet> cut = packets.subList(start, i);
-                    final long timestamp = cut.get(0).getTimestamp();
-                    final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
-                    //noinspection OptionalGetWithoutIsPresent
-                    final byte[] content = cut.stream()
-                            .map(Packet::getContent)
-                            .reduce(ArrayUtils::addAll)
-                            .get();
-
-                    packets.removeAll(cut);
-                    packets.add(start, Packet.builder()
-                            .incoming(incoming)
-                            .timestamp(timestamp)
-                            .ungzipped(ungzipped)
-                            .content(content)
-                            .build());
+                    compress(packets, cut, incoming);
 
                     i++;
                 }
@@ -190,22 +188,26 @@ public class StreamService {
 
         if (packetsInRow > 1) {
             final List<Packet> cut = packets.subList(start, packets.size());
-            final long timestamp = cut.get(0).getTimestamp();
-            final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
-            //noinspection OptionalGetWithoutIsPresent
-            final byte[] content = cut.stream()
-                    .map(Packet::getContent)
-                    .reduce(ArrayUtils::addAll)
-                    .get();
-
-            packets.removeAll(cut);
-            packets.add(Packet.builder()
-                    .incoming(incoming)
-                    .timestamp(timestamp)
-                    .ungzipped(ungzipped)
-                    .content(content)
-                    .build());
+            compress(packets, cut, incoming);
         }
+    }
+
+    private void compress(List<Packet> packets, List<Packet> cut, boolean incoming) {
+        final long timestamp = cut.get(0).getTimestamp();
+        final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
+        //noinspection OptionalGetWithoutIsPresent
+        final byte[] content = cut.stream()
+                .map(Packet::getContent)
+                .reduce(ArrayUtils::addAll)
+                .get();
+
+        packets.removeAll(cut);
+        packets.add(Packet.builder()
+                .incoming(incoming)
+                .timestamp(timestamp)
+                .ungzipped(ungzipped)
+                .content(content)
+                .build());
     }
 
     @SneakyThrows
@@ -229,6 +231,9 @@ public class StreamService {
         }
     }
 
+    /**
+     * Попытаться распаковать gzip из исходящих http пакетов
+     */
     private void unpackGzip(List<Packet> packets) {
         boolean gzipStarted = false;
         int gzipStartPacket = 0;
@@ -237,15 +242,9 @@ public class StreamService {
         for (int i = 0; i < packets.size(); i++) {
             Packet packet = packets.get(i);
 
-            if (packet.isIncoming() && gzipStarted) {
+            if (packet.isIncoming() && gzipStarted) {   // поток gzip закончился
                 gzipEndPacket = i - 1;
-
-                List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
-
-                Packet decompressed = decompressGzipPackets(cut);
-                if (decompressed != null) {
-                    packets.removeAll(cut);
-                    packets.add(gzipStartPacket, decompressed);
+                if(extractGzip(packets, gzipStartPacket, gzipEndPacket)) {
                     gzipStarted = false;
                     i = gzipStartPacket + 1;
                 }
@@ -255,14 +254,9 @@ public class StreamService {
                 int contentPos = content.indexOf("\r\n\r\n");
                 boolean http = content.startsWith("HTTP/");
 
-                if (http && gzipStarted) {
+                if (http && gzipStarted) {  // начался новый http пакет, заканчиваем старый gzip поток
                     gzipEndPacket = i - 1;
-                    List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
-
-                    Packet decompressed = decompressGzipPackets(cut);
-                    if (decompressed != null) {
-                        packets.removeAll(cut);
-                        packets.add(gzipStartPacket, decompressed);
+                    if(extractGzip(packets, gzipStartPacket, gzipEndPacket)) {
                         gzipStarted = false;
                         i = gzipStartPacket + 1;
                     }
@@ -279,16 +273,25 @@ public class StreamService {
             }
         }
 
-        if (gzipStarted) {
-            gzipEndPacket = packets.size() - 1;
-            List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
-
-            Packet decompressed = decompressGzipPackets(cut);
-            if (decompressed != null) {
-                packets.removeAll(cut);
-                packets.add(gzipStartPacket, decompressed);
-            }
+        if (gzipStarted) {  // стрим закончился gzip пакетом
+            extractGzip(packets, gzipStartPacket, packets.size() - 1);
         }
+    }
+
+    /**
+     * @return получилось ли распаковать
+     */
+    private boolean extractGzip(List<Packet> packets, int gzipStartPacket, int gzipEndPacket) {
+        List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
+
+        Packet decompressed = decompressGzipPackets(cut);
+        if (decompressed != null) {
+            packets.removeAll(cut);
+            packets.add(gzipStartPacket, decompressed);
+            return true;
+        }
+
+        return false;
     }
 
     private Packet decompressGzipPackets(List<Packet> packets) {
@@ -350,15 +353,8 @@ public class StreamService {
 
     @SuppressWarnings("UnusedReturnValue")
     @Transactional
-    public Stream setFavorite(long id, boolean favorite) {
-        final Optional<Stream> streamOptional = repository.findById(id);
-        if (streamOptional.isPresent()) {
-            final Stream stream = streamOptional.get();
-            stream.setFavorite(favorite);
-            return repository.save(stream);
-        }
-
-        return null;
+    public void setFavorite(long id, boolean favorite) {
+        repository.setFavorite(id, favorite);
     }
 
     public List<Stream> findAll(Pagination pagination, Optional<Integer> service, boolean onlyFavorites) {
