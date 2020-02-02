@@ -7,6 +7,7 @@ import ru.serega6531.packmate.model.pojo.Pagination;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/stream/")
@@ -21,20 +22,12 @@ public class StreamController {
 
     @PostMapping("/all")
     public List<Stream> getStreams(@RequestBody Pagination pagination) {
-        if (pagination.isFavorites()) {
-            return streamService.findFavorites(pagination);
-        } else {
-            return streamService.findAll(pagination);
-        }
+        return streamService.findAll(pagination, Optional.empty(), pagination.isFavorites());
     }
 
     @PostMapping("/{port}")
     public List<Stream> getStreams(@PathVariable int port, @RequestBody Pagination pagination) {
-        if (pagination.isFavorites()) {
-            return streamService.findFavoritesByService(pagination, port);
-        } else {
-            return streamService.findAllByService(pagination, port);
-        }
+        return streamService.findAll(pagination, Optional.of(port), pagination.isFavorites());
     }
 
     @PostMapping("/{id}/favorite")

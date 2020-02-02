@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.*;
@@ -360,76 +361,49 @@ public class StreamService {
         return null;
     }
 
-    public List<Stream> findFavorites(Pagination pagination) {
+    public List<Stream> findAll(Pagination pagination, Optional<Integer> service, boolean onlyFavorites) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
-        if (pagination.getPattern() != null) { // задан паттерн для поиска
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByIdGreaterThanAndFavoriteIsTrueAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
-            } else {  // более старые стримы
-                return repository.findAllByIdLessThanAndFavoriteIsTrueAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
-            }
+        Specification<Stream> spec;
+        if(pagination.getDirection() == Sort.Direction.ASC) {
+            spec = streamIdGreaterThan(pagination.getStartingFrom());
         } else {
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByIdGreaterThanAndFavoriteIsTrue(pagination.getStartingFrom(), page);
-            } else {  // более старые стримы
-                return repository.findAllByIdLessThanAndFavoriteIsTrue(pagination.getStartingFrom(), page);
-            }
+            spec = streamIdLessThan(pagination.getStartingFrom());
         }
+
+        if(service.isPresent()) {
+            spec = spec.and(streamServiceEquals(service.get()));
+        }
+
+        if(onlyFavorites) {
+            spec = spec.and(streamIsFavorite());
+        }
+
+        if(pagination.getPattern() != null) {
+            spec = spec.and(streamPatternsContains(pagination.getPattern()));
+        }
+
+        return repository.findAll(spec, page).getContent();
     }
 
-    public List<Stream> findFavoritesByService(Pagination pagination, int service) {
-        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
-
-        if (pagination.getPattern() != null) { // задан паттерн для поиска
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByServiceAndIdGreaterThanAndFavoriteIsTrueAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
-            } else {  // более старые стримы
-                return repository.findAllByServiceAndIdLessThanAndFavoriteIsTrueAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
-            }
-        } else {
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByServiceAndIdGreaterThanAndFavoriteIsTrue(service, pagination.getStartingFrom(), page);
-            } else {  // более старые стримы
-                return repository.findAllByServiceAndIdLessThanAndFavoriteIsTrue(service, pagination.getStartingFrom(), page);
-            }
-        }
+    private Specification<Stream> streamServiceEquals(long service) {
+        return (root, query, cb) -> cb.equal(root.get("service"), service);
     }
 
-    public List<Stream> findAll(Pagination pagination) {
-        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
-
-        if (pagination.getPattern() != null) { // задан паттерн для поиска
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByIdGreaterThanAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
-            } else {  // более старые стримы
-                return repository.findAllByIdLessThanAndFoundPatternsContaining(pagination.getStartingFrom(), pagination.getPattern(), page);
-            }
-        } else {
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByIdGreaterThan(pagination.getStartingFrom(), page);
-            } else {  // более старые стримы
-                return repository.findAllByIdLessThan(pagination.getStartingFrom(), page);
-            }
-        }
+    private Specification<Stream> streamIsFavorite() {
+        return (root, query, cb) -> cb.equal(root.get("favorite"), true);
     }
 
-    public List<Stream> findAllByService(Pagination pagination, int service) {
-        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
+    private Specification<Stream> streamIdGreaterThan(long id) {
+        return (root, query, cb) -> cb.greaterThan(root.get("id"), id);
+    }
 
-        if (pagination.getPattern() != null) { // задан паттерн для поиска
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByServiceAndIdGreaterThanAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
-            } else {  // более старые стримы
-                return repository.findAllByServiceAndIdLessThanAndFoundPatternsContaining(service, pagination.getStartingFrom(), pagination.getPattern(), page);
-            }
-        } else {
-            if (pagination.getDirection() == Sort.Direction.ASC) {  // более новые стримы
-                return repository.findAllByServiceAndIdGreaterThan(service, pagination.getStartingFrom(), page);
-            } else {  // более старые стримы
-                return repository.findAllByServiceAndIdLessThan(service, pagination.getStartingFrom(), page);
-            }
-        }
+    private Specification<Stream> streamIdLessThan(long id) {
+        return (root, query, cb) -> cb.lessThan(root.get("id"), id);
+    }
+
+    private Specification<Stream> streamPatternsContains(Pattern pattern) {
+        return (root, query, cb) -> cb.isMember(pattern, root.get("foundPatterns"));
     }
 
 }
