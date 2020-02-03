@@ -40,7 +40,6 @@ public class StreamService {
     private final PacketService packetService;
     private final StreamSubscriptionService subscriptionService;
 
-    private final String localIp;
     private final boolean ignoreEmptyPackets;
 
     private static final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
@@ -59,7 +58,6 @@ public class StreamService {
         this.servicesService = servicesService;
         this.packetService = packetService;
         this.subscriptionService = subscriptionService;
-        this.localIp = localIp;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
@@ -69,10 +67,9 @@ public class StreamService {
     @Transactional
     public boolean saveNewStream(UnfinishedStream unfinishedStream, List<Packet> packets) {
         final Optional<CtfService> serviceOptional = servicesService.findService(
-                localIp,
-                unfinishedStream.getFirstIp().getHostAddress(),
+                unfinishedStream.getFirstIp(),
                 unfinishedStream.getFirstPort(),
-                unfinishedStream.getSecondIp().getHostAddress(),
+                unfinishedStream.getSecondIp(),
                 unfinishedStream.getSecondPort()
         );
 
@@ -175,7 +172,7 @@ public class StreamService {
                     final List<Packet> cut = packets.subList(start, i);
                     compress(packets, cut, incoming);
 
-                    i++;
+                    i++;  // продвигаем указатель на следующий после склеенного блок
                 }
                 start = i;
                 packetsInRow = 1;
@@ -246,7 +243,7 @@ public class StreamService {
                 gzipEndPacket = i - 1;
                 if(extractGzip(packets, gzipStartPacket, gzipEndPacket)) {
                     gzipStarted = false;
-                    i = gzipStartPacket + 1;
+                    i = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
                 }
             } else if (!packet.isIncoming()) {
                 String content = new String(packet.getContent());
@@ -258,7 +255,7 @@ public class StreamService {
                     gzipEndPacket = i - 1;
                     if(extractGzip(packets, gzipStartPacket, gzipEndPacket)) {
                         gzipStarted = false;
-                        i = gzipStartPacket + 1;
+                        i = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
                     }
                 }
 

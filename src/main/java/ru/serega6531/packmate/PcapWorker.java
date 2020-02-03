@@ -3,6 +3,7 @@ package ru.serega6531.packmate;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.pcap4j.core.*;
 import org.pcap4j.packet.IpV4Packet;
 import org.pcap4j.packet.Packet;
@@ -42,9 +43,9 @@ public class PcapWorker implements PacketListener {
 
     private final Map<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> unfinishedStreams = new HashMap<>();
 
-    // в следующих мапах в сетах srcIp соответствующего пакета
-    private final Map<UnfinishedStream, Set<String>> fins = new HashMap<>();
-    private final Map<UnfinishedStream, Set<String>> acks = new HashMap<>();
+    // в следующих мапах в Set находится srcIp соответствующего пакета
+    private final Map<UnfinishedStream, Set<ImmutablePair<Inet4Address, Integer>>> fins = new HashMap<>();
+    private final Map<UnfinishedStream, Set<ImmutablePair<Inet4Address, Integer>>> acks = new HashMap<>();
 
     @Autowired
     public PcapWorker(ServicesService servicesService,
@@ -55,7 +56,7 @@ public class PcapWorker implements PacketListener {
         this.streamService = streamService;
 
         this.localIp = InetAddress.getByName(localIpString);
-        if(!(this.localIp instanceof Inet4Address)) {
+        if (!(this.localIp instanceof Inet4Address)) {
             throw new IllegalArgumentException("Only ipv4 local ips are supported");
         }
 
@@ -143,9 +144,6 @@ public class PcapWorker implements PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
-            String sourceIpAndPort = sourceIpString + ":" + sourcePort;
-            String destIpAndPort = destIpString + ":" + destPort;
-
             UnfinishedStream stream = addNewPacket(sourceIp, destIp, sourcePort, destPort, ttl, content, protocol);
 
             if (log.isDebugEnabled()) {
@@ -155,7 +153,7 @@ public class PcapWorker implements PacketListener {
             }
 
             if (protocol == Protocol.TCP) {  // udp не имеет фазы закрытия, поэтому закрываем по таймауту
-                checkTcpTermination(ack, fin, rst, sourceIpAndPort, destIpAndPort, stream);
+                checkTcpTermination(ack, fin, rst, new ImmutablePair<>(sourceIp, sourcePort), new ImmutablePair<>(destIp, destPort), stream);
             }
         } else { // сервис не найден
             if (log.isTraceEnabled()) {
@@ -189,7 +187,9 @@ public class PcapWorker implements PacketListener {
         return stream;
     }
 
-    private void checkTcpTermination(boolean ack, boolean fin, boolean rst, String sourceIpAndPort, String destIpAndPort, UnfinishedStream stream) {
+    private void checkTcpTermination(boolean ack, boolean fin, boolean rst,
+                                     ImmutablePair<Inet4Address, Integer> sourceIpAndPort, ImmutablePair<Inet4Address, Integer> destIpAndPort,
+                                     UnfinishedStream stream) {
         if (!fins.containsKey(stream)) {
             fins.put(stream, new HashSet<>());
         }
@@ -198,8 +198,8 @@ public class PcapWorker implements PacketListener {
             acks.put(stream, new HashSet<>());
         }
 
-        final Set<String> finsForStream = fins.get(stream);
-        final Set<String> acksForStream = acks.get(stream);
+        final Set<ImmutablePair<Inet4Address, Integer>> finsForStream = fins.get(stream);
+        final Set<ImmutablePair<Inet4Address, Integer>> acksForStream = acks.get(stream);
 
         if (fin) {
             finsForStream.add(sourceIpAndPort);
@@ -209,7 +209,7 @@ public class PcapWorker implements PacketListener {
             acksForStream.add(sourceIpAndPort);
         }
 
-        // если соединение разорвано или закрыто с помощью fin-ack-fin-ack
+        // если соединение разорвано с помощью rst или закрыто с помощью fin-ack-fin-ack
         if (rst || (acksForStream.contains(sourceIpAndPort) && acksForStream.contains(destIpAndPort))) {
             streamService.saveNewStream(stream, unfinishedStreams.get(stream));
 

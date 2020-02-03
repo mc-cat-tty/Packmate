@@ -1,5 +1,8 @@
 package ru.serega6531.packmate.utils;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class Bytes {
 
     public static int indexOf(byte[] array, byte[] target) {
