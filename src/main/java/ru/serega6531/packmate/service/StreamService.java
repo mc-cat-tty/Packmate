@@ -43,7 +43,7 @@ public class StreamService {
     private final String localIp;
     private final boolean ignoreEmptyPackets;
 
-    private final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
+    private static final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\r\\n");
 
     @Autowired
@@ -347,7 +347,11 @@ public class StreamService {
     private String calculateUserAgentHash(String ua) {
         char[] alphabet = "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
         int l = alphabet.length;
-        final int hash = Math.abs(ua.hashCode()) % (l * l * l);
+        int hashCode = ua.hashCode();
+        if(hashCode == Integer.MIN_VALUE) {
+            hashCode = Integer.MAX_VALUE;
+        }
+        final int hash = Math.abs(hashCode) % (l * l * l);
         return "" + alphabet[hash % l] + alphabet[(hash / l) % l] + alphabet[(hash / (l * l)) % l];
     }
 
