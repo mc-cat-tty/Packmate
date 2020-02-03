@@ -190,16 +190,8 @@ public class PcapWorker implements PacketListener {
     private void checkTcpTermination(boolean ack, boolean fin, boolean rst,
                                      ImmutablePair<Inet4Address, Integer> sourceIpAndPort, ImmutablePair<Inet4Address, Integer> destIpAndPort,
                                      UnfinishedStream stream) {
-        if (!fins.containsKey(stream)) {
-            fins.put(stream, new HashSet<>());
-        }
-
-        if (!acks.containsKey(stream)) {
-            acks.put(stream, new HashSet<>());
-        }
-
-        final Set<ImmutablePair<Inet4Address, Integer>> finsForStream = fins.get(stream);
-        final Set<ImmutablePair<Inet4Address, Integer>> acksForStream = acks.get(stream);
+        final Set<ImmutablePair<Inet4Address, Integer>> finsForStream = fins.computeIfAbsent(stream, k -> new HashSet<>());
+        final Set<ImmutablePair<Inet4Address, Integer>> acksForStream = acks.computeIfAbsent(stream, k -> new HashSet<>());
 
         if (fin) {
             finsForStream.add(sourceIpAndPort);
