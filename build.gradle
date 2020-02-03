@@ -29,6 +29,7 @@ dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'org.pcap4j:pcap4j-core:1.+'
     compile 'org.pcap4j:pcap4j-packetfactory-static:1.+'
+    compile group: 'com.google.guava', name: 'guava', version: '28.2-jre'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
