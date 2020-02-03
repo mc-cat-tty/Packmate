@@ -90,6 +90,7 @@ public class StreamService {
             }
         }
 
+        new StreamOptimizer(service, packets).optimizeStream();
         processUserAgent(packets, stream);
 
         Stream savedStream = save(stream);
