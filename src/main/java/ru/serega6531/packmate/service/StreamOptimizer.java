@@ -58,8 +58,7 @@ class StreamOptimizer {
             Packet packet = packets.get(i);
             if (packet.isIncoming() != incoming) {
                 if (packetsInRow > 1) {
-                    final List<Packet> cut = packets.subList(start, i);
-                    compress(cut, incoming);
+                    compress(start, i);
 
                     i++;  // продвигаем указатель на следующий после склеенного блок
                 }
@@ -73,17 +72,18 @@ class StreamOptimizer {
         }
 
         if (packetsInRow > 1) {
-            final List<Packet> cut = packets.subList(start, packets.size());
-            compress(cut, incoming);
+            compress(start, packets.size());
         }
     }
 
     /**
-     * Сжать кусок cut в один пакет
+     * Сжать кусок со start по end в один пакет
      */
-    private void compress(List<Packet> cut, boolean incoming) {
+    private void compress(int start, int end) {
+        final List<Packet> cut = packets.subList(start, end);
         final long timestamp = cut.get(0).getTimestamp();
         final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
+        boolean incoming = cut.get(0).isIncoming();
         //noinspection OptionalGetWithoutIsPresent
         final byte[] content = cut.stream()
                 .map(Packet::getContent)
@@ -91,7 +91,7 @@ class StreamOptimizer {
                 .get();
 
         packets.removeAll(cut);
-        packets.add(Packet.builder()
+        packets.add(start, Packet.builder()
                 .incoming(incoming)
                 .timestamp(timestamp)
                 .ungzipped(ungzipped)
@@ -140,7 +140,7 @@ class StreamOptimizer {
 
             if (packet.isIncoming() && gzipStarted) {   // поток gzip закончился
                 gzipEndPacket = i - 1;
-                if(extractGzip(gzipStartPacket, gzipEndPacket)) {
+                if (extractGzip(gzipStartPacket, gzipEndPacket)) {
                     gzipStarted = false;
                     i = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
                 }
@@ -152,7 +152,7 @@ class StreamOptimizer {
 
                 if (http && gzipStarted) {  // начался новый http пакет, заканчиваем старый gzip поток
                     gzipEndPacket = i - 1;
-                    if(extractGzip(gzipStartPacket, gzipEndPacket)) {
+                    if (extractGzip(gzipStartPacket, gzipEndPacket)) {
                         gzipStarted = false;
                         i = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
                     }
@@ -176,6 +176,7 @@ class StreamOptimizer {
 
     /**
      * Попытаться распаковать кусок пакетов с gzip body и вставить результат на их место
+     *
      * @return получилось ли распаковать
      */
     private boolean extractGzip(int gzipStartPacket, int gzipEndPacket) {

@@ -33,7 +33,8 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth.inMemoryAuthentication()
-                .withUser(login).password(passwordEncoder().encode(password))
+                .withUser(login)
+                .password(passwordEncoder().encode(password))
                 .authorities("ROLE_USER");
     }
 

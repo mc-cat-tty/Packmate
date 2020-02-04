@@ -44,7 +44,7 @@ public class PcapWorker implements PacketListener {
 
     private final ListMultimap<UnfinishedStream, ru.serega6531.packmate.model.Packet> unfinishedStreams = ArrayListMultimap.create();
 
-    // в следующих мапах в Set находится srcIp соответствующего пакета
+    // в следующих мапах в значениях находится srcIp соответствующего пакета
     private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> fins = HashMultimap.create();
     private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> acks = HashMultimap.create();
 
