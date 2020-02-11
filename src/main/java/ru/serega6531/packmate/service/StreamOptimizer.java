@@ -21,7 +21,7 @@ import java.util.zip.ZipException;
 
 @AllArgsConstructor
 @Slf4j
-class StreamOptimizer {
+public class StreamOptimizer {
 
     private final CtfService service;
     private final List<Packet> packets;
@@ -31,7 +31,7 @@ class StreamOptimizer {
     /**
      * Вызвать для выполнения оптимизаций на переданном списке пакетов.
      */
-    void optimizeStream() {
+    public void optimizeStream() {
         if (service.isUngzipHttp()) {
             unpackGzip();
         }
@@ -60,7 +60,7 @@ class StreamOptimizer {
                 if (packetsInRow > 1) {
                     compress(start, i);
 
-                    i++;  // продвигаем указатель на следующий после склеенного блок
+                    i++;  // продвигаем указатель на следующий после склеенного блок TODO проверить работу этого
                 }
                 start = i;
                 packetsInRow = 1;
@@ -109,7 +109,7 @@ class StreamOptimizer {
         for (Packet packet : packets) {
             if (packet.isIncoming()) {
                 String content = new String(packet.getContent());
-                if (content.startsWith("HTTP/")) {
+                if (content.contains("HTTP/")) {
                     httpStarted = true;
                 }
 

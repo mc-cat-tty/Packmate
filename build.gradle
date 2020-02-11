@@ -34,4 +34,5 @@ dependencies {
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
+    testCompile 'org.junit.jupiter:junit-jupiter:5.4.2'
 }
