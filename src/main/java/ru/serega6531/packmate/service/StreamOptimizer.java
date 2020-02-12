@@ -60,7 +60,7 @@ public class StreamOptimizer {
                 if (packetsInRow > 1) {
                     compress(start, i);
 
-                    i++;  // продвигаем указатель на следующий после склеенного блок TODO проверить работу этого
+                    i = start + 1;  // продвигаем указатель на следующий после склеенного блок
                 }
                 start = i;
                 packetsInRow = 1;

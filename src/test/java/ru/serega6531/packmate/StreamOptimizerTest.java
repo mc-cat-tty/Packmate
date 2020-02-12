@@ -13,7 +13,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class StreamOptimizerTest {
 
     @Test
-    public void testUrldecodeRequests() {
+    void testUnpackGzip() {
+        //TODO
+    }
+
+    @Test
+    void testUrldecodeRequests() {
         CtfService service = new CtfService();
         service.setUrldecodeHttpRequests(true);
 
@@ -27,7 +32,7 @@ class StreamOptimizerTest {
     }
 
     @Test
-    public void testMergeAdjacentPackets() {
+    void testMergeAdjacentPackets() {
         CtfService service = new CtfService();
         service.setMergeAdjacentPackets(true);
 
@@ -49,7 +54,9 @@ class StreamOptimizerTest {
         new StreamOptimizer(service, list).optimizeStream();
 
         assertEquals(4, list.size());
-        //TODO
+        assertEquals(2, list.get(1).getContent().length);
+        assertEquals(1, list.get(2).getContent().length);
+        assertEquals(2, list.get(3).getContent().length);
     }
 
     private Packet createPacket(int content, boolean incoming) {
