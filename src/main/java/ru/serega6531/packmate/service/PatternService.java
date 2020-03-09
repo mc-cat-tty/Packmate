@@ -74,9 +74,9 @@ public class PatternService {
                 found.add(FoundPattern.builder()
                         .patternId(pattern.getId())
                         .startPosition(matcher.start())
-                        .endPosition(matcher.end())
+                        .endPosition(matcher.end() - 1)
                         .build());
-                startPos = matcher.end() + 1;
+                startPos = matcher.end();
             }
 
             return found;
