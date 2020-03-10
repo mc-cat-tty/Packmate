@@ -23,9 +23,12 @@ import javax.annotation.PreDestroy;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -36,7 +39,7 @@ public class PcapWorker implements PacketListener {
 
     private final PcapNetworkInterface device;
     private PcapHandle pcap = null;
-    private final ExecutorService executorService;
+    private final ExecutorService listenerExecutorService;
 
     private final InetAddress localIp;
 
@@ -62,8 +65,8 @@ public class PcapWorker implements PacketListener {
         }
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("pcap-worker").build();
-        executorService = Executors.newSingleThreadExecutor(factory);
+                .namingPattern("pcap-worker-listener").build();
+        listenerExecutorService = Executors.newSingleThreadExecutor(factory);
         device = Pcaps.getDevByName(interfaceName);
     }
 
@@ -71,7 +74,10 @@ public class PcapWorker implements PacketListener {
         log.info("Using interface " + device.getName());
         pcap = device.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 100);
 
-        executorService.execute(() -> {
+        BasicThreadFactory factory = new BasicThreadFactory.Builder()
+                .namingPattern("pcap-worker-loop").build();
+        ExecutorService loopExecutorService = Executors.newSingleThreadExecutor(factory);
+        loopExecutorService.execute(() -> {
             try {
                 log.info("Intercept started");
                 pcap.loop(-1, this);   // использовать другой executor?
@@ -97,46 +103,31 @@ public class PcapWorker implements PacketListener {
     }
 
     public void gotPacket(Packet rawPacket) {
-        Inet4Address sourceIp;
-        Inet4Address destIp;
-        int sourcePort;
-        int destPort;
-        byte ttl;
-        byte[] content;
-        Protocol protocol;
-        boolean ack = false;
-        boolean fin = false;
-        boolean rst = false;
-
-        if (rawPacket.contains(IpV4Packet.class)) {
-            final IpV4Packet.IpV4Header header = rawPacket.get(IpV4Packet.class).getHeader();
-            sourceIp = header.getSrcAddr();
-            destIp = header.getDstAddr();
-            ttl = header.getTtl();
-        } else {
+        if (!rawPacket.contains(IpV4Packet.class)) {
             return;
         }
 
         if (rawPacket.contains(TcpPacket.class)) {
-            final TcpPacket packet = rawPacket.get(TcpPacket.class);
-            final TcpPacket.TcpHeader header = packet.getHeader();
-            sourcePort = header.getSrcPort().valueAsInt();
-            destPort = header.getDstPort().valueAsInt();
-            ack = header.getAck();
-            fin = header.getFin();
-            rst = header.getRst();
-            content = packet.getPayload() != null ? packet.getPayload().getRawData() : new byte[0];
-            protocol = Protocol.TCP;
+            gotTcpPacket(rawPacket);
         } else if (rawPacket.contains(UdpPacket.class)) {
-            final UdpPacket packet = rawPacket.get(UdpPacket.class);
-            final UdpPacket.UdpHeader header = packet.getHeader();
-            sourcePort = header.getSrcPort().valueAsInt();
-            destPort = header.getDstPort().valueAsInt();
-            content = packet.getPayload() != null ? packet.getPayload().getRawData() : new byte[0];
-            protocol = Protocol.UDP;
-        } else {
-            return;
+            gotUdpPacket(rawPacket);
         }
+    }
+
+    private void gotTcpPacket(Packet rawPacket) {
+        final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
+        Inet4Address sourceIp = ipHeader.getSrcAddr();
+        Inet4Address destIp = ipHeader.getDstAddr();
+        byte ttl = ipHeader.getTtl();
+
+        final TcpPacket packet = rawPacket.get(TcpPacket.class);
+        final TcpPacket.TcpHeader tcpHeader = packet.getHeader();
+        int sourcePort = tcpHeader.getSrcPort().valueAsInt();
+        int destPort = tcpHeader.getDstPort().valueAsInt();
+        boolean ack = tcpHeader.getAck();
+        boolean fin = tcpHeader.getFin();
+        boolean rst = tcpHeader.getRst();
+        byte[] content = packet.getPayload() != null ? packet.getPayload().getRawData() : new byte[0];
 
         String sourceIpString = sourceIp.getHostAddress();
         String destIpString = destIp.getHostAddress();
@@ -145,20 +136,55 @@ public class PcapWorker implements PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
-            UnfinishedStream stream = addNewPacket(sourceIp, destIp, sourcePort, destPort, ttl, content, protocol);
+            listenerExecutorService.execute(() -> {
+                UnfinishedStream stream = addNewPacket(sourceIp, destIp, sourcePort, destPort, ttl, content, Protocol.TCP);
 
-            if (log.isDebugEnabled()) {
-                log.debug("{} {} {}:{} -> {}:{}, номер пакета {}",
-                        protocol.name().toLowerCase(), serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
-                        unfinishedStreams.get(stream).size());
-            }
+                if (log.isDebugEnabled()) {
+                    log.debug("tcp {} {}:{} -> {}:{}, номер пакета {}",
+                            serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
+                            unfinishedStreams.get(stream).size());
+                }
 
-            if (protocol == Protocol.TCP) {  // udp не имеет фазы закрытия, поэтому закрываем по таймауту
                 checkTcpTermination(ack, fin, rst, new ImmutablePair<>(sourceIp, sourcePort), new ImmutablePair<>(destIp, destPort), stream);
-            }
+            });
         } else { // сервис не найден
             if (log.isTraceEnabled()) {
-                log.trace("{} {}:{} -> {}:{}", protocol.name().toLowerCase(), sourceIpString, sourcePort, destIpString, destPort);
+                log.trace("tcp {}:{} -> {}:{}", sourceIpString, sourcePort, destIpString, destPort);
+            }
+        }
+    }
+
+    private void gotUdpPacket(Packet rawPacket) {
+        final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
+        Inet4Address sourceIp = ipHeader.getSrcAddr();
+        Inet4Address destIp = ipHeader.getDstAddr();
+        byte ttl = ipHeader.getTtl();
+
+        final UdpPacket packet = rawPacket.get(UdpPacket.class);
+        final UdpPacket.UdpHeader udpHeader = packet.getHeader();
+        int sourcePort = udpHeader.getSrcPort().valueAsInt();
+        int destPort = udpHeader.getDstPort().valueAsInt();
+        byte[] content = packet.getPayload() != null ? packet.getPayload().getRawData() : new byte[0];
+
+        String sourceIpString = sourceIp.getHostAddress();
+        String destIpString = destIp.getHostAddress();
+
+        final Optional<CtfService> serviceOptional =
+                servicesService.findService(sourceIp, sourcePort, destIp, destPort);
+
+        if (serviceOptional.isPresent()) {
+            listenerExecutorService.execute(() -> {
+                UnfinishedStream stream = addNewPacket(sourceIp, destIp, sourcePort, destPort, ttl, content, Protocol.UDP);
+
+                if (log.isDebugEnabled()) {
+                    log.debug("udp {} {}:{} -> {}:{}, номер пакета {}",
+                            serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
+                            unfinishedStreams.get(stream).size());
+                }
+            });
+        } else { // сервис не найден
+            if (log.isTraceEnabled()) {
+                log.trace("udp {}:{} -> {}:{}", sourceIpString, sourcePort, destIpString, destPort);
             }
         }
     }
@@ -185,8 +211,12 @@ public class PcapWorker implements PacketListener {
         return stream;
     }
 
+    /**
+     * Udp не имеет фазы закрытия, поэтому закрывается только по таймауту
+     */
     private void checkTcpTermination(boolean ack, boolean fin, boolean rst,
-                                     ImmutablePair<Inet4Address, Integer> sourceIpAndPort, ImmutablePair<Inet4Address, Integer> destIpAndPort,
+                                     ImmutablePair<Inet4Address, Integer> sourceIpAndPort,
+                                     ImmutablePair<Inet4Address, Integer> destIpAndPort,
                                      UnfinishedStream stream) {
 
         if (fin) {
@@ -207,33 +237,39 @@ public class PcapWorker implements PacketListener {
         }
     }
 
+    @SneakyThrows
     int closeTimeoutStreams(Protocol protocol, long timeoutMillis) {
-        int streamsClosed = 0;
-        final Iterator<Map.Entry<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>>> iterator =
-                Multimaps.asMap(unfinishedStreams).entrySet().iterator();
+        return listenerExecutorService.submit(() -> {
+            int streamsClosed = 0;
 
-        while (iterator.hasNext()) {
-            final Map.Entry<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> entry = iterator.next();
-            final UnfinishedStream stream = entry.getKey();
+            final long time = System.currentTimeMillis();
+            final Map<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> oldStreams =
+                    Multimaps.asMap(unfinishedStreams).entrySet().stream()
+                            .filter(entry -> {
+                                final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
+                                return time - packets.get(packets.size() - 1).getTimestamp() > timeoutMillis;
+                            })
+                            .filter(entry -> entry.getKey().getProtocol() == protocol)
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            if (stream.getProtocol() == protocol) {
+            for (Map.Entry<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> entry : oldStreams.entrySet()) {
+                final UnfinishedStream stream = entry.getKey();
                 final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
-                if (System.currentTimeMillis() - packets.get(packets.size() - 1).getTimestamp() > timeoutMillis) {
-                    if (streamService.saveNewStream(stream, packets)) {
-                        streamsClosed++;
-                    }
 
-                    iterator.remove();
-
-                    if (protocol == Protocol.TCP) {
-                        fins.removeAll(stream);
-                        acks.removeAll(stream);
-                    }
+                if (streamService.saveNewStream(stream, packets)) {
+                    streamsClosed++;
                 }
-            }
-        }
 
-        return streamsClosed;
+                if (protocol == Protocol.TCP) {
+                    fins.removeAll(stream);
+                    acks.removeAll(stream);
+                }
+
+                unfinishedStreams.removeAll(stream);
+            }
+
+            return streamsClosed;
+        }).get();
     }
 
 }
