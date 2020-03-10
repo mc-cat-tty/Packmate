@@ -1,20 +1,36 @@
 package ru.serega6531.packmate;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.service.StreamOptimizer;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StreamOptimizerTest {
 
     @Test
     void testUnpackGzip() {
-        //TODO
+        String encoded = "H4sIAAAAAAAA/0tMTExKSgIA2KWG6gYAAAA=";
+        final byte[] gzipped = Base64.getDecoder().decode(encoded);
+        final byte[] content = ArrayUtils.addAll("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: 26\r\n\r\n".getBytes(), gzipped);
+
+        CtfService service = new CtfService();
+        service.setUngzipHttp(true);
+
+        Packet p = createPacket(content, false);
+        List<Packet> list = new ArrayList<>();
+        list.add(p);
+
+        new StreamOptimizer(service, list).optimizeStream();
+        final String processed = new String(list.get(0).getContent());
+        assertTrue(processed.contains("aaabbb"));
     }
 
     @Test
