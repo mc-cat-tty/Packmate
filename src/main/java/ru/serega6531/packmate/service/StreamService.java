@@ -70,6 +70,15 @@ public class StreamService {
         }
         CtfService service = serviceOptional.get();
 
+        if (ignoreEmptyPackets) {
+            packets.removeIf(packet -> packet.getContent().length == 0);
+
+            if (packets.isEmpty()) {
+                log.debug("Стрим состоит только из пустых пакетов и не будет сохранен");
+                return false;
+            }
+        }
+
         Optional<Packet> firstIncoming = packets.stream()
                 .filter(Packet::isIncoming)
                 .findFirst();
@@ -80,15 +89,6 @@ public class StreamService {
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(service.getPort());
-
-        if (ignoreEmptyPackets) {
-            packets.removeIf(packet -> packet.getContent().length == 0);
-
-            if (packets.isEmpty()) {
-                log.debug("Стрим состоит только из пустых пакетов и не будет сохранен");
-                return false;
-            }
-        }
 
         new StreamOptimizer(service, packets).optimizeStream();
         processUserAgent(packets, stream);
