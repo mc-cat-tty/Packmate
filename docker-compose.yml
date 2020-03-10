@@ -7,8 +7,10 @@ services:
       DB_NAME: ${PACKMATE_DB_NAME:-packmate}
       INTERFACE: ${PACKMATE_INTERFACE}
       LOCAL_IP: ${PACKMATE_LOCAL_IP}
-      WEB_LOGIN: ${PACKMATE_WEB_LOGIN:-BinaryBears}
-      WEB_PASSWORD: ${PACKMATE_WEB_PASSWORD:-13371337}
+      WEB_LOGIN: ${PACKMATE_WEB_LOGIN}
+      WEB_PASSWORD: ${PACKMATE_WEB_PASSWORD}
+    env_file:
+      - .env
     container_name: packmate-app
     build:
       context: .
@@ -34,6 +36,8 @@ services:
         POSTGRES_USER: ${PACKMATE_DB_USER:-packmate}
         POSTGRES_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}
         POSTGRES_DB: ${PACKMATE_DB_NAME:-packmate}
+    env_file:
+      - .env
     network_mode: "host"
     image: packmate-db:v1
     restart: unless-stopped
