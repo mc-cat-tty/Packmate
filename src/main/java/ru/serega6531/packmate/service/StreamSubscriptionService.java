@@ -12,13 +12,14 @@ import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
 @Slf4j
 public class StreamSubscriptionService {
 
-    private List<WebSocketSession> subscribers = new ArrayList<>();
+    private List<WebSocketSession> subscribers = Collections.synchronizedList(new ArrayList<>());
 
     private final ObjectMapper mapper;
 

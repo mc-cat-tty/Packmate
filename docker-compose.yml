@@ -18,7 +18,7 @@ services:
     network_mode: "host"
     image: packmate-app:v1
     command: [
-      "/usr/bin/java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true",
+      "java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true",
       "-jar", "/app/app.jar", "--spring.datasource.url=jdbc:postgresql://127.0.0.1:65001/$${DB_NAME}",
       "--spring.datasource.username=$${DB_USER}", "--spring.datasource.password=$${DB_PASSWORD}",
       "--interface-name=$${INTERFACE}", "--local-ip=$${LOCAL_IP}", "--account-login=$${WEB_LOGIN}",
