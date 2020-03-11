@@ -23,7 +23,6 @@ import javax.annotation.PreDestroy;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -81,7 +80,7 @@ public class PcapWorker implements PacketListener {
         loopExecutorService.execute(() -> {
             try {
                 log.info("Intercept started");
-                pcap.loop(-1, this);   // использовать другой executor?
+                pcap.loop(-1, this);   //  использовать другой executor?
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
                 // выходим
@@ -192,11 +191,10 @@ public class PcapWorker implements PacketListener {
 
     private UnfinishedStream addNewPacket(Inet4Address sourceIp, Inet4Address destIp,
                                           int sourcePort, int destPort, byte ttl, byte[] content, Protocol protocol) {
-        boolean incoming = destIp.equals(localIp);
+        var incoming = destIp.equals(localIp);
+        var stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
 
-        UnfinishedStream stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
-
-        ru.serega6531.packmate.model.Packet packet = ru.serega6531.packmate.model.Packet.builder()
+        var packet = ru.serega6531.packmate.model.Packet.builder()
                 .tempId(packetIdCounter++)
                 .ttl(ttl)
                 .timestamp(System.currentTimeMillis())
@@ -204,8 +202,7 @@ public class PcapWorker implements PacketListener {
                 .content(content)
                 .build();
 
-        final ListMultimap<UnfinishedStream, ru.serega6531.packmate.model.Packet> streams =
-                (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
+        final var streams = (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
 
         if (!streams.containsKey(stream)) {
             log.debug("Начат новый стрим");
@@ -247,20 +244,18 @@ public class PcapWorker implements PacketListener {
             int streamsClosed = 0;
 
             final long time = System.currentTimeMillis();
-            final ListMultimap<UnfinishedStream, ru.serega6531.packmate.model.Packet> streams =
-                    (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
+            final var streams = (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
 
-            final Map<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> oldStreams =
-                    Multimaps.asMap(streams).entrySet().stream()
-                            .filter(entry -> {
-                                final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
-                                return time - packets.get(packets.size() - 1).getTimestamp() > timeoutMillis;
-                            })
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            final var oldStreams = Multimaps.asMap(streams).entrySet().stream()
+                    .filter(entry -> {
+                        final var packets = entry.getValue();
+                        return time - packets.get(packets.size() - 1).getTimestamp() > timeoutMillis;
+                    })
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            for (Map.Entry<UnfinishedStream, List<ru.serega6531.packmate.model.Packet>> entry : oldStreams.entrySet()) {
+            for (var entry : oldStreams.entrySet()) {
                 final UnfinishedStream stream = entry.getKey();
-                final List<ru.serega6531.packmate.model.Packet> packets = entry.getValue();
+                final var packets = entry.getValue();
 
                 if (streamService.saveNewStream(stream, packets)) {
                     streamsClosed++;

@@ -33,7 +33,7 @@ public class PatternMatcher {
 
     private void match(Pattern pattern) {
         if (pattern.getSearchType() == PatternSearchType.REGEX) {
-            final java.util.regex.Pattern regex = compilePattern(pattern);
+            final var regex = compilePattern(pattern);
             final Matcher matcher = regex.matcher(content);
             int startPos = 0;
 
@@ -98,7 +98,6 @@ public class PatternMatcher {
     private boolean between(int a, int b, int x) {
         return a <= x && x <= b;
     }
-
 
     private java.util.regex.Pattern compilePattern(Pattern pattern) {
         return compiledPatterns.computeIfAbsent(pattern.getValue(), java.util.regex.Pattern::compile);

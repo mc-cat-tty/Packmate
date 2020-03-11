@@ -56,14 +56,14 @@ public class StreamService {
      */
     @Transactional
     public boolean saveNewStream(UnfinishedStream unfinishedStream, List<Packet> packets) {
-        final Optional<CtfService> serviceOptional = servicesService.findService(
+        final var serviceOptional = servicesService.findService(
                 unfinishedStream.getFirstIp(),
                 unfinishedStream.getFirstPort(),
                 unfinishedStream.getSecondIp(),
                 unfinishedStream.getSecondPort()
         );
 
-        if (!serviceOptional.isPresent()) {
+        if (serviceOptional.isEmpty()) {
             log.warn("Не удалось сохранить стрим: сервиса на порту {} или {} не существует",
                     unfinishedStream.getFirstPort(), unfinishedStream.getSecondPort());
             return false;
