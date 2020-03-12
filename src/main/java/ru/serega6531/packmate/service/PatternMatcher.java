@@ -99,7 +99,7 @@ public class PatternMatcher {
         return a <= x && x <= b;
     }
 
-    private java.util.regex.Pattern compilePattern(Pattern pattern) {
+    static java.util.regex.Pattern compilePattern(Pattern pattern) {
         return compiledPatterns.computeIfAbsent(pattern.getValue(), java.util.regex.Pattern::compile);
     }
 

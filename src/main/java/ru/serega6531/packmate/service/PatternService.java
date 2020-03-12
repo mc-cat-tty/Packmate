@@ -8,11 +8,13 @@ import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
+import ru.serega6531.packmate.model.enums.PatternSearchType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.PatternRepository;
 
 import java.util.*;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,9 +73,17 @@ public class PatternService {
     }
 
     public Pattern save(Pattern pattern) {
-        log.info("Добавлен новый паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+        if(pattern.getSearchType() == PatternSearchType.REGEX) {
+            try {
+                PatternMatcher.compilePattern(pattern);
+            } catch (PatternSyntaxException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
+
         final Pattern saved = repository.save(pattern);
         patterns.put(saved.getId(), saved);
+        log.info("Добавлен новый паттерн {} со значением {}", pattern.getName(), pattern.getValue());
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, saved));
         return saved;
     }
