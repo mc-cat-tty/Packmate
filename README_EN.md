@@ -4,93 +4,95 @@
 </div>
 
 ### [EN | [RU](README.md)]
-Утилита перехвата и анализа трафика для CTF.
+Advanced network traffic flow analyzer for A/D CTFs.
 
-#### Фичи:
-* Поддерживает текстовые и бинарные сервисы
-* Умеет отображать совпадения паттернов в пакетах цветом
-  * Подстрока
-  * Регулярное выражение
-  * Бинарная подстрока (WIP)
-* Умеет сохранять пакеты в избранное и отображать только избранные пакеты
-* Работает с несколькими сервисами на разных портах
-* Поддерживает навигацию по стримам с помощью горячих клавиш
-* Конкатенирует смежные пакеты
-* Разархивирует GZIP в HTTP на лету
+#### Features:
+* Supports binary and textual services
+* Can highlight found patterns in packets
+  * Substring
+  * Regular expression
+  * Binary substring
+* Can make certain streams favorite and show only favorite streams
+* Supports several simultaneous services, can show streams for a specific service or pattern
+* Allows to navigate streams using shortcuts
+* Has the option to copy packet content in the required format
+* Can concatenate adjacent packets
+* Can urldecode text automatically
+* Can automatically decode GZIPed HTTP
 
-![Скриншот главного окна](Screenshot.png)
-## Клонирование
-Поскольку этот репозиторий содержит фронтенд как git submodule, его необходимо клонировать так:
+![Main window](screenshots/Screenshot.png)
+## Cloning
+As this repository contains frontend part as git submodule, it has to be cloned like this:
 ```bash
 git clone --recurse-submodules https://gitlab.com/binarybears_ctf/Packmate.git
 
-# Или, на старых версиях git
+# Or if you have older git
 git clone --recursive https://gitlab.com/binarybears_ctf/Packmate.git
 ```
 
-Если репозиторий уже был склонирован без подмодулей, необходимо выполнить:
+If the repository was already cloned without submodule, just run:
 ```bash
-git pull  # Забираем свежую версию мастер-репы из gitlab
+git pull
 git submodule update --init --recursive
 ```
 
-## Подготовка
-В этом ПО используется Docker и docker-compose. В образ `packmate-app` пробрасывается 
-сетевой интерфейс хоста, его название указывается переменной окружения (об этом ниже).
+## Preparation
+This program uses Docker and docker-compose.
 
-`packmate-db` настроен на прослушивание порта 65001 с локальным IP.  
-При этом файлы БД не монтируются как volume, поэтому при пересоздании контейнера все стримы теряются.
+`packmate-db` will listen port 65001 at localhost.  
+Database files do not mount as volume, so upon container recreation all data will be lost.
 
-### Настройка
-Программа берет основные настройки из переменных окружения, поэтому для удобства
-можно создать env-файл.  
-Он должен называться `.env` и лежать в корневой директоии проекта.
+### Settings
+This program retreives settings from environment variables, 
+so it would be convenient to create env file;  
+It must be called `.env` and located at the root of the project.
 
-В файле необходимо прописать:
+Contents of the file:
 ```bash
-PACKMATE_INTERFACE=wlan0  # Интерфейс, на котором производится перехват трафика
-PACKMATE_LOCAL_IP=192.168.1.124  # Локальный IP сервера на указанном интерфейсе
-PACKMATE_WEB_LOGIN=SomeUser  # Имя пользователя для web-авторизации
-PACKMATE_WEB_PASSWORD=SomeSecurePassword  # Пароль для web-авторизации
+PACKMATE_INTERFACE=wlan0  # Interface to capture on
+PACKMATE_LOCAL_IP=192.168.1.124  # Local ip on said interface to tell incoming packets from outgoing
+PACKMATE_WEB_LOGIN=SomeUser  # Username for web interface
+PACKMATE_WEB_PASSWORD=SomeSecurePassword  # Password for web interface
 ```
 
-### Запуск
-После указания нужных настроек в env-файле, можно запустить приложение:
+### Launch
+After filling in env file you can launch the app:
 ```bash
 sudo docker-compose up --build -d
 ```
 
-При успешном запуске Packmate будет видно с любого хоста на порту `65000`.
+If everything went fine, Packmate will be available on port `65000` from any host
 
-### Начало работы
-При попытке зайти в web-интерфейс впервые, браузер спросит логин и пароль,
-который указывался в env-файле.  
-После успешного входа необходимо открыть настройки кликом по шестеренкам в правом
-верхнем углу, затем ввести логин и пароль API, указанный при входе.
+### Accessing web interface
+When you open web interface for the first time, you will be asked for login and password
+you specified in the env file.  
+After entering the credentials, open the settings by clicking on the cogs 
+in the top right corner and enter login and password again.
 
-![Скриншот настроек](Screenshot_Settings.png)
+![Settings](screenshots/Screenshot_Settings.png)
 
-Все настройки сохраняются в local storage и теряются только при смене IP-адреса или порта сервера.
+All settings are saved in the local storage and will be 
+lost only upon changing server ip or port.
 
-## Использование
-Сначала нужно создать сервисы, находящиеся в игре.  
-Для этого вызывается диалоговое окно по нажатию кнопки `+` в навбаре,
-где можно указать название и порт сервиса, а также дополнительные опции.
+## Usage
+First of all you should create game services.  
+To do that click `+` in the navbar, 
+then fill in service name, port and optimization to perform.
 
-Система начнет автоматически захватывать стримы и отображать их в сайдбаре.  
-При нажатии на стрим в главном контейнере выводится список пакетов;
-между бинарным и текстовым представлением можно переключиться по кнопке в сайдбаре.
+System will start automatically capture streams and show them in a sidebar.  
+Click at stream to view a list of packets;
+you can click a button in the sidebar to switch between binary and text views.
 
-Для удобного отлова флагов в приложении существует система паттернов.  
-Чтобы создать паттерн, нужно открыть выпадающее меню `Patterns` и нажать кнопку `+`,
-затем указать нужный тип поиска, сам паттерн, цвет подсветки в тексте и прочее.
+For a simple monitoring of flags there is a system of patterns.  
+To create a pattern open `Patterns` dropdown menu, press `+`, then 
+specify the type of pattern, the pattern itself, highlight color and other things.
 
-### Горячие клавиши
-Для быстрой навигации по стримам можно использовать следующие горячие клавиши:
-* `Ctrl+Up` -- переместиться на один стрим выше
-* `Ctrl+Down` -- переместиться на один стрим ниже
-* `Ctrl+Home` -- перейти на последний стрим
-* `Ctrl+End` -- перейти на первый стрим
+### Shortcuts
+To quickly navigate streams you can use the following shortcuts:
+* `Ctrl+Up` -- go to next stream
+* `Ctrl+Down` -- go to previous stream
+* `Ctrl+Home` -- go to latest stream
+* `Ctrl+End` -- go to first stream
 
 <div align="right">
 
