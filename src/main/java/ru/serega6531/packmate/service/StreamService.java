@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.*;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
@@ -29,7 +30,6 @@ public class StreamService {
     private final StreamRepository repository;
     private final PatternService patternService;
     private final ServicesService servicesService;
-    private final PacketService packetService;
     private final StreamSubscriptionService subscriptionService;
 
     private final boolean ignoreEmptyPackets;
@@ -40,13 +40,11 @@ public class StreamService {
     public StreamService(StreamRepository repository,
                          PatternService patternService,
                          ServicesService servicesService,
-                         PacketService packetService,
                          StreamSubscriptionService subscriptionService,
                          @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
-        this.packetService = packetService;
         this.subscriptionService = subscriptionService;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
@@ -54,7 +52,7 @@ public class StreamService {
     /**
      * @return был ли сохранен стрим
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NEVER)
     public boolean saveNewStream(UnfinishedStream unfinishedStream, List<Packet> packets) {
         final var serviceOptional = servicesService.findService(
                 unfinishedStream.getFirstIp(),
@@ -83,7 +81,7 @@ public class StreamService {
                 .filter(Packet::isIncoming)
                 .findFirst();
 
-        Stream stream = new Stream();
+        final Stream stream = new Stream();
         stream.setProtocol(unfinishedStream.getProtocol());
         stream.setTtl(firstIncoming.isPresent() ? firstIncoming.get().getTtl() : 0);
         stream.setStartTimestamp(packets.get(0).getTimestamp());
@@ -97,7 +95,7 @@ public class StreamService {
 
         Set<Pattern> foundPatterns = getFoundPatterns(packets, savedStream);
         savedStream.setFoundPatterns(foundPatterns);
-        savedStream.setPackets(packetService.saveAll(packets));
+        savedStream.setPackets(packets);
         savedStream = save(savedStream);
 
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, savedStream));

@@ -33,8 +33,7 @@ public class Stream {
 
     private Protocol protocol;
 
-    @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderColumn
+    @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Packet> packets;
 
@@ -42,13 +41,14 @@ public class Stream {
 
     private long endTimestamp;
 
-    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = CascadeType.ALL)
     private Set<Pattern> foundPatterns;
 
     private boolean favorite;
 
     private byte ttl;
 
+    @Column(columnDefinition = "char(3)")
     private String userAgentHash;
 
 }

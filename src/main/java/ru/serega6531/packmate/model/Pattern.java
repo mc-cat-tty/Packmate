@@ -38,7 +38,7 @@ public class Pattern {
 
     private PatternDirectionType directionType;
 
-    @ManyToMany(mappedBy = "foundPatterns", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "foundPatterns", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Stream> matchedStreams;
 

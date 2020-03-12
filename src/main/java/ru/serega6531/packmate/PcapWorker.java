@@ -136,8 +136,10 @@ public class PcapWorker implements PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
+            final long time = System.currentTimeMillis();
+
             listenerExecutorService.execute(() -> {
-                UnfinishedStream stream = addNewPacket(sourceIp, destIp, sourcePort, destPort, ttl, content, Protocol.TCP);
+                UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.TCP);
 
                 if (log.isDebugEnabled()) {
                     log.debug("tcp {} {}:{} -> {}:{}, номер пакета {}",
@@ -173,8 +175,10 @@ public class PcapWorker implements PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
+            final long time = System.currentTimeMillis();
+
             listenerExecutorService.execute(() -> {
-                UnfinishedStream stream = addNewPacket(sourceIp, destIp, sourcePort, destPort, ttl, content, Protocol.UDP);
+                UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.UDP);
 
                 if (log.isDebugEnabled()) {
                     log.debug("udp {} {}:{} -> {}:{}, номер пакета {}",
@@ -189,7 +193,7 @@ public class PcapWorker implements PacketListener {
         }
     }
 
-    private UnfinishedStream addNewPacket(Inet4Address sourceIp, Inet4Address destIp,
+    private UnfinishedStream addNewPacket(Inet4Address sourceIp, Inet4Address destIp, long time,
                                           int sourcePort, int destPort, byte ttl, byte[] content, Protocol protocol) {
         var incoming = destIp.equals(localIp);
         var stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
@@ -197,7 +201,7 @@ public class PcapWorker implements PacketListener {
         var packet = ru.serega6531.packmate.model.Packet.builder()
                 .tempId(packetIdCounter++)
                 .ttl(ttl)
-                .timestamp(System.currentTimeMillis())
+                .timestamp(time)
                 .incoming(incoming)
                 .content(content)
                 .build();

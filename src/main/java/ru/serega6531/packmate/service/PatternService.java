@@ -2,7 +2,6 @@ package ru.serega6531.packmate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.FoundPattern;
@@ -21,17 +20,14 @@ import java.util.stream.Collectors;
 public class PatternService {
 
     private final PatternRepository repository;
-    private final StreamService streamService;
     private final StreamSubscriptionService subscriptionService;
 
     private final Map<Integer, Pattern> patterns = new HashMap<>();
 
     @Autowired
     public PatternService(PatternRepository repository,
-                          @Lazy StreamService streamService,
                           StreamSubscriptionService subscriptionService) {
         this.repository = repository;
-        this.streamService = streamService;
         this.subscriptionService = subscriptionService;
 
         repository.findAll().forEach(p -> patterns.put(p.getId(), p));
@@ -63,10 +59,11 @@ public class PatternService {
 
             for (Stream stream : pattern.getMatchedStreams()) {
                 stream.getFoundPatterns().remove(pattern);
-                streamService.save(stream);
+                stream.getPackets().forEach(p ->
+                        p.getMatches().removeIf(m ->
+                                m.getPatternId() == pattern.getId()));
             }
 
-            pattern.getMatchedStreams().clear();
             patterns.remove(id);
             repository.delete(pattern);
             subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DELETE_PATTERN, id));
@@ -76,7 +73,7 @@ public class PatternService {
     public Pattern save(Pattern pattern) {
         log.info("Добавлен новый паттерн {} со значением {}", pattern.getName(), pattern.getValue());
         final Pattern saved = repository.save(pattern);
-        patterns.put(saved.getId(), pattern);
+        patterns.put(saved.getId(), saved);
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, saved));
         return saved;
     }

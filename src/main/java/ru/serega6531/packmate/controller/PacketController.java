@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.model.Stream;
-import ru.serega6531.packmate.service.PacketService;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.util.Collections;
@@ -19,19 +18,17 @@ import java.util.Optional;
 public class PacketController {
 
     private final StreamService streamService;
-    private final PacketService packetService;
 
     @Autowired
-    public PacketController(StreamService streamService, PacketService packetService) {
+    public PacketController(StreamService streamService) {
         this.streamService = streamService;
-        this.packetService = packetService;
     }
 
     @PostMapping("/{streamId}")
     public List<Packet> getPacketsForStream(@PathVariable long streamId) {
         final Optional<Stream> stream = streamService.find(streamId);
         if (stream.isPresent()) {
-            return packetService.getPacketsForStream(stream.get());
+            return stream.get().getPackets();
         } else {
             return Collections.emptyList();
         }
