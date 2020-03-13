@@ -7,8 +7,8 @@ services:
       DB_NAME: ${PACKMATE_DB_NAME:-packmate}
       INTERFACE: ${PACKMATE_INTERFACE}
       LOCAL_IP: ${PACKMATE_LOCAL_IP}
-      WEB_LOGIN: ${PACKMATE_WEB_LOGIN}
-      WEB_PASSWORD: ${PACKMATE_WEB_PASSWORD}
+      WEB_LOGIN: ${PACKMATE_WEB_LOGIN:-BinaryBears}
+      WEB_PASSWORD: ${PACKMATE_WEB_PASSWORD:-123456}
     env_file:
       - .env
     container_name: packmate-app
