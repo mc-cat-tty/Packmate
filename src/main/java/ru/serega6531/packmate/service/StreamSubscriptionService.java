@@ -14,12 +14,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
 public class StreamSubscriptionService {
 
-    private List<WebSocketSession> subscribers = Collections.synchronizedList(new ArrayList<>());
+    private final List<WebSocketSession> subscribers = Collections.synchronizedList(new ArrayList<>());
 
     private final ObjectMapper mapper;
 
@@ -30,12 +31,12 @@ public class StreamSubscriptionService {
 
     public void addSubscriber(WebSocketSession session) {
         subscribers.add(session);
-        log.info("Подписан пользователь {}", session.getRemoteAddress().getHostName());
+        log.info("Подписан пользователь {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
     public void removeSubscriber(WebSocketSession session) {
         subscribers.remove(session);
-        log.info("Отписан пользователь {}", session.getRemoteAddress().getHostName());
+        log.info("Отписан пользователь {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
     public void broadcast(SubscriptionMessage message) {

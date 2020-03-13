@@ -10,7 +10,7 @@ import ru.serega6531.packmate.utils.Bytes;
 import java.util.*;
 import java.util.regex.Matcher;
 
-public class PatternMatcher {
+class PatternMatcher {
 
     private static final Map<String, java.util.regex.Pattern> compiledPatterns = new HashMap<>();
 
@@ -65,7 +65,7 @@ public class PatternMatcher {
 
                 startSearch = end + 1;
             }
-        } else {  // SUBBYTES
+        } else if (pattern.getSearchType() == PatternSearchType.SUBBYTES) {
             int startSearch = 0;
             final byte[] value = Hex.decode(pattern.getValue());
 

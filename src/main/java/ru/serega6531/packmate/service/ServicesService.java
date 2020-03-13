@@ -50,7 +50,7 @@ public class ServicesService {
         return Optional.empty();
     }
 
-    public Optional<CtfService> findByPort(int port) {
+    private Optional<CtfService> findByPort(int port) {
         return Optional.ofNullable(services.get(port));
     }
 

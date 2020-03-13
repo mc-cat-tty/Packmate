@@ -145,7 +145,7 @@ public class StreamService {
         return foundPatterns;
     }
 
-    public Stream save(Stream stream) {
+    private Stream save(Stream stream) {
         Stream saved;
         if (stream.getId() == null) {
             saved = repository.save(stream);
@@ -167,6 +167,7 @@ public class StreamService {
         repository.setFavorite(id, favorite);
     }
 
+    @SuppressWarnings("ConstantConditions")
     public List<Stream> findAll(Pagination pagination, Optional<Integer> service, boolean onlyFavorites) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
