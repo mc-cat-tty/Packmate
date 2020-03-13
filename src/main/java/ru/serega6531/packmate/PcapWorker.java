@@ -77,18 +77,16 @@ public class PcapWorker implements PacketListener {
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
                 .namingPattern("pcap-worker-loop").build();
         ExecutorService loopExecutorService = Executors.newSingleThreadExecutor(factory);
-        loopExecutorService.execute(() -> {
-            try {
-                log.info("Intercept started");
-                pcap.loop(-1, this);   //  использовать другой executor?
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-                // выходим
-            } catch (Exception e) {
-                log.error("Error while capturing packet", e);
-                stop();
-            }
-        });
+        try {
+            log.info("Intercept started");
+            pcap.loop(-1, this, loopExecutorService);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+            // выходим
+        } catch (Exception e) {
+            log.error("Error while capturing packet", e);
+            stop();
+        }
     }
 
     @PreDestroy
