@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.codec.Hex;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
-import ru.serega6531.packmate.model.enums.PatternSearchType;
 import ru.serega6531.packmate.utils.Bytes;
 
 import java.util.*;
@@ -20,71 +19,87 @@ class PatternMatcher {
 
     private final Set<FoundPattern> result = new HashSet<>();
 
-    public PatternMatcher(byte[] contentBytes, List<Pattern> patterns) {
+    PatternMatcher(byte[] contentBytes, List<Pattern> patterns) {
         this.contentBytes = contentBytes;
         this.content = new String(contentBytes);
         this.patterns = patterns;
     }
 
-    public Set<FoundPattern> findMatches() {
+    Set<FoundPattern> findMatches() {
         patterns.forEach(this::match);
         return result;
     }
 
     private void match(Pattern pattern) {
-        if (pattern.getSearchType() == PatternSearchType.REGEX) {
-            final var regex = compilePattern(pattern);
-            final Matcher matcher = regex.matcher(content);
-            int startPos = 0;
+        switch (pattern.getSearchType()) {
+            case REGEX:
+                matchRegex(pattern);
+                break;
+            case SUBSTRING:
+                matchSubstring(pattern);
+                break;
+            case SUBBYTES:
+                matchSubbytes(pattern);
+                break;
+        }
+    }
 
-            while (matcher.find(startPos)) {
-                addIfPossible(FoundPattern.builder()
-                        .patternId(pattern.getId())
-                        .startPosition(matcher.start())
-                        .endPosition(matcher.end() - 1)
-                        .build());
-                startPos = matcher.end();
+    private void matchRegex(Pattern pattern) {
+        final var regex = compilePattern(pattern);
+        final Matcher matcher = regex.matcher(content);
+        int startPos = 0;
+
+        while (matcher.find(startPos)) {
+            addIfPossible(FoundPattern.builder()
+                    .patternId(pattern.getId())
+                    .startPosition(matcher.start())
+                    .endPosition(matcher.end() - 1)
+                    .build());
+            startPos = matcher.end();
+        }
+    }
+
+    private void matchSubstring(Pattern pattern) {
+        int startSearch = 0;
+        final String value = pattern.getValue();
+
+        while (true) {
+            int start = StringUtils.indexOfIgnoreCase(content, value, startSearch);
+
+            if (start == -1) {
+                return;
             }
-        } else if (pattern.getSearchType() == PatternSearchType.SUBSTRING) {
-            int startSearch = 0;
-            final String value = pattern.getValue();
 
-            while (true) {
-                int start = StringUtils.indexOfIgnoreCase(content, value, startSearch);
+            int end = start + value.length() - 1;
+            addIfPossible(FoundPattern.builder()
+                    .patternId(pattern.getId())
+                    .startPosition(start)
+                    .endPosition(end)
+                    .build());
 
-                if (start == -1) {
-                    return;
-                }
+            startSearch = end + 1;
+        }
+    }
 
-                int end = start + value.length() - 1;
-                addIfPossible(FoundPattern.builder()
-                        .patternId(pattern.getId())
-                        .startPosition(start)
-                        .endPosition(end)
-                        .build());
+    private void matchSubbytes(Pattern pattern) {
+        int startSearch = 0;
+        final byte[] value = Hex.decode(pattern.getValue());
 
-                startSearch = end + 1;
+        while (true) {
+            int start = Bytes.indexOf(contentBytes, value, startSearch, contentBytes.length);
+
+            if (start == -1) {
+                return;
             }
-        } else if (pattern.getSearchType() == PatternSearchType.SUBBYTES) {
-            int startSearch = 0;
-            final byte[] value = Hex.decode(pattern.getValue());
 
-            while (true) {
-                int start = Bytes.indexOf(contentBytes, value, startSearch, contentBytes.length);
+            int end = start + value.length - 1;
+            addIfPossible(FoundPattern.builder()
+                    .patternId(pattern.getId())
+                    .startPosition(start)
+                    .endPosition(end)
+                    .build());
 
-                if (start == -1) {
-                    return;
-                }
-
-                int end = start + value.length - 1;
-                addIfPossible(FoundPattern.builder()
-                        .patternId(pattern.getId())
-                        .startPosition(start)
-                        .endPosition(end)
-                        .build());
-
-                startSearch = end + 1;
-            }
+            startSearch = end + 1;
         }
     }
 

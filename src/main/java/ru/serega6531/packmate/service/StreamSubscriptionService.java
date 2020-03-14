@@ -39,7 +39,7 @@ public class StreamSubscriptionService {
         log.info("Отписан пользователь {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
-    public void broadcast(SubscriptionMessage message) {
+    void broadcast(SubscriptionMessage message) {
         subscribers.forEach(s -> {
             try {
                 s.sendMessage(objectToTextMessage(message));
