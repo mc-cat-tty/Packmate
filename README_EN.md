@@ -49,10 +49,14 @@ It must be called `.env` and located at the root of the project.
 
 Contents of the file:
 ```bash
-PACKMATE_INTERFACE=wlan0  # Interface to capture on
-PACKMATE_LOCAL_IP=192.168.1.124  # Local ip on said interface to tell incoming packets from outgoing
-PACKMATE_WEB_LOGIN=SomeUser  # Username for web interface
-PACKMATE_WEB_PASSWORD=SomeSecurePassword  # Password for web interface
+# Interface to capture on
+PACKMATE_INTERFACE=wlan0
+# Local ip on said interface to tell incoming packets from outgoing
+PACKMATE_LOCAL_IP=192.168.1.124
+# Username for web interface
+PACKMATE_WEB_LOGIN=SomeUser
+# Password for web interface
+PACKMATE_WEB_PASSWORD=SomeSecurePassword
 ```
 
 ### Launch

@@ -50,10 +50,14 @@ git submodule update --init --recursive
 
 В файле необходимо прописать:
 ```bash
-PACKMATE_INTERFACE=wlan0  # Интерфейс, на котором производится перехват трафика
-PACKMATE_LOCAL_IP=192.168.1.124  # Локальный IP сервера на указанном интерфейсе
-PACKMATE_WEB_LOGIN=SomeUser  # Имя пользователя для web-авторизации
-PACKMATE_WEB_PASSWORD=SomeSecurePassword  # Пароль для web-авторизации
+# Интерфейс, на котором производится перехват трафика
+PACKMATE_INTERFACE=wlan0
+# Локальный IP сервера на указанном интерфейсе
+PACKMATE_LOCAL_IP=192.168.1.124
+# Имя пользователя для web-авторизации
+PACKMATE_WEB_LOGIN=SomeUser
+# Пароль для web-авторизации
+PACKMATE_WEB_PASSWORD=SomeSecurePassword
 ```
 
 ### Запуск
