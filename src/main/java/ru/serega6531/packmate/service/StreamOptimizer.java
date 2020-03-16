@@ -209,7 +209,7 @@ public class StreamOptimizer {
             IOUtils.copy(gzipStream, out);
             byte[] newContent = ArrayUtils.addAll(httpHeader, out.toByteArray());
 
-            log.debug("Разархивирован gzip: {} -> {} байт", gzipBytes.length, out.size());
+            log.debug("GZIP decompressed: {} -> {} bytes", gzipBytes.length, out.size());
 
             return Packet.builder()
                     .incoming(false)
@@ -218,7 +218,7 @@ public class StreamOptimizer {
                     .content(newContent)
                     .build();
         } catch (ZipException e) {
-            log.warn("Не удалось разархивировать gzip, оставляем как есть", e);
+            log.warn("Failed to decompress gzip, leaving as it is", e);
         } catch (IOException e) {
             log.error("decompress gzip", e);
         }

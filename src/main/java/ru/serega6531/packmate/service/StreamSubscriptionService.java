@@ -31,12 +31,12 @@ public class StreamSubscriptionService {
 
     public void addSubscriber(WebSocketSession session) {
         subscribers.add(session);
-        log.info("Подписан пользователь {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
+        log.info("User subscribed: {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
     public void removeSubscriber(WebSocketSession session) {
         subscribers.remove(session);
-        log.info("Отписан пользователь {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
+        log.info("User unsubscribed {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
     void broadcast(SubscriptionMessage message) {

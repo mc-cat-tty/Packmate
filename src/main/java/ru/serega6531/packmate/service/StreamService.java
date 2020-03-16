@@ -62,7 +62,7 @@ public class StreamService {
         );
 
         if (serviceOptional.isEmpty()) {
-            log.warn("Не удалось сохранить стрим: сервиса на порту {} или {} не существует",
+            log.warn("Failed to save the stream: service at port {} or {} does not exist",
                     unfinishedStream.getFirstPort(), unfinishedStream.getSecondPort());
             return false;
         }
@@ -72,7 +72,7 @@ public class StreamService {
             packets.removeIf(packet -> packet.getContent().length == 0);
 
             if (packets.isEmpty()) {
-                log.debug("Стрим состоит только из пустых пакетов и не будет сохранен");
+                log.debug("Stream consists only of empty packets and will not be saved");
                 return false;
             }
         }
@@ -149,7 +149,7 @@ public class StreamService {
         Stream saved;
         if (stream.getId() == null) {
             saved = repository.save(stream);
-            log.debug("Создан стрим с id {}", saved.getId());
+            log.debug("Saved stream with id {}", saved.getId());
         } else {
             saved = repository.save(stream);
         }

@@ -57,7 +57,7 @@ public class PatternService {
         final Optional<Pattern> optional = repository.findById(id);
         if (optional.isPresent()) {
             final Pattern pattern = optional.get();
-            log.info("Удален паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+            log.info("Removed pattern {} with value {}", pattern.getName(), pattern.getValue());
 
             for (Stream stream : pattern.getMatchedStreams()) {
                 stream.getFoundPatterns().remove(pattern);
@@ -83,7 +83,7 @@ public class PatternService {
 
         final Pattern saved = repository.save(pattern);
         patterns.put(saved.getId(), saved);
-        log.info("Добавлен новый паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+        log.info("Added new pattern {} with value {}", pattern.getName(), pattern.getValue());
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, saved));
         return saved;
     }
