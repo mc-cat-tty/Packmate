@@ -30,7 +30,8 @@ public class StreamService {
     private final StreamRepository repository;
     private final PatternService patternService;
     private final ServicesService servicesService;
-    private final StreamSubscriptionService subscriptionService;
+    private final CountingService countingService;
+    private final SubscriptionService subscriptionService;
 
     private final boolean ignoreEmptyPackets;
 
@@ -40,11 +41,13 @@ public class StreamService {
     public StreamService(StreamRepository repository,
                          PatternService patternService,
                          ServicesService servicesService,
-                         StreamSubscriptionService subscriptionService,
+                         CountingService countingService,
+                         SubscriptionService subscriptionService,
                          @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
+        this.countingService = countingService;
         this.subscriptionService = subscriptionService;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
@@ -87,6 +90,8 @@ public class StreamService {
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(service.getPort());
+
+        countingService.countStream(service.getPort(), packets.size());
 
         new StreamOptimizer(service, packets).optimizeStream();
         processUserAgent(packets, stream);
