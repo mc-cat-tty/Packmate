@@ -3,10 +3,8 @@ package ru.serega6531.packmate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
-import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
@@ -52,28 +50,24 @@ public class PatternService {
         return new PatternMatcher(bytes, list).findMatches();
     }
 
-    @Transactional
-    public void deleteById(int id) {
+    public void enable(int id, boolean enabled) {
         final Optional<Pattern> optional = repository.findById(id);
         if (optional.isPresent()) {
             final Pattern pattern = optional.get();
-            log.info("Удален паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+            pattern.setEnabled(enabled);
 
-            for (Stream stream : pattern.getMatchedStreams()) {
-                stream.getFoundPatterns().remove(pattern);
-                stream.getPackets().forEach(p ->
-                        p.getMatches().removeIf(m ->
-                                m.getPatternId() == pattern.getId()));
+            if(enabled) {
+                log.info("Включен паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+                subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.ENABLE_PATTERN, id));
+            } else {
+                log.info("Выключен паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+                subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DISABLE_PATTERN, id));
             }
-
-            patterns.remove(id);
-            repository.delete(pattern);
-            subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DELETE_PATTERN, id));
         }
     }
 
     public Pattern save(Pattern pattern) {
-        if(pattern.getSearchType() == PatternSearchType.REGEX) {
+        if (pattern.getSearchType() == PatternSearchType.REGEX) {
             try {
                 PatternMatcher.compilePattern(pattern);
             } catch (PatternSyntaxException e) {
