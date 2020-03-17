@@ -36,7 +36,7 @@ public class SubscriptionService {
 
     public void removeSubscriber(WebSocketSession session) {
         subscribers.remove(session);
-        log.info("User unsubscribed {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
+        log.info("User unsubscribed: {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
     void broadcast(SubscriptionMessage message) {
