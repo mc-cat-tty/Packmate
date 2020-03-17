@@ -22,7 +22,7 @@ import java.util.Optional;
 public class ServicesService {
 
     private final ServiceRepository repository;
-    private final StreamSubscriptionService subscriptionService;
+    private final SubscriptionService subscriptionService;
 
     private final InetAddress localIp;
 
@@ -30,7 +30,7 @@ public class ServicesService {
 
     @Autowired
     public ServicesService(ServiceRepository repository,
-                           StreamSubscriptionService subscriptionService,
+                           SubscriptionService subscriptionService,
                            @Value("${local-ip}") String localIpString) throws UnknownHostException {
         this.repository = repository;
         this.subscriptionService = subscriptionService;

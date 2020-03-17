@@ -22,13 +22,13 @@ import java.util.stream.Collectors;
 public class PatternService {
 
     private final PatternRepository repository;
-    private final StreamSubscriptionService subscriptionService;
+    private final SubscriptionService subscriptionService;
 
     private final Map<Integer, Pattern> patterns = new HashMap<>();
 
     @Autowired
     public PatternService(PatternRepository repository,
-                          StreamSubscriptionService subscriptionService) {
+                          SubscriptionService subscriptionService) {
         this.repository = repository;
         this.subscriptionService = subscriptionService;
 

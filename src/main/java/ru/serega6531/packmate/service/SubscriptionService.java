@@ -18,14 +18,14 @@ import java.util.Objects;
 
 @Service
 @Slf4j
-public class StreamSubscriptionService {
+public class SubscriptionService {
 
     private final List<WebSocketSession> subscribers = Collections.synchronizedList(new ArrayList<>());
 
     private final ObjectMapper mapper;
 
     @Autowired
-    public StreamSubscriptionService(ObjectMapper mapper) {
+    public SubscriptionService(ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
@@ -36,7 +36,7 @@ public class StreamSubscriptionService {
 
     public void removeSubscriber(WebSocketSession session) {
         subscribers.remove(session);
-        log.info("User unsubscribed {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
+        log.info("User unsubscribed: {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
     void broadcast(SubscriptionMessage message) {
