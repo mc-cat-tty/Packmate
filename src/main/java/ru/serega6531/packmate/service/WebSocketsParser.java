@@ -37,11 +37,10 @@ public class WebSocketsParser {
     private static final String WEBSOCKET_CONNECTION_HEADER = "connection: upgrade\r\n";
 
     private final List<Packet> packets;
-    private List<Framedata> frames;
 
     @Getter
     private boolean parsed = false;
-    private int httpEnd = -1;
+    private List<Packet> parsedPackets;
 
     public WebSocketsParser(List<Packet> packets) {
         this.packets = packets;
@@ -58,6 +57,7 @@ public class WebSocketsParser {
             return;
         }
 
+        int httpEnd = -1;
         for (int i = clientHandshakePackets.size(); i < packets.size(); i++) {
             if (packets.get(i).getContentString().endsWith("\r\n\r\n")) {
                 httpEnd = i + 1;
@@ -92,29 +92,55 @@ public class WebSocketsParser {
             return;
         }
 
-        final List<Packet> wsPackets = this.packets.subList(
+        final List<Packet> wsPackets = packets.subList(
                 httpEnd,
-                this.packets.size());
+                packets.size());
 
-        final byte[] wsContent = wsPackets.stream()
-                .map(Packet::getContent)
-                .reduce(ArrayUtils::addAll)
-                .orElse(null);
-
-        if (wsContent == null) {
+        if(wsPackets.isEmpty()) {
             return;
         }
 
-        final ByteBuffer frame = ByteBuffer.wrap(wsContent);
+        final List<Packet> handshakes = packets.subList(0, httpEnd);
 
-        try {
-            frames = draft.translateFrame(frame);
-        } catch (InvalidDataException e) {
-            log.warn("WebSocket data", e);
-            return;
-        }
-
+        parse(wsPackets, handshakes, draft);
         parsed = true;
+    }
+
+    private void parse(final List<Packet> wsPackets, final List<Packet> handshakes, Draft_6455 draft) {
+        List<List<Packet>> sides = sliceToSides(wsPackets);
+        parsedPackets = new ArrayList<>(handshakes);
+
+        for (List<Packet> side : sides) {
+            final Packet lastPacket = side.get(0);
+
+            final byte[] wsContent = side.stream()
+                    .map(Packet::getContent)
+                    .reduce(ArrayUtils::addAll)
+                    .get();
+
+            final ByteBuffer buffer = ByteBuffer.wrap(wsContent);
+            List<Framedata> frames;
+
+            try {
+                frames = draft.translateFrame(buffer);
+            } catch (InvalidDataException e) {
+                log.warn("WebSocket data", e);
+                return;
+            }
+
+            for (Framedata frame : frames) {
+                if(frame instanceof DataFrame) {
+                    parsedPackets.add(Packet.builder()
+                            .content(frame.getPayloadData().array())
+                            .incoming(lastPacket.isIncoming())
+                            .timestamp(lastPacket.getTimestamp())
+                            .ttl(lastPacket.getTtl())
+                            .ungzipped(lastPacket.isUngzipped())
+                            .build()
+                    );
+                }
+            }
+        }
     }
 
     public List<Packet> getParsedPackets() {
@@ -122,26 +148,32 @@ public class WebSocketsParser {
             throw new IllegalStateException("WS is not parsed");
         }
 
-        final List<Packet> handshakes = packets.subList(0, httpEnd);
-        List<Packet> newPackets = new ArrayList<>(handshakes.size() + frames.size());
-        newPackets.addAll(handshakes);
+        return parsedPackets;
+    }
 
-        final Packet lastPacket = packets.get(packets.size() - 1);
+    private List<List<Packet>> sliceToSides(List<Packet> packets) {
+        List<List<Packet>> result = new ArrayList<>();
+        List<Packet> side = new ArrayList<>();
+        boolean incoming = true;
 
-        for (Framedata frame : frames) {
-            if(frame instanceof DataFrame) {
-                newPackets.add(Packet.builder()
-                        .content(frame.getPayloadData().array())
-                        .incoming(true) //TODO
-                        .timestamp(lastPacket.getTimestamp())
-                        .ttl(lastPacket.getTtl())
-                        .ungzipped(lastPacket.isUngzipped())
-                        .build()
-                );
+        for (Packet packet : packets) {
+            if(packet.isIncoming() != incoming) {
+                incoming = packet.isIncoming();
+
+                if(!side.isEmpty()) {
+                    result.add(side);
+                    side = new ArrayList<>();
+                }
             }
+
+            side.add(packet);
         }
 
-        return newPackets;
+        if(!side.isEmpty()) {
+            result.add(side);
+        }
+
+        return result;
     }
 
     private String getHandshake(final List<Packet> packets) {
