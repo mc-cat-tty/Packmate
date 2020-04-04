@@ -136,6 +136,7 @@ public class WebSocketsParser {
                             .timestamp(lastPacket.getTimestamp())
                             .ttl(lastPacket.getTtl())
                             .ungzipped(lastPacket.isUngzipped())
+                            .webSocketInflated(true)
                             .build()
                     );
                 }

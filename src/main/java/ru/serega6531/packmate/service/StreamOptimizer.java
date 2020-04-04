@@ -89,6 +89,7 @@ public class StreamOptimizer {
         final List<Packet> cut = packets.subList(start, end);
         final long timestamp = cut.get(0).getTimestamp();
         final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
+        final boolean webSocketInflated = cut.stream().anyMatch(Packet::isWebSocketInflated);
         boolean incoming = cut.get(0).isIncoming();
         //noinspection OptionalGetWithoutIsPresent
         final byte[] content = cut.stream()
@@ -101,6 +102,7 @@ public class StreamOptimizer {
                 .incoming(incoming)
                 .timestamp(timestamp)
                 .ungzipped(ungzipped)
+                .webSocketInflated(webSocketInflated)
                 .content(content)
                 .build());
     }
@@ -221,6 +223,7 @@ public class StreamOptimizer {
                     .incoming(false)
                     .timestamp(cut.get(0).getTimestamp())
                     .ungzipped(true)
+                    .webSocketInflated(false)
                     .content(newContent)
                     .build();
         } catch (ZipException e) {

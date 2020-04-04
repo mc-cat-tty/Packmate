@@ -52,6 +52,8 @@ public class Packet {
 
     private boolean ungzipped;
 
+    private boolean webSocketInflated;
+
     private byte[] content;
 
     @Transient
