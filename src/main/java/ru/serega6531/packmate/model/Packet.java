@@ -52,6 +52,18 @@ public class Packet {
 
     private boolean ungzipped;
 
+    private boolean webSocketInflated;
+
     private byte[] content;
+
+    @Transient
+    @JsonIgnore
+    public String getContentString() {
+        return new String(content);
+    }
+
+    public String toString() {
+        return "Packet(id=" + id + ", content=" + getContentString() + ")";
+    }
 
 }

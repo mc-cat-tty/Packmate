@@ -24,16 +24,20 @@ import java.util.zip.ZipException;
 public class StreamOptimizer {
 
     private final CtfService service;
-    private final List<Packet> packets;
+    private List<Packet> packets;
 
     private static final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
 
     /**
      * Вызвать для выполнения оптимизаций на переданном списке пакетов.
      */
-    public void optimizeStream() {
+    public List<Packet> optimizeStream() {
         if (service.isUngzipHttp()) {
             unpackGzip();
+        }
+
+        if (service.isInflateWebSockets()) {
+            inflateWebSocket();
         }
 
         if (service.isUrldecodeHttpRequests()) {
@@ -43,6 +47,8 @@ public class StreamOptimizer {
         if (service.isMergeAdjacentPackets()) {
             mergeAdjacentPackets();
         }
+
+        return packets;
     }
 
     /**
@@ -83,6 +89,7 @@ public class StreamOptimizer {
         final List<Packet> cut = packets.subList(start, end);
         final long timestamp = cut.get(0).getTimestamp();
         final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
+        final boolean webSocketInflated = cut.stream().anyMatch(Packet::isWebSocketInflated);
         boolean incoming = cut.get(0).isIncoming();
         //noinspection OptionalGetWithoutIsPresent
         final byte[] content = cut.stream()
@@ -95,6 +102,7 @@ public class StreamOptimizer {
                 .incoming(incoming)
                 .timestamp(timestamp)
                 .ungzipped(ungzipped)
+                .webSocketInflated(webSocketInflated)
                 .content(content)
                 .build());
     }
@@ -108,7 +116,7 @@ public class StreamOptimizer {
 
         for (Packet packet : packets) {
             if (packet.isIncoming()) {
-                String content = new String(packet.getContent());
+                String content = packet.getContentString();
                 if (content.contains("HTTP/")) {
                     httpStarted = true;
                 }
@@ -145,7 +153,7 @@ public class StreamOptimizer {
                     i = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
                 }
             } else if (!packet.isIncoming()) {
-                String content = new String(packet.getContent());
+                String content = packet.getContentString();
 
                 int contentPos = content.indexOf("\r\n\r\n");
                 boolean http = content.startsWith("HTTP/");
@@ -215,6 +223,7 @@ public class StreamOptimizer {
                     .incoming(false)
                     .timestamp(cut.get(0).getTimestamp())
                     .ungzipped(true)
+                    .webSocketInflated(false)
                     .content(newContent)
                     .build();
         } catch (ZipException e) {
@@ -224,6 +233,19 @@ public class StreamOptimizer {
         }
 
         return null;
+    }
+
+    private void inflateWebSocket() {
+        if (!packets.get(0).getContentString().contains("HTTP/")) {
+            return;
+        }
+
+        final WebSocketsParser parser = new WebSocketsParser(packets);
+        if(!parser.isParsed()) {
+            return;
+        }
+
+        packets = parser.getParsedPackets();
     }
 
 }

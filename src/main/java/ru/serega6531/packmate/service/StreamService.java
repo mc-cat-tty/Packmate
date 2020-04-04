@@ -93,7 +93,7 @@ public class StreamService {
 
         countingService.countStream(service.getPort(), packets.size());
 
-        new StreamOptimizer(service, packets).optimizeStream();
+        packets = new StreamOptimizer(service, packets).optimizeStream();
         processUserAgent(packets, stream);
 
         Stream savedStream = save(stream);
@@ -110,7 +110,7 @@ public class StreamService {
     private void processUserAgent(List<Packet> packets, Stream stream) {
         String ua = null;
         for (Packet packet : packets) {
-            String content = new String(packet.getContent());
+            String content = packet.getContentString();
             final Matcher matcher = userAgentPattern.matcher(content);
             if (matcher.find()) {
                 ua = matcher.group(1);
