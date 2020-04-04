@@ -18,7 +18,8 @@ Advanced network traffic flow analyzer for A/D CTFs.
 * Has the option to copy packet content in the required format
 * Can concatenate adjacent packets
 * Can urldecode text automatically
-* Can automatically decode GZIPed HTTP
+* Can automatically decompress GZIPed HTTP
+* Can automatically deflate WebSockets with permessages-deflate extension
 
 ![Main window](screenshots/Screenshot.png)
 ## Cloning
