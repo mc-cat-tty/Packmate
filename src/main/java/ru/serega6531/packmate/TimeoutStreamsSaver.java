@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.enums.Protocol;
+import ru.serega6531.packmate.pcap.PcapWorker;
 
 import java.util.concurrent.TimeUnit;
 
