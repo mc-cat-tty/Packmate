@@ -1,20 +1,20 @@
 FROM openjdk:13-jdk-alpine
 
-RUN apk add libpcap npm
+RUN apk --no-cache add libpcap npm
 
 COPY ./ /app/
 
 WORKDIR /app/frontend/
 
-RUN npm install && npm run build
-
-RUN mkdir -p ../src/main/resources/static/ \
-	&& cp -rf ./dist/* ../src/main/resources/static/
+RUN npm install && npm run build && npm cache clean --force \
+    && mkdir -p ../src/main/resources/static/ \
+	&& mv ./dist/* ../src/main/resources/static/ \
+	&& rm -rf node_modules
 
 WORKDIR /app/
 
-RUN ./gradlew --no-daemon build
-
-RUN cp build/libs/packmate-*.jar app.jar
+RUN ./gradlew --no-daemon --no-build-cache build \
+    && cp build/libs/packmate-*.jar app.jar \
+    && ./gradlew --no-daemon clean
 
 EXPOSE 65000:65000
