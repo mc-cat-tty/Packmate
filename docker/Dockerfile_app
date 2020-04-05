@@ -1,4 +1,4 @@
-FROM openjdk:13-jdk-alpine
+FROM openjdk:15-ea-jdk-alpine
 
 RUN apk --no-cache add libpcap npm
 
