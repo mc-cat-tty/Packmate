@@ -1,4 +1,5 @@
 src/main/resources/static/*
+*.pcap
 
 HELP.md
 .gradle

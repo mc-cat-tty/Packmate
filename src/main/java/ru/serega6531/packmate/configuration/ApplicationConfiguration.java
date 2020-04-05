@@ -1,4 +1,4 @@
-package ru.serega6531.packmate;
+package ru.serega6531.packmate.configuration;
 
 import org.pcap4j.core.PcapNativeException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import ru.serega6531.packmate.WebSocketHandler;
 import ru.serega6531.packmate.model.enums.CaptureMode;
 import ru.serega6531.packmate.pcap.FilePcapWorker;
 import ru.serega6531.packmate.pcap.LivePcapWorker;

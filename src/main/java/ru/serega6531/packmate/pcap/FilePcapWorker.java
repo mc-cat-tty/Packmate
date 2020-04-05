@@ -42,6 +42,7 @@ public class FilePcapWorker extends AbstractPcapWorker {
                 log.error("Pcap read", e);
                 Thread.sleep(100);
             } catch (EOFException e) {
+                log.info("All packets processed");
                 stop();
                 break;
             }
@@ -54,6 +55,7 @@ public class FilePcapWorker extends AbstractPcapWorker {
             pcap.close();
         }
 
-        log.info("Intercept stopped");
+        //TODO закрывать все стримы
+        log.info("Pcap closed");
     }
 }

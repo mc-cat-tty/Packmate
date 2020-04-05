@@ -6,7 +6,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import ru.serega6531.packmate.pcap.PcapWorker;
+import ru.serega6531.packmate.model.enums.CaptureMode;
+import ru.serega6531.packmate.service.PcapService;
 
 @SpringBootApplication
 public class PackmateApplication {
@@ -14,15 +15,18 @@ public class PackmateApplication {
     @Value("${enable-capture}")
     private boolean enableCapture;
 
+    @Value("${capture-mode}")
+    private CaptureMode captureMode;
+
     public static void main(String[] args) {
         SpringApplication.run(PackmateApplication.class, args);
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void afterStartup(ApplicationReadyEvent event) throws PcapNativeException {
-        if (enableCapture) {
-            final PcapWorker pcapWorker = event.getApplicationContext().getBean(PcapWorker.class);
-            pcapWorker.start();
+        if (enableCapture && captureMode == CaptureMode.LIVE) {
+            final PcapService pcapService = event.getApplicationContext().getBean(PcapService.class);
+            pcapService.start();
         }
     }
 
