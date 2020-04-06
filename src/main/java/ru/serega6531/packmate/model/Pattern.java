@@ -28,6 +28,8 @@ public class Pattern {
     @GeneratedValue(generator = "pattern_generator")
     private int id;
 
+    private boolean enabled;
+
     private String name;
 
     private String value;
