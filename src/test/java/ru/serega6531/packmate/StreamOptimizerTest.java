@@ -28,8 +28,8 @@ class StreamOptimizerTest {
         List<Packet> list = new ArrayList<>();
         list.add(p);
 
-        new StreamOptimizer(service, list).optimizeStream();
-        final String processed = new String(list.get(0).getContent());
+        list = new StreamOptimizer(service, list).optimizeStream();
+        final String processed = list.get(0).getContentString();
         assertTrue(processed.contains("aaabbb"));
     }
 
@@ -42,8 +42,8 @@ class StreamOptimizerTest {
         List<Packet> list = new ArrayList<>();
         list.add(p);
 
-        new StreamOptimizer(service, list).optimizeStream();
-        final String processed = new String(list.get(0).getContent());
+        list = new StreamOptimizer(service, list).optimizeStream();
+        final String processed = list.get(0).getContentString();
         assertTrue(processed.contains("а б"));
     }
 
@@ -67,7 +67,7 @@ class StreamOptimizerTest {
         list.add(p5);
         list.add(p6);
 
-        new StreamOptimizer(service, list).optimizeStream();
+        list = new StreamOptimizer(service, list).optimizeStream();
 
         assertEquals(4, list.size());
         assertEquals(2, list.get(1).getContent().length);

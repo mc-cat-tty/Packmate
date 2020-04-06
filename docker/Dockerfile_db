@@ -8,7 +8,7 @@ ENV POSTGRES_USER ${POSTGRES_USER}
 ENV POSTGRES_PASSWORD ${POSTGRES_PASSWORD}
 ENV POSTGRES_DB ${POSTGRES_DB}
 
-COPY postgresql.conf /tmp/postgresql.conf
-COPY update_db_config.sh /docker-entrypoint-initdb.d/_update_db_config.sh
+COPY docker/postgresql.conf /tmp/postgresql.conf
+COPY docker/update_db_config.sh /docker-entrypoint-initdb.d/_update_db_config.sh
 
 EXPOSE 65001:65001

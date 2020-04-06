@@ -22,7 +22,7 @@ import java.util.Optional;
 public class ServicesService {
 
     private final ServiceRepository repository;
-    private final StreamSubscriptionService subscriptionService;
+    private final SubscriptionService subscriptionService;
 
     private final InetAddress localIp;
 
@@ -30,7 +30,7 @@ public class ServicesService {
 
     @Autowired
     public ServicesService(ServiceRepository repository,
-                           StreamSubscriptionService subscriptionService,
+                           SubscriptionService subscriptionService,
                            @Value("${local-ip}") String localIpString) throws UnknownHostException {
         this.repository = repository;
         this.subscriptionService = subscriptionService;
@@ -59,14 +59,14 @@ public class ServicesService {
     }
 
     public void deleteByPort(int port) {
-        log.info("Удален сервис на порту {}", port);
+        log.info("Removed service at port {}", port);
         services.remove(port);
         repository.deleteById(port);
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DELETE_SERVICE, port));
     }
 
     public CtfService save(CtfService service) {
-        log.info("Добавлен или изменен сервис {} на порту {}", service.getName(), service.getPort());
+        log.info("Added or edited service {} at port {}", service.getName(), service.getPort());
         final CtfService saved = repository.save(service);
         services.put(saved.getPort(), saved);
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_SERVICE, saved));

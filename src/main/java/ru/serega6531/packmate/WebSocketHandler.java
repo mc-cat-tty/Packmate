@@ -5,15 +5,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import ru.serega6531.packmate.service.StreamSubscriptionService;
+import ru.serega6531.packmate.service.SubscriptionService;
 
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
-    private final StreamSubscriptionService subscriptionService;
+    private final SubscriptionService subscriptionService;
 
     @Autowired
-    public WebSocketHandler(StreamSubscriptionService subscriptionService) {
+    public WebSocketHandler(SubscriptionService subscriptionService) {
         this.subscriptionService = subscriptionService;
     }
 

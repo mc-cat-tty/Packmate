@@ -14,7 +14,7 @@ services:
     container_name: packmate-app
     build:
       context: .
-      dockerfile: Dockerfile_app
+      dockerfile: docker/Dockerfile_app
     network_mode: "host"
     image: packmate-app:v1
     command: [
@@ -31,7 +31,7 @@ services:
     container_name: packmate-db
     build:
       context: .
-      dockerfile: Dockerfile_db
+      dockerfile: docker/Dockerfile_db
       args:
         POSTGRES_USER: ${PACKMATE_DB_USER:-packmate}
         POSTGRES_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}

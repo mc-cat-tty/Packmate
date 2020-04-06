@@ -19,6 +19,9 @@ configurations {
 
 repositories {
     mavenCentral()
+
+    // удалить после выхода стабильной версии Java-WebSocket
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
@@ -32,6 +35,7 @@ dependencies {
     compile 'org.pcap4j:pcap4j-core:1.8.2'
     compile 'org.pcap4j:pcap4j-packetfactory-static:1.8.2'
     compile group: 'com.google.guava', name: 'guava', version: '28.2-jre'
+    compile group: 'org.java-websocket', name: 'Java-WebSocket', version: '1.5.0-SNAPSHOT'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'

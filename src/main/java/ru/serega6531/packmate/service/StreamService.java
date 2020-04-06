@@ -30,7 +30,8 @@ public class StreamService {
     private final StreamRepository repository;
     private final PatternService patternService;
     private final ServicesService servicesService;
-    private final StreamSubscriptionService subscriptionService;
+    private final CountingService countingService;
+    private final SubscriptionService subscriptionService;
 
     private final boolean ignoreEmptyPackets;
 
@@ -40,11 +41,13 @@ public class StreamService {
     public StreamService(StreamRepository repository,
                          PatternService patternService,
                          ServicesService servicesService,
-                         StreamSubscriptionService subscriptionService,
+                         CountingService countingService,
+                         SubscriptionService subscriptionService,
                          @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
+        this.countingService = countingService;
         this.subscriptionService = subscriptionService;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
@@ -62,7 +65,7 @@ public class StreamService {
         );
 
         if (serviceOptional.isEmpty()) {
-            log.warn("Не удалось сохранить стрим: сервиса на порту {} или {} не существует",
+            log.warn("Failed to save the stream: service at port {} or {} does not exist",
                     unfinishedStream.getFirstPort(), unfinishedStream.getSecondPort());
             return false;
         }
@@ -72,7 +75,7 @@ public class StreamService {
             packets.removeIf(packet -> packet.getContent().length == 0);
 
             if (packets.isEmpty()) {
-                log.debug("Стрим состоит только из пустых пакетов и не будет сохранен");
+                log.debug("Stream consists only of empty packets and will not be saved");
                 return false;
             }
         }
@@ -88,7 +91,9 @@ public class StreamService {
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(service.getPort());
 
-        new StreamOptimizer(service, packets).optimizeStream();
+        countingService.countStream(service.getPort(), packets.size());
+
+        packets = new StreamOptimizer(service, packets).optimizeStream();
         processUserAgent(packets, stream);
 
         Stream savedStream = save(stream);
@@ -105,7 +110,7 @@ public class StreamService {
     private void processUserAgent(List<Packet> packets, Stream stream) {
         String ua = null;
         for (Packet packet : packets) {
-            String content = new String(packet.getContent());
+            String content = packet.getContentString();
             final Matcher matcher = userAgentPattern.matcher(content);
             if (matcher.find()) {
                 ua = matcher.group(1);
@@ -149,7 +154,7 @@ public class StreamService {
         Stream saved;
         if (stream.getId() == null) {
             saved = repository.save(stream);
-            log.debug("Создан стрим с id {}", saved.getId());
+            log.debug("Saved stream with id {}", saved.getId());
         } else {
             saved = repository.save(stream);
         }

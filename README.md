@@ -19,15 +19,16 @@
 * Конкатенирует смежные пакеты
 * Автоматически проводит urldecode
 * Разархивирует GZIP в HTTP на лету
+* Разархивирует сжатые WebSockets
 
 ![Скриншот главного окна](screenshots/Screenshot.png)
 ## Клонирование
 Поскольку этот репозиторий содержит фронтенд как git submodule, его необходимо клонировать так:
 ```bash
-git clone --recurse-submodules https://gitlab.com/binarybears_ctf/Packmate.git
+git clone --recurse-submodules https://gitlab.com/packmate/Packmate.git
 
 # Или, на старых версиях git
-git clone --recursive https://gitlab.com/binarybears_ctf/Packmate.git
+git clone --recursive https://gitlab.com/packmate/Packmate.git
 ```
 
 Если репозиторий уже был склонирован без подмодулей, необходимо выполнить:

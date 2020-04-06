@@ -30,12 +30,12 @@ public class TimeoutStreamsSaver {
     public void saveStreams() {
         int streamsClosed = pcapWorker.closeTimeoutStreams(Protocol.UDP, udpStreamTimeoutMillis);
         if (streamsClosed > 0) {
-            log.info("Закрыто {} udp стримов", streamsClosed);
+            log.info("{} udp streams closed", streamsClosed);
         }
 
         streamsClosed = pcapWorker.closeTimeoutStreams(Protocol.TCP, tcpStreamTimeoutMillis);
         if (streamsClosed > 0) {
-            log.info("Закрыто {} tcp стримов", streamsClosed);
+            log.info("{} tcp streams closed", streamsClosed);
         }
     }
 

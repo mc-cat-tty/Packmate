@@ -140,7 +140,7 @@ public class PcapWorker implements PacketListener {
                 UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.TCP);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("tcp {} {}:{} -> {}:{}, номер пакета {}",
+                    log.debug("tcp {} {}:{} -> {}:{}, packet number {}",
                             serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
                             unfinishedTcpStreams.get(stream).size());
                 }
@@ -179,7 +179,7 @@ public class PcapWorker implements PacketListener {
                 UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.UDP);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("udp {} {}:{} -> {}:{}, номер пакета {}",
+                    log.debug("udp {} {}:{} -> {}:{}, packet number {}",
                             serviceOptional.get(), sourceIpString, sourcePort, destIpString, destPort,
                             unfinishedUdpStreams.get(stream).size());
                 }
@@ -207,7 +207,7 @@ public class PcapWorker implements PacketListener {
         final var streams = (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
 
         if (!streams.containsKey(stream)) {
-            log.debug("Начат новый стрим");
+            log.debug("New stream started");
         }
 
         streams.put(stream, packet);

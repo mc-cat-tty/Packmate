@@ -20,13 +20,13 @@ import java.util.stream.Collectors;
 public class PatternService {
 
     private final PatternRepository repository;
-    private final StreamSubscriptionService subscriptionService;
+    private final SubscriptionService subscriptionService;
 
     private final Map<Integer, Pattern> patterns = new HashMap<>();
 
     @Autowired
     public PatternService(PatternRepository repository,
-                          StreamSubscriptionService subscriptionService) {
+                          SubscriptionService subscriptionService) {
         this.repository = repository;
         this.subscriptionService = subscriptionService;
 
@@ -56,7 +56,7 @@ public class PatternService {
             pattern.setEnabled(enabled);
             repository.save(pattern);
 
-            if(enabled) {
+            if (enabled) {
                 log.info("Включен паттерн {} со значением {}", pattern.getName(), pattern.getValue());
                 subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.ENABLE_PATTERN, id));
             } else {
@@ -77,7 +77,7 @@ public class PatternService {
 
         final Pattern saved = repository.save(pattern);
         patterns.put(saved.getId(), saved);
-        log.info("Добавлен новый паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+        log.info("Added new pattern {} with value {}", pattern.getName(), pattern.getValue());
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, saved));
         return saved;
     }
