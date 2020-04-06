@@ -44,6 +44,7 @@ public class PatternService {
 
     public Set<FoundPattern> findMatches(byte[] bytes, boolean incoming) {
         final List<Pattern> list = patterns.values().stream()
+                .filter(Pattern::isEnabled)
                 .filter(p -> p.getDirectionType() == (incoming ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT)
                         || p.getDirectionType() == PatternDirectionType.BOTH)
                 .collect(Collectors.toList());
@@ -54,7 +55,8 @@ public class PatternService {
         final Pattern pattern = find(id);
         if (pattern != null) {
             pattern.setEnabled(enabled);
-            repository.save(pattern);
+            final Pattern saved = repository.save(pattern);
+            patterns.put(id, saved);
 
             if (enabled) {
                 log.info("Включен паттерн {} со значением {}", pattern.getName(), pattern.getValue());
