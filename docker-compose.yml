@@ -20,7 +20,7 @@ services:
     network_mode: "host"
     image: packmate-app:v1
     command: [
-      "java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true",
+      "java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000",
       "-jar", "/app/app.jar", "--spring.datasource.url=jdbc:postgresql://127.0.0.1:65001/$${DB_NAME}",
       "--spring.datasource.username=$${DB_USER}", "--spring.datasource.password=$${DB_PASSWORD}",
       "--capture-mode=$${MODE}", "--pcap-file=$${PCAP_FILE}",

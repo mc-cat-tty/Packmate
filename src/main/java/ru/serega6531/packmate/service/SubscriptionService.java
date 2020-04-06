@@ -2,6 +2,7 @@ package ru.serega6531.packmate.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,10 +40,15 @@ public class SubscriptionService {
         log.info("User unsubscribed: {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
-    void broadcast(SubscriptionMessage message) {
+    /**
+     * Вызов потокобезопасный
+     */
+    @SneakyThrows
+    public void broadcast(SubscriptionMessage message) {
+        final TextMessage messageJson = objectToTextMessage(message);
         subscribers.forEach(s -> {
             try {
-                s.sendMessage(objectToTextMessage(message));
+                s.sendMessage(messageJson);
             } catch (IOException | SockJsTransportFailureException e) {
                 log.warn("WS", e);
             }

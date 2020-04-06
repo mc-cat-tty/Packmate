@@ -7,6 +7,7 @@
 Advanced network traffic flow analyzer for A/D CTFs.
 
 #### Features:
+* Can monitor live traffic or analyze pcap files
 * Supports binary and textual services
 * Can highlight found patterns in packets
   * Substring
@@ -50,14 +51,27 @@ It must be called `.env` and located at the root of the project.
 
 Contents of the file:
 ```bash
-# Interface to capture on
-PACKMATE_INTERFACE=wlan0
-# Local IP on said interface to tell incoming packets from outgoing
+# Local IP on network interface or in pcap file to tell incoming packets from outgoing
 PACKMATE_LOCAL_IP=192.168.1.124
 # Username for the web interface
 PACKMATE_WEB_LOGIN=SomeUser
 # Password for the web interface
 PACKMATE_WEB_PASSWORD=SomeSecurePassword
+```
+
+If we are capturing live traffic (best option if possible):
+```bash
+# Mode: capturing
+PACKMATE_MODE=LIVE
+# Interface to capture on
+PACKMATE_INTERFACE=wlan0
+```
+If we are analyzing pcap dump:
+```bash
+# Mode: dump analyzing
+PACKMATE_MODE=FILE
+# Path to pcap file from project root
+PACKMATE_PCAP_FILE=dump.pcap
 ```
 
 ### Launch

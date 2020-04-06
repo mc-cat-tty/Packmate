@@ -7,8 +7,11 @@ import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
 import ru.serega6531.packmate.model.enums.Protocol;
+import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
+import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
+import ru.serega6531.packmate.service.SubscriptionService;
 
 import java.io.EOFException;
 import java.io.File;
@@ -17,13 +20,16 @@ import java.net.UnknownHostException;
 @Slf4j
 public class FilePcapWorker extends AbstractPcapWorker {
 
+    private final SubscriptionService subscriptionService;
     private final File file;
 
     public FilePcapWorker(ServicesService servicesService,
                           StreamService streamService,
+                          SubscriptionService subscriptionService,
                           String localIpString,
                           String filename) throws UnknownHostException {
         super(servicesService, streamService, localIpString);
+        this.subscriptionService = subscriptionService;
 
         file = new File(filename);
         if(!file.exists()) {
@@ -67,5 +73,7 @@ public class FilePcapWorker extends AbstractPcapWorker {
 
         closeAllStreams(Protocol.TCP);
         closeAllStreams(Protocol.UDP);
+
+        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.PCAP_STOPPED, null));
     }
 }
