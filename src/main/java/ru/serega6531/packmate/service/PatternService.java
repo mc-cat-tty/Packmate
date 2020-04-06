@@ -51,10 +51,10 @@ public class PatternService {
     }
 
     public void enable(int id, boolean enabled) {
-        final Optional<Pattern> optional = repository.findById(id);
-        if (optional.isPresent()) {
-            final Pattern pattern = optional.get();
+        final Pattern pattern = find(id);
+        if (pattern != null) {
             pattern.setEnabled(enabled);
+            repository.save(pattern);
 
             if(enabled) {
                 log.info("Включен паттерн {} со значением {}", pattern.getName(), pattern.getValue());

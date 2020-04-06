@@ -30,6 +30,7 @@ public class PatternController {
 
     @PostMapping
     public Pattern addPattern(@RequestBody Pattern pattern) {
+        pattern.setEnabled(true);
         return service.save(pattern);
     }
 
