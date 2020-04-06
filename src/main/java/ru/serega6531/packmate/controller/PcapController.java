@@ -24,10 +24,6 @@ public class PcapController {
         return service.isStarted();
     }
 
-    public boolean isRunning() {
-        return true; //TODO
-    }
-
     @PostMapping("/start")
     public void start() throws PcapNativeException {
         service.start();

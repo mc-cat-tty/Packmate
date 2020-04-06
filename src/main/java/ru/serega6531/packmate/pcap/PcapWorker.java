@@ -7,6 +7,15 @@ public interface PcapWorker {
 
     void start() throws PcapNativeException;
     void stop();
+
+    /**
+     * Выполняется в вызывающем потоке
+     */
+    void closeAllStreams(Protocol protocol);
+
+    /**
+     * Выполняется в потоке обработчика
+     */
     int closeTimeoutStreams(Protocol protocol, long timeoutMillis);
 
 }

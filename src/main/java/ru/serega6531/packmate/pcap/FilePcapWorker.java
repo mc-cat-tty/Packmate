@@ -2,9 +2,11 @@ package ru.serega6531.packmate.pcap;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.threads.InlineExecutorService;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
+import ru.serega6531.packmate.model.enums.Protocol;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
@@ -27,13 +29,19 @@ public class FilePcapWorker extends AbstractPcapWorker {
         if(!file.exists()) {
             throw new IllegalArgumentException("File " + file.getAbsolutePath() + " does not exist");
         }
+
+        processorExecutorService = new InlineExecutorService();
     }
 
     @SneakyThrows
     @Override
     public void start() {
         pcap = Pcaps.openOffline(file.getAbsolutePath());
+        loopExecutorService.execute(this::runScan);
+    }
 
+    @SneakyThrows
+    private void runScan() {
         while (pcap.isOpen()) {
             try {
                 final Packet packet = pcap.getNextPacketEx();
@@ -42,8 +50,9 @@ public class FilePcapWorker extends AbstractPcapWorker {
                 log.error("Pcap read", e);
                 Thread.sleep(100);
             } catch (EOFException e) {
-                log.info("All packets processed");
                 stop();
+
+                log.info("All packets processed");
                 break;
             }
         }
@@ -53,9 +62,10 @@ public class FilePcapWorker extends AbstractPcapWorker {
     public void stop() {
         if (pcap != null && pcap.isOpen()) {
             pcap.close();
+            log.info("Pcap closed");
         }
 
-        //TODO закрывать все стримы
-        log.info("Pcap closed");
+        closeAllStreams(Protocol.TCP);
+        closeAllStreams(Protocol.UDP);
     }
 }

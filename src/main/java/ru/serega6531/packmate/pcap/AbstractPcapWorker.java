@@ -20,6 +20,7 @@ import ru.serega6531.packmate.service.StreamService;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +34,10 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     private final StreamService streamService;
 
     protected PcapHandle pcap = null;
-    protected final ExecutorService listenerExecutorService;
+    protected final ExecutorService loopExecutorService;
+
+    // во время работы должен быть != null
+    protected ExecutorService processorExecutorService;
 
     private final InetAddress localIp;
 
@@ -58,8 +62,8 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("pcap-worker-listener").build();
-        listenerExecutorService = Executors.newSingleThreadExecutor(factory);
+                .namingPattern("pcap-loop").build();
+        loopExecutorService = Executors.newSingleThreadExecutor(factory);
     }
 
     public void gotPacket(Packet rawPacket) {
@@ -67,14 +71,16 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
             return;
         }
 
+        final long time = pcap.getTimestamp().getTime();
+
         if (rawPacket.contains(TcpPacket.class)) {
-            gotTcpPacket(rawPacket);
+            gotTcpPacket(rawPacket, time);
         } else if (rawPacket.contains(UdpPacket.class)) {
-            gotUdpPacket(rawPacket);
+            gotUdpPacket(rawPacket, time);
         }
     }
 
-    private void gotTcpPacket(Packet rawPacket) {
+    private void gotTcpPacket(Packet rawPacket, long time) {
         final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
         Inet4Address sourceIp = ipHeader.getSrcAddr();
         Inet4Address destIp = ipHeader.getDstAddr();
@@ -96,9 +102,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
-            final long time = System.currentTimeMillis();
-
-            listenerExecutorService.execute(() -> {
+            processorExecutorService.execute(() -> {
                 UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.TCP);
 
                 if (log.isDebugEnabled()) {
@@ -116,7 +120,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
     }
 
-    private void gotUdpPacket(Packet rawPacket) {
+    private void gotUdpPacket(Packet rawPacket, long time) {
         final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
         Inet4Address sourceIp = ipHeader.getSrcAddr();
         Inet4Address destIp = ipHeader.getDstAddr();
@@ -135,9 +139,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
-            final long time = System.currentTimeMillis();
-
-            listenerExecutorService.execute(() -> {
+            processorExecutorService.execute(() -> {
                 UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.UDP);
 
                 if (log.isDebugEnabled()) {
@@ -202,9 +204,25 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
     }
 
+    @Override
+    @SneakyThrows
+    public void closeAllStreams(Protocol protocol) {
+        final var streams = (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
+
+        Multimaps.asMap(streams).forEach((key, value) ->
+                streamService.saveNewStream(key, new ArrayList<>(value)));
+
+        streams.clear();
+        if (protocol == Protocol.TCP) {
+            fins.clear();
+            acks.clear();
+        }
+    }
+
+    @Override
     @SneakyThrows
     public int closeTimeoutStreams(Protocol protocol, long timeoutMillis) {
-        return listenerExecutorService.submit(() -> {
+        return processorExecutorService.submit(() -> {
             int streamsClosed = 0;
 
             final long time = System.currentTimeMillis();

@@ -3,6 +3,7 @@ package ru.serega6531.packmate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.enums.Protocol;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
+@ConditionalOnProperty(name = "capture-mode", havingValue = "LIVE")
 public class TimeoutStreamsSaver {
 
     private final PcapWorker pcapWorker;

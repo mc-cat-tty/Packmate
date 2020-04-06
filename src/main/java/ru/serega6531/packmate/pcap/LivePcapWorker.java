@@ -10,7 +10,6 @@ import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.net.UnknownHostException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Slf4j
@@ -28,15 +27,16 @@ public class LivePcapWorker extends AbstractPcapWorker {
         if(device == null) {
             throw new IllegalArgumentException("Device " + interfaceName + " does not exist");
         }
+
+        BasicThreadFactory factory = new BasicThreadFactory.Builder()
+                .namingPattern("pcap-processor").build();
+        processorExecutorService = Executors.newSingleThreadExecutor(factory);
     }
 
     public void start() throws PcapNativeException {
         log.info("Using interface " + device.getName());
         pcap = device.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 100);
 
-        BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("pcap-worker-loop").build();
-        ExecutorService loopExecutorService = Executors.newSingleThreadExecutor(factory);
         try {
             log.info("Intercept started");
             pcap.loop(-1, this, loopExecutorService);
