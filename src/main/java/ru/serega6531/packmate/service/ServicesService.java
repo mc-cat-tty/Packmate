@@ -66,7 +66,7 @@ public class ServicesService {
     }
 
     public CtfService save(CtfService service) {
-        log.info("Added or edited service {} at port {}", service.getName(), service.getPort());
+        log.info("Added or edited service '{}' at port {}", service.getName(), service.getPort());
         final CtfService saved = repository.save(service);
         services.put(saved.getPort(), saved);
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_SERVICE, saved));

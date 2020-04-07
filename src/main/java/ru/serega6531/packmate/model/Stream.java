@@ -35,6 +35,7 @@ public class Stream {
 
     @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL)
     @JsonIgnore
+    @OrderBy("id")
     private List<Packet> packets;
 
     private long startTimestamp;
