@@ -41,6 +41,8 @@ services:
         POSTGRES_DB: ${PACKMATE_DB_NAME:-packmate}
     env_file:
       - .env
+    volumes:
+    - "./docker/postgres_data:/var/lib/postgresql/data"
     network_mode: "host"
     image: packmate-db:v1
     restart: unless-stopped

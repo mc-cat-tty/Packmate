@@ -24,6 +24,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(indexes = { @Index(name = "stream_id_index", columnList = "stream_id") })
 public class Packet {
 
     @Id
