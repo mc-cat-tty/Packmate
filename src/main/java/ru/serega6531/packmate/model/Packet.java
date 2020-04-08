@@ -52,7 +52,7 @@ public class Packet {
 
     private boolean ungzipped;
 
-    private boolean webSocketInflated;
+    private boolean webSocketParsed;
 
     private byte[] content;
 

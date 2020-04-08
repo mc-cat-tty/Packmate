@@ -22,6 +22,6 @@ public class CtfService {
 
     private boolean mergeAdjacentPackets;
 
-    private boolean inflateWebSockets;
+    private boolean parseWebSockets;
 
 }
