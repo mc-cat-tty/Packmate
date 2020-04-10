@@ -36,8 +36,8 @@ public class StreamOptimizer {
             unpackGzip();
         }
 
-        if (service.isInflateWebSockets()) {
-            inflateWebSocket();
+        if (service.isParseWebSockets()) {
+            parseWebSockets();
         }
 
         if (service.isUrldecodeHttpRequests()) {
@@ -89,7 +89,7 @@ public class StreamOptimizer {
         final List<Packet> cut = packets.subList(start, end);
         final long timestamp = cut.get(0).getTimestamp();
         final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
-        final boolean webSocketInflated = cut.stream().anyMatch(Packet::isWebSocketInflated);
+        final boolean webSocketParsed = cut.stream().anyMatch(Packet::isWebSocketParsed);
         boolean incoming = cut.get(0).isIncoming();
         //noinspection OptionalGetWithoutIsPresent
         final byte[] content = cut.stream()
@@ -102,7 +102,7 @@ public class StreamOptimizer {
                 .incoming(incoming)
                 .timestamp(timestamp)
                 .ungzipped(ungzipped)
-                .webSocketInflated(webSocketInflated)
+                .webSocketParsed(webSocketParsed)
                 .content(content)
                 .build());
     }
@@ -227,7 +227,7 @@ public class StreamOptimizer {
                     .incoming(false)
                     .timestamp(cut.get(0).getTimestamp())
                     .ungzipped(true)
-                    .webSocketInflated(false)
+                    .webSocketParsed(false)
                     .content(newContent)
                     .build();
         } catch (ZipException e) {
@@ -239,7 +239,7 @@ public class StreamOptimizer {
         return null;
     }
 
-    private void inflateWebSocket() {
+    private void parseWebSockets() {
         if (!packets.get(0).getContentString().contains("HTTP/")) {
             return;
         }

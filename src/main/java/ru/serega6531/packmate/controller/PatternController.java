@@ -23,13 +23,14 @@ public class PatternController {
         return service.findAll();
     }
 
-    @DeleteMapping("/{id}")
-    public void deletePattern(@PathVariable int id) {
-        service.deleteById(id);
+    @PostMapping("/{id}")
+    public void enable(@PathVariable int id, @RequestParam boolean enabled) {
+        service.enable(id, enabled);
     }
 
     @PostMapping
     public Pattern addPattern(@RequestBody Pattern pattern) {
+        pattern.setEnabled(true);
         return service.save(pattern);
     }
 

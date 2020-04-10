@@ -31,8 +31,6 @@ public class WebSocketsParser {
     private static final java.util.regex.Pattern WEBSOCKET_ACCEPT_PATTERN =
             java.util.regex.Pattern.compile("Sec-WebSocket-Accept: (.+)\\r\\n");
 
-    private static final String WEBSOCKET_EXTENSION_HEADER = "Sec-WebSocket-Extension: permessage-deflate";
-    private static final String WEBSOCKET_EXTENSIONS_HEADER = "Sec-WebSocket-Extensions: permessage-deflate";
     private static final String WEBSOCKET_UPGRADE_HEADER = "upgrade: websocket\r\n";
     private static final String WEBSOCKET_CONNECTION_HEADER = "connection: upgrade\r\n";
 
@@ -103,7 +101,6 @@ public class WebSocketsParser {
         final List<Packet> handshakes = packets.subList(0, httpEnd);
 
         parse(wsPackets, handshakes, draft);
-        parsed = true;
     }
 
     private void parse(final List<Packet> wsPackets, final List<Packet> handshakes, Draft_6455 draft) {
@@ -136,12 +133,14 @@ public class WebSocketsParser {
                             .timestamp(lastPacket.getTimestamp())
                             .ttl(lastPacket.getTtl())
                             .ungzipped(lastPacket.isUngzipped())
-                            .webSocketInflated(true)
+                            .webSocketParsed(true)
                             .build()
                     );
                 }
             }
         }
+
+        parsed = true;
     }
 
     public List<Packet> getParsedPackets() {
@@ -190,11 +189,6 @@ public class WebSocketsParser {
             return null;
         }
 
-        if (!handshake.contains(WEBSOCKET_EXTENSION_HEADER) &&
-                !handshake.contains(WEBSOCKET_EXTENSIONS_HEADER)) {
-            return null;
-        }
-
         return handshake;
     }
 
@@ -212,10 +206,10 @@ public class WebSocketsParser {
         String key = matcher.group(1);
 
         matcher = WEBSOCKET_EXTENSIONS_PATTERN.matcher(clientHandshake);
-        if (!matcher.find()) {
-            return null;
+        String extensions = null;
+        if (matcher.find()) {
+            extensions = matcher.group(1);
         }
-        String extensions = matcher.group(1);
 
         HandshakeImpl1Client clientHandshakeImpl = new HandshakeImpl1Client();
 
@@ -223,7 +217,10 @@ public class WebSocketsParser {
         clientHandshakeImpl.put("Connection", "Upgrade");
         clientHandshakeImpl.put("Sec-WebSocket-Version", version);
         clientHandshakeImpl.put("Sec-WebSocket-Key", key);
-        clientHandshakeImpl.put("Sec-WebSocket-Extensions", extensions);
+
+        if(extensions != null) {
+            clientHandshakeImpl.put("Sec-WebSocket-Extensions", extensions);
+        }
 
         return clientHandshakeImpl;
     }
@@ -236,10 +233,10 @@ public class WebSocketsParser {
         String accept = matcher.group(1);
 
         matcher = WEBSOCKET_EXTENSIONS_PATTERN.matcher(serverHandshake);
-        if (!matcher.find()) {
-            return null;
+        String extensions = null;
+        if (matcher.find()) {
+            extensions = matcher.group(1);
         }
-        String extensions = matcher.group(1);
 
         HandshakeImpl1Server serverHandshakeImpl = new HandshakeImpl1Server();
 
