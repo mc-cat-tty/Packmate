@@ -79,7 +79,7 @@ public class PatternService {
 
         final Pattern saved = repository.save(pattern);
         patterns.put(saved.getId(), saved);
-        log.info("Added new pattern {} with value {}", pattern.getName(), pattern.getValue());
+        log.info("Added new pattern '{}' with value '{}'", pattern.getName(), pattern.getValue());
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, saved));
         return saved;
     }

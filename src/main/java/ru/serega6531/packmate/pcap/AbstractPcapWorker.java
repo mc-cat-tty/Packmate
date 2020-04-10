@@ -1,44 +1,43 @@
-package ru.serega6531.packmate;
+package ru.serega6531.packmate.pcap;
 
 import com.google.common.collect.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.pcap4j.core.*;
+import org.pcap4j.core.PacketListener;
+import org.pcap4j.core.PcapHandle;
 import org.pcap4j.packet.IpV4Packet;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.Protocol;
 import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
-import javax.annotation.PreDestroy;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-@Component
 @Slf4j
-public class PcapWorker implements PacketListener {
+public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
 
     private final ServicesService servicesService;
     private final StreamService streamService;
 
-    private final PcapNetworkInterface device;
-    private PcapHandle pcap = null;
-    private final ExecutorService listenerExecutorService;
+    protected PcapHandle pcap = null;
+    protected final ExecutorService loopExecutorService;
+
+    // во время работы должен быть != null
+    protected ExecutorService processorExecutorService;
 
     private final InetAddress localIp;
 
@@ -51,11 +50,9 @@ public class PcapWorker implements PacketListener {
     private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> fins = HashMultimap.create();
     private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> acks = HashMultimap.create();
 
-    @Autowired
-    public PcapWorker(ServicesService servicesService,
-                      StreamService streamService,
-                      @Value("${interface-name}") String interfaceName,
-                      @Value("${local-ip}") String localIpString) throws PcapNativeException, UnknownHostException {
+    public AbstractPcapWorker(ServicesService servicesService,
+                              StreamService streamService,
+                              String localIpString) throws UnknownHostException {
         this.servicesService = servicesService;
         this.streamService = streamService;
 
@@ -65,39 +62,8 @@ public class PcapWorker implements PacketListener {
         }
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("pcap-worker-listener").build();
-        listenerExecutorService = Executors.newSingleThreadExecutor(factory);
-        device = Pcaps.getDevByName(interfaceName);
-    }
-
-    void start() throws PcapNativeException {
-        log.info("Using interface " + device.getName());
-        pcap = device.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 100);
-
-        BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("pcap-worker-loop").build();
-        ExecutorService loopExecutorService = Executors.newSingleThreadExecutor(factory);
-        try {
-            log.info("Intercept started");
-            pcap.loop(-1, this, loopExecutorService);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
-            // выходим
-        } catch (Exception e) {
-            log.error("Error while capturing packet", e);
-            stop();
-        }
-    }
-
-    @PreDestroy
-    @SneakyThrows
-    private void stop() {
-        if (pcap != null && pcap.isOpen()) {
-            pcap.breakLoop();
-            pcap.close();
-        }
-
-        log.info("Intercept stopped");
+                .namingPattern("pcap-loop").build();
+        loopExecutorService = Executors.newSingleThreadExecutor(factory);
     }
 
     public void gotPacket(Packet rawPacket) {
@@ -105,14 +71,16 @@ public class PcapWorker implements PacketListener {
             return;
         }
 
+        final long time = pcap.getTimestamp().getTime();
+
         if (rawPacket.contains(TcpPacket.class)) {
-            gotTcpPacket(rawPacket);
+            gotTcpPacket(rawPacket, time);
         } else if (rawPacket.contains(UdpPacket.class)) {
-            gotUdpPacket(rawPacket);
+            gotUdpPacket(rawPacket, time);
         }
     }
 
-    private void gotTcpPacket(Packet rawPacket) {
+    private void gotTcpPacket(Packet rawPacket, long time) {
         final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
         Inet4Address sourceIp = ipHeader.getSrcAddr();
         Inet4Address destIp = ipHeader.getDstAddr();
@@ -134,9 +102,7 @@ public class PcapWorker implements PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
-            final long time = System.currentTimeMillis();
-
-            listenerExecutorService.execute(() -> {
+            processorExecutorService.execute(() -> {
                 UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.TCP);
 
                 if (log.isDebugEnabled()) {
@@ -154,7 +120,7 @@ public class PcapWorker implements PacketListener {
         }
     }
 
-    private void gotUdpPacket(Packet rawPacket) {
+    private void gotUdpPacket(Packet rawPacket, long time) {
         final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
         Inet4Address sourceIp = ipHeader.getSrcAddr();
         Inet4Address destIp = ipHeader.getDstAddr();
@@ -173,9 +139,7 @@ public class PcapWorker implements PacketListener {
                 servicesService.findService(sourceIp, sourcePort, destIp, destPort);
 
         if (serviceOptional.isPresent()) {
-            final long time = System.currentTimeMillis();
-
-            listenerExecutorService.execute(() -> {
+            processorExecutorService.execute(() -> {
                 UnfinishedStream stream = addNewPacket(sourceIp, destIp, time, sourcePort, destPort, ttl, content, Protocol.UDP);
 
                 if (log.isDebugEnabled()) {
@@ -240,9 +204,25 @@ public class PcapWorker implements PacketListener {
         }
     }
 
+    @Override
     @SneakyThrows
-    int closeTimeoutStreams(Protocol protocol, long timeoutMillis) {
-        return listenerExecutorService.submit(() -> {
+    public void closeAllStreams(Protocol protocol) {
+        final var streams = (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
+
+        Multimaps.asMap(streams).forEach((key, value) ->
+                streamService.saveNewStream(key, new ArrayList<>(value)));
+
+        streams.clear();
+        if (protocol == Protocol.TCP) {
+            fins.clear();
+            acks.clear();
+        }
+    }
+
+    @Override
+    @SneakyThrows
+    public int closeTimeoutStreams(Protocol protocol, long timeoutMillis) {
+        return processorExecutorService.submit(() -> {
             int streamsClosed = 0;
 
             final long time = System.currentTimeMillis();

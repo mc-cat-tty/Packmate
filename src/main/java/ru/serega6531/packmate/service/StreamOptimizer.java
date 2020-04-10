@@ -122,8 +122,12 @@ public class StreamOptimizer {
                 }
 
                 if (httpStarted) {
-                    content = URLDecoder.decode(content, StandardCharsets.UTF_8.toString());
-                    packet.setContent(content.getBytes());
+                    try {
+                        content = URLDecoder.decode(content, StandardCharsets.UTF_8.toString());
+                        packet.setContent(content.getBytes());
+                    } catch (IllegalArgumentException e) {
+                        log.warn("urldecode", e);
+                    }
                 }
             } else {
                 httpStarted = false;
