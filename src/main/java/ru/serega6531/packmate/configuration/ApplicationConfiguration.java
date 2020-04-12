@@ -1,11 +1,14 @@
 package ru.serega6531.packmate.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.pcap4j.core.PcapNativeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,6 +33,7 @@ import java.net.UnknownHostException;
 @EnableWebSecurity
 @EnableScheduling
 @EnableWebSocket
+@Slf4j
 public class ApplicationConfiguration extends WebSecurityConfigurerAdapter implements WebSocketConfigurer {
 
     @Value("${account-login}")
@@ -88,6 +92,12 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @EventListener
+    public void authenticationFailed(AuthenticationFailureBadCredentialsEvent e) {
+        log.info("Login failed for user {}, password {}",
+                e.getAuthentication().getPrincipal(), e.getAuthentication().getCredentials());
     }
 
     @Override
