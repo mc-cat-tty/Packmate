@@ -37,7 +37,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     protected PcapHandle pcap = null;
     protected final ExecutorService loopExecutorService;
 
-    protected String filter = null;
+    protected String filter = "tcp or udp";
 
     // во время работы должен быть != null
     protected ExecutorService processorExecutorService;
