@@ -171,7 +171,7 @@ public class StreamOptimizer {
                 }
 
                 if (contentPos != -1) {   // начало body
-                    String headers = content.substring(0, contentPos);
+                    String headers = content.substring(0, contentPos + 2);  // захватываем первые \r\n
                     boolean gziped = headers.contains("Content-Encoding: gzip\r\n");
                     if (gziped) {
                         gzipStarted = true;

@@ -98,13 +98,14 @@ First of all, you should create game services.
 To do that click `+` in the navbar, 
 then fill in the service name, port, and optimization to perform.
 
-The system will start automatically capture streams and show them in a sidebar.  
-Click at a stream to view a list of packets;
-you can click a button in the sidebar to switch between binary and text views.
-
 For simple monitoring of flags, there is a system of patterns.  
 To create a pattern open `Patterns` dropdown menu, press `+`, then 
 specify the type of pattern, the pattern itself, highlight color and other things.
+
+In LIVE mode the system will start automatically capture streams and show them in a sidebar.
+In FILE mode you'll have to press appropriate button in a sidebar to start processing a file.  
+Click at a stream to view a list of packets;
+you can click a button in the sidebar to switch between binary and text views.
 
 ### Shortcuts
 To quickly navigate streams you can use the following shortcuts:
