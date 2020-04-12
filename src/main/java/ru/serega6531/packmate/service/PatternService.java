@@ -59,10 +59,10 @@ public class PatternService {
             patterns.put(id, saved);
 
             if (enabled) {
-                log.info("Включен паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+                log.info("Enabled pattern '{}' with value '{}'", pattern.getName(), pattern.getValue());
                 subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.ENABLE_PATTERN, id));
             } else {
-                log.info("Выключен паттерн {} со значением {}", pattern.getName(), pattern.getValue());
+                log.info("Disabled pattern '{}' with value '{}'", pattern.getName(), pattern.getValue());
                 subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DISABLE_PATTERN, id));
             }
         }

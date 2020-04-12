@@ -44,6 +44,9 @@ public class FilePcapWorker extends AbstractPcapWorker {
     public void start() {
         log.info("Using file " + file.getAbsolutePath());
         pcap = Pcaps.openOffline(file.getAbsolutePath());
+
+        applyFilter();
+
         loopExecutorService.execute(this::runScan);
     }
 

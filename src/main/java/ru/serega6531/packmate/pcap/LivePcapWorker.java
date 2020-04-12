@@ -37,6 +37,8 @@ public class LivePcapWorker extends AbstractPcapWorker {
         log.info("Using interface " + device.getName());
         pcap = device.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 100);
 
+        applyFilter();
+
         try {
             log.info("Intercept started");
             pcap.loop(-1, this, loopExecutorService);

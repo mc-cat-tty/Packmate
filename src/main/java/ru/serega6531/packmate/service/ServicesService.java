@@ -23,6 +23,7 @@ public class ServicesService {
 
     private final ServiceRepository repository;
     private final SubscriptionService subscriptionService;
+    private final PcapService pcapService;
 
     private final InetAddress localIp;
 
@@ -31,9 +32,11 @@ public class ServicesService {
     @Autowired
     public ServicesService(ServiceRepository repository,
                            SubscriptionService subscriptionService,
+                           PcapService pcapService,
                            @Value("${local-ip}") String localIpString) throws UnknownHostException {
         this.repository = repository;
         this.subscriptionService = subscriptionService;
+        this.pcapService = pcapService;
         this.localIp = InetAddress.getByName(localIpString);
 
         repository.findAll().forEach(s -> services.put(s.getPort(), s));
@@ -67,9 +70,13 @@ public class ServicesService {
 
     public CtfService save(CtfService service) {
         log.info("Added or edited service '{}' at port {}", service.getName(), service.getPort());
+
         final CtfService saved = repository.save(service);
         services.put(saved.getPort(), saved);
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_SERVICE, saved));
+
+        pcapService.updateFilter(findAll());
+
         return saved;
     }
 
