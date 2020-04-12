@@ -3,6 +3,7 @@ package ru.serega6531.packmate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
@@ -23,6 +24,7 @@ public class ServicesService {
 
     private final ServiceRepository repository;
     private final SubscriptionService subscriptionService;
+    private final PcapService pcapService;
 
     private final InetAddress localIp;
 
@@ -31,9 +33,11 @@ public class ServicesService {
     @Autowired
     public ServicesService(ServiceRepository repository,
                            SubscriptionService subscriptionService,
+                           @Lazy PcapService pcapService,
                            @Value("${local-ip}") String localIpString) throws UnknownHostException {
         this.repository = repository;
         this.subscriptionService = subscriptionService;
+        this.pcapService = pcapService;
         this.localIp = InetAddress.getByName(localIpString);
 
         repository.findAll().forEach(s -> services.put(s.getPort(), s));
@@ -60,16 +64,25 @@ public class ServicesService {
 
     public void deleteByPort(int port) {
         log.info("Removed service at port {}", port);
+
         services.remove(port);
         repository.deleteById(port);
+
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DELETE_SERVICE, port));
+
+        pcapService.updateFilter(findAll());
     }
 
     public CtfService save(CtfService service) {
         log.info("Added or edited service '{}' at port {}", service.getName(), service.getPort());
+
         final CtfService saved = repository.save(service);
         services.put(saved.getPort(), saved);
+
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_SERVICE, saved));
+
+        pcapService.updateFilter(findAll());
+
         return saved;
     }
 

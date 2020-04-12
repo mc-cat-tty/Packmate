@@ -18,4 +18,6 @@ public interface PcapWorker {
      */
     int closeTimeoutStreams(Protocol protocol, long timeoutMillis);
 
+    void setFilter(String filter);
+
 }

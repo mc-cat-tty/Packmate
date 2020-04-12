@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.pcap4j.core.BpfProgram;
 import org.pcap4j.core.PacketListener;
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.packet.IpV4Packet;
@@ -35,6 +36,8 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
 
     protected PcapHandle pcap = null;
     protected final ExecutorService loopExecutorService;
+
+    protected String filter = "tcp or udp";
 
     // во время работы должен быть != null
     protected ExecutorService processorExecutorService;
@@ -255,4 +258,17 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }).get();
     }
 
+    @Override
+    @SneakyThrows
+    public void setFilter(String filter) {
+        this.filter = filter;
+        applyFilter();
+    }
+
+    @SneakyThrows
+    protected void applyFilter() {
+        if(filter != null && pcap != null && pcap.isOpen()) {
+            pcap.setFilter(filter, BpfProgram.BpfCompileMode.OPTIMIZE);
+        }
+    }
 }
