@@ -16,6 +16,8 @@ public class CtfService {
 
     private String name;
 
+    private boolean processChunkedEncoding;
+
     private boolean ungzipHttp;
 
     private boolean urldecodeHttpRequests;
