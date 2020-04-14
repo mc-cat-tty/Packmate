@@ -86,7 +86,7 @@ If everything went fine, Packmate will be available on port `65000` from any hos
 When you open a web interface for the first time, you will be asked for a login and password
 you specified in the env file.  
 After entering the credentials, open the settings by clicking on the cogs 
-in the top right corner and enter login and password again.
+in the top right corner and enter the specified login and password again.
 
 ![Settings](screenshots/Screenshot_Settings.png)
 
@@ -109,10 +109,10 @@ you can click a button in the sidebar to switch between binary and text views.
 
 ### Shortcuts
 To quickly navigate streams you can use the following shortcuts:
-* `Ctrl+Up` -- go to next stream
-* `Ctrl+Down` -- go to previous stream
-* `Ctrl+Home` -- go to latest stream
-* `Ctrl+End` -- go to first stream
+* `Ctrl+Up` -- go to the next stream
+* `Ctrl+Down` -- go to the previous stream
+* `Ctrl+Home` -- go to the latest stream
+* `Ctrl+End` -- go to the first stream
 
 <div align="right">
 

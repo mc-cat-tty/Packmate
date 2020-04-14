@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class HttpChunksProcessor {
 
-    private List<Packet> packets;
+    private final List<Packet> packets;
 
     public void processChunkedEncoding() {
         boolean chunkStarted = false;

@@ -22,7 +22,7 @@ public class HttpGzipProcessor {
 
     private static final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
 
-    private List<Packet> packets;
+    private final List<Packet> packets;
 
     /**
      * Попытаться распаковать GZIP из исходящих http пакетов. <br>

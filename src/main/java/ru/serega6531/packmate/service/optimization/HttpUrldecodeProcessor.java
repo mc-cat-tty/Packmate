@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 public class HttpUrldecodeProcessor {
 
-    private List<Packet> packets;
+    private final List<Packet> packets;
 
     /**
      * Декодирование urlencode с http пакета до смены стороны или окончания стрима

@@ -7,6 +7,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import ru.serega6531.packmate.service.SubscriptionService;
 
+@SuppressWarnings("NullableProblems")
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 

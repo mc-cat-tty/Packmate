@@ -17,8 +17,8 @@ public class CountingService {
 
     private final SubscriptionService subscriptionService;
 
-    private Map<Integer, Counter> servicesPackets = new HashMap<>();
-    private Map<Integer, Counter> servicesStreams = new HashMap<>();
+    private final Map<Integer, Counter> servicesPackets = new HashMap<>();
+    private final Map<Integer, Counter> servicesStreams = new HashMap<>();
 
     private Counter totalPackets = new Counter();
     private Counter totalStreams = new Counter();

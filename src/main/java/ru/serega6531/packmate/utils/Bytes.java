@@ -5,11 +5,11 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class Bytes {
 
-    public static int indexOf(byte[] array, byte[] target) {
+    public int indexOf(byte[] array, byte[] target) {
         return indexOf(array, target, 0, array.length);
     }
 
-    public static int indexOf(byte[] array, byte[] target, int start, int end) {
+    public int indexOf(byte[] array, byte[] target, int start, int end) {
         if (target.length == 0) {
             return 0;
         }

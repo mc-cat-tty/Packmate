@@ -10,11 +10,11 @@ import java.net.Inet4Address;
 @Getter
 public class UnfinishedStream {
 
-    private Inet4Address firstIp;
-    private Inet4Address secondIp;
-    private int firstPort;
-    private int secondPort;
-    private Protocol protocol;
+    private final Inet4Address firstIp;
+    private final Inet4Address secondIp;
+    private final int firstPort;
+    private final int secondPort;
+    private final Protocol protocol;
 
     @Override
     public boolean equals(Object obj) {

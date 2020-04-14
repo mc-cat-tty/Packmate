@@ -10,7 +10,7 @@ import java.util.Optional;
 @UtilityClass
 public class PacketUtils {
 
-    public static Optional<byte[]> mergePackets(List<Packet> cut) {
+    public Optional<byte[]> mergePackets(List<Packet> cut) {
         return cut.stream()
                 .map(Packet::getContent)
                 .reduce(ArrayUtils::addAll);

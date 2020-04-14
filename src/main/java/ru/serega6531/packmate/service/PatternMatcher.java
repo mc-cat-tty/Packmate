@@ -32,15 +32,9 @@ class PatternMatcher {
 
     private void match(Pattern pattern) {
         switch (pattern.getSearchType()) {
-            case REGEX:
-                matchRegex(pattern);
-                break;
-            case SUBSTRING:
-                matchSubstring(pattern);
-                break;
-            case SUBBYTES:
-                matchSubbytes(pattern);
-                break;
+            case REGEX -> matchRegex(pattern);
+            case SUBSTRING -> matchSubstring(pattern);
+            case SUBBYTES -> matchSubbytes(pattern);
         }
     }
 

@@ -7,11 +7,11 @@ import java.util.Map;
 @Getter
 public class CountersHolder {
 
-    private Map<Integer, Integer> servicesPackets;
-    private Map<Integer, Integer> servicesStreams;
+    private final Map<Integer, Integer> servicesPackets;
+    private final Map<Integer, Integer> servicesStreams;
 
-    private int totalPackets;
-    private int totalStreams;
+    private final int totalPackets;
+    private final int totalStreams;
 
     public CountersHolder(Map<Integer, Integer> servicesPackets, Map<Integer, Integer> servicesStreams,
                           int totalPackets, int totalStreams) {

@@ -9,7 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 public class PacketsMerger {
 
-    private List<Packet> packets;
+    private final List<Packet> packets;
 
     /**
      * Сжать соседние пакеты в одном направлении в один.
