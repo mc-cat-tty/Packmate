@@ -57,7 +57,7 @@ public class FilePcapWorker extends AbstractPcapWorker {
                 final Packet packet = pcap.getNextPacketEx();
                 gotPacket(packet);
             } catch (PcapNativeException e) {
-                log.error("Pcap read", e);
+                log.error("Pcap read error: {}", e.getMessage());
                 Thread.sleep(100);
             } catch (EOFException e) {
                 stop();

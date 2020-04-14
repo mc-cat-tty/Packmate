@@ -1,8 +1,7 @@
-package ru.serega6531.packmate.service;
+package ru.serega6531.packmate.service.optimization;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.exceptions.InvalidDataException;
 import org.java_websocket.exceptions.InvalidHandshakeException;
@@ -12,6 +11,7 @@ import org.java_websocket.framing.Framedata;
 import org.java_websocket.handshake.HandshakeImpl1Client;
 import org.java_websocket.handshake.HandshakeImpl1Server;
 import ru.serega6531.packmate.model.Packet;
+import ru.serega6531.packmate.utils.PacketUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -110,10 +110,8 @@ public class WebSocketsParser {
         for (List<Packet> side : sides) {
             final Packet lastPacket = side.get(0);
 
-            final byte[] wsContent = side.stream()
-                    .map(Packet::getContent)
-                    .reduce(ArrayUtils::addAll)
-                    .get();
+            //noinspection OptionalGetWithoutIsPresent
+            final byte[] wsContent = PacketUtils.mergePackets(side).get();
 
             final ByteBuffer buffer = ByteBuffer.wrap(wsContent);
             List<Framedata> frames;
@@ -177,9 +175,7 @@ public class WebSocketsParser {
     }
 
     private String getHandshake(final List<Packet> packets) {
-        final String handshake = packets.stream()
-                .map(Packet::getContent)
-                .reduce(ArrayUtils::addAll)
+        final String handshake = PacketUtils.mergePackets(packets)
                 .map(String::new)
                 .orElse(null);
 

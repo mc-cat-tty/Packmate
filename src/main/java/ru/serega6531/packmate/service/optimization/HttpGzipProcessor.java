@@ -1,139 +1,28 @@
-package ru.serega6531.packmate.service;
+package ru.serega6531.packmate.service.optimization;
 
 import lombok.AllArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.utils.Bytes;
+import ru.serega6531.packmate.utils.PacketUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
-@AllArgsConstructor
 @Slf4j
-public class StreamOptimizer {
-
-    private final CtfService service;
-    private List<Packet> packets;
+@AllArgsConstructor
+public class HttpGzipProcessor {
 
     private static final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
 
-    /**
-     * Вызвать для выполнения оптимизаций на переданном списке пакетов.
-     */
-    public List<Packet> optimizeStream() {
-        if (service.isUngzipHttp()) {
-            unpackGzip();
-        }
-
-        if (service.isParseWebSockets()) {
-            parseWebSockets();
-        }
-
-        if (service.isUrldecodeHttpRequests()) {
-            urldecodeRequests();
-        }
-
-        if (service.isMergeAdjacentPackets()) {
-            mergeAdjacentPackets();
-        }
-
-        return packets;
-    }
-
-    /**
-     * Сжать соседние пакеты в одном направлении в один.
-     * Выполняется после других оптимизаций чтобы правильно определять границы пакетов.
-     */
-    private void mergeAdjacentPackets() {
-        int start = 0;
-        int packetsInRow = 0;
-        boolean incoming = true;
-
-        for (int i = 0; i < packets.size(); i++) {
-            Packet packet = packets.get(i);
-            if (packet.isIncoming() != incoming) {
-                if (packetsInRow > 1) {
-                    compress(start, i);
-
-                    i = start + 1;  // продвигаем указатель на следующий после склеенного блок
-                }
-                start = i;
-                packetsInRow = 1;
-            } else {
-                packetsInRow++;
-            }
-
-            incoming = packet.isIncoming();
-        }
-
-        if (packetsInRow > 1) {
-            compress(start, packets.size());
-        }
-    }
-
-    /**
-     * Сжать кусок со start по end в один пакет
-     */
-    private void compress(int start, int end) {
-        final List<Packet> cut = packets.subList(start, end);
-        final long timestamp = cut.get(0).getTimestamp();
-        final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
-        final boolean webSocketParsed = cut.stream().anyMatch(Packet::isWebSocketParsed);
-        boolean incoming = cut.get(0).isIncoming();
-        //noinspection OptionalGetWithoutIsPresent
-        final byte[] content = cut.stream()
-                .map(Packet::getContent)
-                .reduce(ArrayUtils::addAll)
-                .get();
-
-        packets.removeAll(cut);
-        packets.add(start, Packet.builder()
-                .incoming(incoming)
-                .timestamp(timestamp)
-                .ungzipped(ungzipped)
-                .webSocketParsed(webSocketParsed)
-                .content(content)
-                .build());
-    }
-
-    /**
-     * Декодирование urlencode с http пакета до смены стороны или окончания стрима
-     */
-    @SneakyThrows
-    private void urldecodeRequests() {
-        boolean httpStarted = false;
-
-        for (Packet packet : packets) {
-            if (packet.isIncoming()) {
-                String content = packet.getContentString();
-                if (content.contains("HTTP/")) {
-                    httpStarted = true;
-                }
-
-                if (httpStarted) {
-                    try {
-                        content = URLDecoder.decode(content, StandardCharsets.UTF_8.toString());
-                        packet.setContent(content.getBytes());
-                    } catch (IllegalArgumentException e) {
-                        log.warn("urldecode", e);
-                    }
-                }
-            } else {
-                httpStarted = false;
-            }
-        }
-    }
+    private List<Packet> packets;
 
     /**
      * Попытаться распаковать GZIP из исходящих http пакетов. <br>
@@ -142,7 +31,7 @@ public class StreamOptimizer {
      * Поток заканчивается при обнаружении нового HTTP заголовка,
      * при смене стороны передачи или при окончании всего стрима
      */
-    private void unpackGzip() {
+    public void unpackGzip() {
         boolean gzipStarted = false;
         int gzipStartPacket = 0;
         int gzipEndPacket;
@@ -206,10 +95,7 @@ public class StreamOptimizer {
 
     private Packet decompressGzipPackets(List<Packet> cut) {
         //noinspection OptionalGetWithoutIsPresent
-        final byte[] content = cut.stream()
-                .map(Packet::getContent)
-                .reduce(ArrayUtils::addAll)
-                .get();
+        final byte[] content = PacketUtils.mergePackets(cut).get();
 
         final int gzipStart = Bytes.indexOf(content, GZIP_HEADER);
         byte[] httpHeader = Arrays.copyOfRange(content, 0, gzipStart);
@@ -231,25 +117,12 @@ public class StreamOptimizer {
                     .content(newContent)
                     .build();
         } catch (ZipException e) {
-            log.warn("Failed to decompress gzip, leaving as it is", e);
+            log.warn("Failed to decompress gzip, leaving as it is: {}", e.getMessage());
         } catch (IOException e) {
             log.error("decompress gzip", e);
         }
 
         return null;
-    }
-
-    private void parseWebSockets() {
-        if (!packets.get(0).getContentString().contains("HTTP/")) {
-            return;
-        }
-
-        final WebSocketsParser parser = new WebSocketsParser(packets);
-        if(!parser.isParsed()) {
-            return;
-        }
-
-        packets = parser.getParsedPackets();
     }
 
 }

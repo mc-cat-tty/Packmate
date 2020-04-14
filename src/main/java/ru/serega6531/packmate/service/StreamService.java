@@ -15,6 +15,7 @@ import ru.serega6531.packmate.model.pojo.Pagination;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.repository.StreamRepository;
+import ru.serega6531.packmate.service.optimization.StreamOptimizer;
 
 import java.util.HashSet;
 import java.util.List;
