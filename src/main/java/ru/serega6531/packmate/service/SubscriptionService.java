@@ -32,7 +32,9 @@ public class SubscriptionService {
 
     public void addSubscriber(WebSocketSession session) {
         subscribers.add(session);
-        log.info("User subscribed: {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
+        log.info("User subscribed: {} {}",
+                session.getClass().getSimpleName(),
+                Objects.requireNonNull(session.getRemoteAddress()).getHostName());
     }
 
     public void removeSubscriber(WebSocketSession session) {
@@ -51,6 +53,8 @@ public class SubscriptionService {
                 s.sendMessage(messageJson);
             } catch (IOException | SockJsTransportFailureException e) {
                 log.warn("WS", e);
+            } catch (IllegalStateException ignored) {
+                // очередь сообщений заполнилась, сообщение не доставится
             }
         });
     }
