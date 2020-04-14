@@ -162,6 +162,7 @@ public class StreamOptimizer {
                         if (checkCompleteChunk(chunk, start)) {
                             chunkStarted = false;
                             chunk.clear();
+                            i = start + 1;
                         }
                     } else {
                         chunkStarted = false;
@@ -172,6 +173,7 @@ public class StreamOptimizer {
                     if (checkCompleteChunk(chunk, start)) {
                         chunkStarted = false;
                         chunk.clear();
+                        i = start + 1;
                     }
                 }
             }
@@ -203,9 +205,6 @@ public class StreamOptimizer {
                     final int chunkSize = Integer.parseInt(found, 16);
 
                     if (chunkSize == 0) {  // конец потока чанков
-                        output.write('\r');
-                        output.write('\n');
-
                         Packet result = Packet.builder()
                                 .incoming(false)
                                 .timestamp(chunk.get(0).getTimestamp())
@@ -354,7 +353,7 @@ public class StreamOptimizer {
                     .content(newContent)
                     .build();
         } catch (ZipException e) {
-            log.warn("Failed to decompress gzip, leaving as it is", e);
+            log.warn("Failed to decompress gzip, leaving as it is: {}", e.getMessage());
         } catch (IOException e) {
             log.error("decompress gzip", e);
         }
