@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '2.2.5.RELEASE'
+    id 'org.springframework.boot' version '2.2.6.RELEASE'
     id 'java'
 }
 
@@ -8,8 +8,8 @@ apply plugin: 'io.spring.dependency-management'
 group = 'ru.serega6531'
 version = '1.0-SNAPSHOT'
 
-sourceCompatibility = JavaVersion.VERSION_13
-targetCompatibility = JavaVersion.VERSION_13
+sourceCompatibility = JavaVersion.VERSION_14
+targetCompatibility = JavaVersion.VERSION_14
 
 configurations {
     compileOnly {
@@ -30,7 +30,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-websocket"
     implementation 'org.springframework.session:spring-session-core'
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'org.pcap4j:pcap4j-core:1.8.2'
     compile 'org.pcap4j:pcap4j-packetfactory-static:1.8.2'
@@ -40,5 +40,5 @@ dependencies {
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
-    testCompile 'org.junit.jupiter:junit-jupiter:5.6.0'
+    testCompile 'org.junit.jupiter:junit-jupiter:5.6.2'
 }
