@@ -1,12 +1,14 @@
 package ru.serega6531.packmate.service.optimization;
 
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.utils.Bytes;
 import ru.serega6531.packmate.utils.PacketUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,58 +64,62 @@ public class HttpChunksProcessor {
     /**
      * @return true если чанк завершен
      */
-    private boolean checkCompleteChunk(List<Packet> chunk, int start) {
-        boolean end = chunk.get(chunk.size() - 1).getContentString().endsWith("\r\n0\r\n\r\n");
+    @SneakyThrows
+    private boolean checkCompleteChunk(List<Packet> packets, int start) {
+        boolean end = packets.get(packets.size() - 1).getContentString().endsWith("\r\n0\r\n\r\n");
 
         if (end) {
             //noinspection OptionalGetWithoutIsPresent
-            final byte[] content = PacketUtils.mergePackets(chunk).get();
+            final byte[] content = PacketUtils.mergePackets(packets).get();
 
             ByteArrayOutputStream output = new ByteArrayOutputStream(content.length);
 
             final int contentStart = Bytes.indexOf(content, "\r\n\r\n".getBytes()) + 4;
             output.write(content, 0, contentStart);
 
-            final byte[] body = Arrays.copyOfRange(content, contentStart, content.length);
-
-            int currentPos = 0;
+            ByteBuffer buf = ByteBuffer.wrap(Arrays.copyOfRange(content, contentStart, content.length));
 
             while (true) {
-                final String found = readChunkSize(body, currentPos);
+                final String found = readChunkSize(buf);
                 if (found != null) {
                     final int chunkSize = Integer.parseInt(found, 16);
 
                     if (chunkSize == 0) {  // конец потока чанков
                         Packet result = Packet.builder()
                                 .incoming(false)
-                                .timestamp(chunk.get(0).getTimestamp())
+                                .timestamp(packets.get(0).getTimestamp())
                                 .ungzipped(false)
                                 .webSocketParsed(false)
                                 .content(output.toByteArray())
                                 .build();
 
-                        packets.removeAll(chunk);
-                        packets.add(start, result);
+                        this.packets.removeAll(packets);
+                        this.packets.add(start, result);
 
                         return true;
                     }
 
-                    currentPos += found.length() + 2;
-
-                    if (currentPos + chunkSize >= body.length) {
-                        log.warn("Failed to merge chunks, chunk size too big: {} + {} > {}", currentPos, chunkSize, body.length);
+                    if (chunkSize > buf.remaining()) {
+                        log.warn("Failed to merge chunks, chunk size too big: {} + {} > {}",
+                                buf.position(), chunkSize, buf.capacity());
                         return true;  // обнулить список, но не заменять пакеты
                     }
 
-                    output.write(body, currentPos, chunkSize);
-                    currentPos += chunkSize;
+                    byte[] chunk = new byte[chunkSize];
+                    buf.get(chunk);
+                    output.write(chunk);
 
-                    if (currentPos + 2 >= body.length || body[currentPos] != '\r' || body[currentPos + 1] != '\n') {
+                    if (buf.remaining() < 2) {
                         log.warn("Failed to merge chunks, chunk doesn't end with \\r\\n");
                         return true;  // обнулить список, но не заменять пакеты
                     }
 
-                    currentPos += 2;
+                    int c1 = buf.get();
+                    int c2 = buf.get();
+                    if(c1 != '\r' || c2 != '\n') {
+                        log.warn("Failed to merge chunks, chunk trailer is not equal to \\r\\n");
+                        return true;  // обнулить список, но не заменять пакеты
+                    }
                 } else {
                     log.warn("Failed to merge chunks, next chunk size not found");
                     return true;  // обнулить список, но не заменять пакеты
@@ -124,15 +130,20 @@ public class HttpChunksProcessor {
         return false;
     }
 
-    private String readChunkSize(byte[] content, int start) {
+    private String readChunkSize(ByteBuffer buf) {
         StringBuilder sb = new StringBuilder();
-        for (int i = start; i < content.length - 1; i++) {
-            byte b = content[i];
+
+        while (buf.remaining() > 2) {
+            byte b = buf.get();
 
             if ((b >= '0' && b <= '9') || (b >= 'a' && b <= 'f')) {
                 sb.append((char) b);
-            } else if (b == '\r' && content[i + 1] == '\n') {
-                return sb.toString();
+            } else if (b == '\r') {
+                if(buf.get() == '\n') {
+                    return sb.toString();
+                } else {
+                    return null; // после \r не идет \n
+                }
             }
         }
 

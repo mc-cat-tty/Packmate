@@ -46,7 +46,7 @@ public class PcapService {
         final String format = "(tcp or udp) and (%s)";
         String filter = String.format(format, ports);
 
-        log.info("New filter: " + filter);
+        log.debug("New filter: " + filter);
 
         worker.setFilter(filter);
     }
