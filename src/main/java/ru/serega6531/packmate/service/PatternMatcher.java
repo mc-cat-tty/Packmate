@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.codec.Hex;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
-import ru.serega6531.packmate.utils.Bytes;
+import ru.serega6531.packmate.utils.BytesUtils;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -80,7 +80,7 @@ class PatternMatcher {
         final byte[] value = Hex.decode(pattern.getValue());
 
         while (true) {
-            int start = Bytes.indexOf(contentBytes, value, startSearch, contentBytes.length);
+            int start = BytesUtils.indexOf(contentBytes, value, startSearch, contentBytes.length);
 
             if (start == -1) {
                 return;

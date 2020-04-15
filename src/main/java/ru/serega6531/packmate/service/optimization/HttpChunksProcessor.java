@@ -1,10 +1,11 @@
 package ru.serega6531.packmate.service.optimization;
 
+import com.google.common.primitives.Bytes;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import ru.serega6531.packmate.model.Packet;
-import ru.serega6531.packmate.utils.Bytes;
+import ru.serega6531.packmate.utils.BytesUtils;
 import ru.serega6531.packmate.utils.PacketUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -57,7 +58,7 @@ public class HttpChunksProcessor {
     }
 
     private void checkCompleteChunk(List<Packet> packets, int start) {
-        boolean end = Bytes.endsWith(packets.get(packets.size() - 1).getContent(), "\r\n0\r\n\r\n".getBytes());
+        boolean end = BytesUtils.endsWith(packets.get(packets.size() - 1).getContent(), "\r\n0\r\n\r\n".getBytes());
 
         if (end) {
             processChunk(packets, start);

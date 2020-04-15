@@ -1,11 +1,11 @@
 package ru.serega6531.packmate.service.optimization;
 
-import lombok.AllArgsConstructor;
+import com.google.common.primitives.Bytes;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import ru.serega6531.packmate.model.Packet;
-import ru.serega6531.packmate.utils.Bytes;
 import ru.serega6531.packmate.utils.PacketUtils;
 
 import java.io.ByteArrayInputStream;
@@ -17,12 +17,15 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class HttpGzipProcessor {
 
     private static final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
 
     private final List<Packet> packets;
+
+    boolean gzipStarted = false;
+    private int position;
 
     /**
      * Попытаться распаковать GZIP из исходящих http пакетов. <br>
@@ -32,19 +35,13 @@ public class HttpGzipProcessor {
      * при смене стороны передачи или при окончании всего стрима
      */
     public void unpackGzip() {
-        boolean gzipStarted = false;
         int gzipStartPacket = 0;
-        int gzipEndPacket;
 
-        for (int i = 0; i < packets.size(); i++) {
-            Packet packet = packets.get(i);
+        for (position = 0; position < packets.size(); position++) {
+            Packet packet = packets.get(position);
 
             if (packet.isIncoming() && gzipStarted) {   // поток gzip закончился
-                gzipEndPacket = i - 1;
-                if (extractGzip(gzipStartPacket, gzipEndPacket)) {
-                    gzipStarted = false;
-                    i = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
-                }
+                extractGzip(gzipStartPacket, position - 1);
             } else if (!packet.isIncoming()) {
                 String content = packet.getContentString();
 
@@ -52,11 +49,7 @@ public class HttpGzipProcessor {
                 boolean http = content.startsWith("HTTP/");
 
                 if (http && gzipStarted) {  // начался новый http пакет, заканчиваем старый gzip поток
-                    gzipEndPacket = i - 1;
-                    if (extractGzip(gzipStartPacket, gzipEndPacket)) {
-                        gzipStarted = false;
-                        i = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
-                    }
+                    extractGzip(gzipStartPacket, position - 1);
                 }
 
                 if (contentPos != -1) {   // начало body
@@ -64,7 +57,7 @@ public class HttpGzipProcessor {
                     boolean gziped = headers.contains("Content-Encoding: gzip\r\n");
                     if (gziped) {
                         gzipStarted = true;
-                        gzipStartPacket = i;
+                        gzipStartPacket = position;
                     }
                 }
             }
@@ -77,20 +70,18 @@ public class HttpGzipProcessor {
 
     /**
      * Попытаться распаковать кусок пакетов с gzip body и вставить результат на их место
-     *
-     * @return получилось ли распаковать
      */
-    private boolean extractGzip(int gzipStartPacket, int gzipEndPacket) {
+    private void extractGzip(int gzipStartPacket, int gzipEndPacket) {
         List<Packet> cut = packets.subList(gzipStartPacket, gzipEndPacket + 1);
 
         Packet decompressed = decompressGzipPackets(cut);
         if (decompressed != null) {
             packets.removeAll(cut);
             packets.add(gzipStartPacket, decompressed);
-            return true;
-        }
 
-        return false;
+            gzipStarted = false;
+            position = gzipStartPacket + 1;  // продвигаем указатель на следующий после склеенного блок
+        }
     }
 
     private Packet decompressGzipPackets(List<Packet> cut) {

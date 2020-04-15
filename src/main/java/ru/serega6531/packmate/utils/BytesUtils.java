@@ -3,15 +3,7 @@ package ru.serega6531.packmate.utils;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class Bytes {
-
-    /**
-     * @param array где ищем
-     * @param target что ищем
-     */
-    public int indexOf(byte[] array, byte[] target) {
-        return indexOf(array, target, 0, array.length);
-    }
+public class BytesUtils {
 
     /**
      * @param array где ищем
