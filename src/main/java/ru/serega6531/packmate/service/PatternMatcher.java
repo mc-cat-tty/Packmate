@@ -1,15 +1,18 @@
 package ru.serega6531.packmate.service;
 
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.codec.Hex;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
-import ru.serega6531.packmate.utils.BytesUtils;
+import ru.serega6531.packmate.utils.KMPByteSearcher;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 
-class PatternMatcher {
+public class PatternMatcher {
 
     private static final Map<String, java.util.regex.Pattern> compiledPatterns = new HashMap<>();
 
@@ -19,13 +22,13 @@ class PatternMatcher {
 
     private final Set<FoundPattern> result = new HashSet<>();
 
-    PatternMatcher(byte[] contentBytes, List<Pattern> patterns) {
+    public PatternMatcher(byte[] contentBytes, List<Pattern> patterns) {
         this.contentBytes = contentBytes;
         this.content = new String(contentBytes);
         this.patterns = patterns;
     }
 
-    Set<FoundPattern> findMatches() {
+    public Set<FoundPattern> findMatches() {
         patterns.forEach(this::match);
         return result;
     }
@@ -75,25 +78,25 @@ class PatternMatcher {
         }
     }
 
+    @SneakyThrows
     private void matchSubbytes(Pattern pattern) {
-        int startSearch = 0;
         final byte[] value = Hex.decode(pattern.getValue());
+        KMPByteSearcher searcher = new KMPByteSearcher(value);
+        InputStream is = new ByteArrayInputStream(contentBytes);
 
         while (true) {
-            int start = BytesUtils.indexOf(contentBytes, value, startSearch, contentBytes.length);
+            int end = searcher.search(is) - 1;
 
-            if (start == -1) {
+            if (end < 0) {
                 return;
             }
 
-            int end = start + value.length - 1;
+            int start = end - value.length + 1;
             addIfPossible(FoundPattern.builder()
                     .patternId(pattern.getId())
                     .startPosition(start)
                     .endPosition(end)
                     .build());
-
-            startSearch = end + 1;
         }
     }
 

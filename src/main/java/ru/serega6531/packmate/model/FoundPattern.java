@@ -23,6 +23,7 @@ import javax.persistence.Id;
 @Builder
 @Getter
 @ToString
+@EqualsAndHashCode
 public class FoundPattern {
 
     @Id
