@@ -61,7 +61,7 @@ public class StreamOptimizer {
     }
 
     /**
-     * https://ru.wikipedia.org/wiki/Chunked_transfer_encoding
+     * <a href="https://ru.wikipedia.org/wiki/Chunked_transfer_encoding">Chunked transfer encoding</a>
      */
     private void processChunkedEncoding() {
         HttpChunksProcessor processor = new HttpChunksProcessor(packets);

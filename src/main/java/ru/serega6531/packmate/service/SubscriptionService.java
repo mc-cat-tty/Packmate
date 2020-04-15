@@ -32,9 +32,9 @@ public class SubscriptionService {
 
     public void addSubscriber(WebSocketSession session) {
         subscribers.add(session);
-        log.info("User subscribed: {} {}",
-                session.getClass().getSimpleName(),
-                Objects.requireNonNull(session.getRemoteAddress()).getHostName());
+        log.info("User subscribed: {} ({})",
+                Objects.requireNonNull(session.getRemoteAddress()).getHostName(),
+                session.getClass().getSimpleName());
     }
 
     public void removeSubscriber(WebSocketSession session) {
