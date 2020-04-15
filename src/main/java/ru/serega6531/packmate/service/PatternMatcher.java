@@ -1,14 +1,15 @@
 package ru.serega6531.packmate.service;
 
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.codec.Hex;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.utils.KMPByteSearcher;
+import ru.serega6531.packmate.utils.KMPStringSearcher;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.*;
 import java.util.regex.Matcher;
 
@@ -57,24 +58,23 @@ public class PatternMatcher {
     }
 
     private void matchSubstring(Pattern pattern) {
-        int startSearch = 0;
         final String value = pattern.getValue();
+        KMPStringSearcher searcher = new KMPStringSearcher(value.toCharArray());
+        StringReader reader = new StringReader(content);
 
         while (true) {
-            int start = StringUtils.indexOfIgnoreCase(content, value, startSearch);
+            int end = searcher.search(reader) - 1;
 
-            if (start == -1) {
+            if (end < 0) {
                 return;
             }
 
-            int end = start + value.length() - 1;
+            int start = end - value.length() + 1;
             addIfPossible(FoundPattern.builder()
                     .patternId(pattern.getId())
                     .startPosition(start)
                     .endPosition(end)
                     .build());
-
-            startSearch = end + 1;
         }
     }
 
