@@ -9,13 +9,14 @@ import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 
 import static com.google.common.base.Preconditions.checkState;
 
 public class SSLUtils {
 
     @SneakyThrows
-    public static SSLContext createContext(File pemFile, File keyFile) {
+    public static SSLContext createContext(File pemFile, File keyFile, SecureRandom random) {
         final String pass = "abcdef";
 
         File jksKeystoreFile = File.createTempFile("packmate_", ".jks");
@@ -46,7 +47,7 @@ public class SSLUtils {
         TrustManagerFactory factory = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm());
         factory.init(keystore);
-        ret.init(keyManagerFactory.getKeyManagers(), factory.getTrustManagers(), null);
+        ret.init(keyManagerFactory.getKeyManagers(), factory.getTrustManagers(), random);
 
         return ret;
     }
