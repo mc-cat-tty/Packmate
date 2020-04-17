@@ -32,14 +32,17 @@ public class SubscriptionService {
 
     public void addSubscriber(WebSocketSession session) {
         subscribers.add(session);
-        log.info("User subscribed: {} ({})",
+        log.info("User subscribed: {} ({} {})",
                 Objects.requireNonNull(session.getRemoteAddress()).getHostName(),
-                session.getClass().getSimpleName());
+                session.getClass().getSimpleName(),
+                session.getId());
     }
 
     public void removeSubscriber(WebSocketSession session) {
         subscribers.remove(session);
-        log.info("User unsubscribed: {}", Objects.requireNonNull(session.getRemoteAddress()).getHostName());
+        log.info("User unsubscribed: {} ({})",
+                Objects.requireNonNull(session.getRemoteAddress()).getHostName(),
+                session.getId());
     }
 
     /**
