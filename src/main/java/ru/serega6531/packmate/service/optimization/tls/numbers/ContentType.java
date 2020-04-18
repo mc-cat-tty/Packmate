@@ -1,4 +1,4 @@
-package ru.serega6531.packmate.service.optimization.tls;
+package ru.serega6531.packmate.service.optimization.tls.numbers;
 
 import org.pcap4j.packet.namednumber.NamedNumber;
 
@@ -7,12 +7,16 @@ import java.util.Map;
 
 public class ContentType extends NamedNumber<Byte, ContentType> {
 
+    public static final ContentType CHANGE_CIPHER_SPEC = new ContentType((byte) 20, "Change Cipher Spec");
+    public static final ContentType ALERT = new ContentType((byte) 21, "Alert");
     public static final ContentType HANDSHAKE = new ContentType((byte) 22, "Handshake");
     public static final ContentType APPLICATION_DATA = new ContentType((byte) 23, "Application Data");
 
     private static final Map<Byte, ContentType> registry = new HashMap<>();
 
     static {
+        registry.put(CHANGE_CIPHER_SPEC.value(), CHANGE_CIPHER_SPEC);
+        registry.put(ALERT.value(), ALERT);
         registry.put(HANDSHAKE.value(), HANDSHAKE);
         registry.put(APPLICATION_DATA.value(), APPLICATION_DATA);
     }
@@ -25,7 +29,7 @@ public class ContentType extends NamedNumber<Byte, ContentType> {
         if (registry.containsKey(value)) {
             return registry.get(value);
         } else {
-            return new ContentType(value, "unknown");
+            throw new IllegalArgumentException("Unknown record type " + value);
         }
     }
 
