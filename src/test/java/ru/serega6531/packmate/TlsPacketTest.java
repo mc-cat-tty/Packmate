@@ -13,10 +13,14 @@ public class TlsPacketTest {
     @Test
     public void testHandshake() throws IOException, IllegalRawDataException {
         List<Packet> packets = new PackmateDumpFileLoader("tls.pkmt").getPackets();
-        byte[] content = packets.get(0).getContent();
 
-        TlsPacket tlsPacket = TlsPacket.newPacket(content, 0, content.length);
-        System.out.println(tlsPacket.toString());
+        for (int i = 0; i < packets.size(); i++) {
+            Packet packet = packets.get(i);
+            System.out.println("Packet " + i + ", incoming: " + packet.isIncoming());
+            byte[] content = packet.getContent();
+            TlsPacket tlsPacket = TlsPacket.newPacket(content, 0, content.length);
+            System.out.println(tlsPacket.toString());
+        }
     }
 
 }

@@ -4,12 +4,14 @@ import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.service.optimization.tls.numbers.HandshakeType;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
 
 import static org.pcap4j.util.ByteArrays.BYTE_SIZE_IN_BYTES;
 
 public class HandshakeRecord extends TlsRecord {
 
     private static final int HANDSHAKE_TYPE_OFFSET = 0;
+    private static final int CONTENT_OFFSET = HANDSHAKE_TYPE_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private HandshakeType handshakeType;
     private HandshakeRecordContent content;
@@ -25,9 +27,10 @@ public class HandshakeRecord extends TlsRecord {
 
         } else if (handshakeType == HandshakeType.CLIENT_HELLO) {
             this.content = ClientHelloHandshakeRecordContent.newInstance(
-                    rawData, offset + BYTE_SIZE_IN_BYTES, length);
+                    rawData, offset + CONTENT_OFFSET);
         } else if (handshakeType == HandshakeType.SERVER_HELLO) {
-
+            this.content = ServerHelloHandshakeRecordContent.newInstance(
+                    rawData, offset + CONTENT_OFFSET);
         } else if (handshakeType == HandshakeType.CERTIFICATE) {
 
         } else if (handshakeType == HandshakeType.SERVER_KEY_EXCHANGE) {

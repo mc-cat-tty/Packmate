@@ -6,6 +6,7 @@ import org.pcap4j.packet.Packet;
 import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.service.optimization.tls.numbers.ContentType;
 import ru.serega6531.packmate.service.optimization.tls.numbers.TlsVersion;
+import ru.serega6531.packmate.service.optimization.tls.records.ApplicationDataRecord;
 import ru.serega6531.packmate.service.optimization.tls.records.ChangeCipherSpecRecord;
 import ru.serega6531.packmate.service.optimization.tls.records.HandshakeRecord;
 import ru.serega6531.packmate.service.optimization.tls.records.TlsRecord;
@@ -52,8 +53,27 @@ public class TlsPacket extends AbstractPacket {
     }
 
     @Override
+    public Packet getPayload() {
+        return payload;
+    }
+
+    @Override
     public Builder getBuilder() {
         return new Builder(this);
+    }
+
+    @Override
+    protected String buildString() {
+        StringBuilder sb = new StringBuilder(getHeader().toString());
+
+        TlsPacket p = (TlsPacket) getPayload();
+
+        if (p != null) {
+            sb.append('\n');
+            sb.append(p.toString());
+        }
+
+        return sb.toString();
     }
 
     public static final class TlsHeader extends AbstractHeader {
@@ -65,7 +85,7 @@ public class TlsPacket extends AbstractPacket {
 
         private ContentType contentType;
         private TlsVersion version;
-        private short length;
+        private short recordLength;
         private TlsRecord record;
 
         private TlsHeader(Builder builder) {
@@ -76,16 +96,16 @@ public class TlsPacket extends AbstractPacket {
             //TODO check length
             this.contentType = ContentType.getInstance(ByteArrays.getByte(rawData, CONTENT_TYPE_OFFSET + offset));
             this.version = TlsVersion.getInstance(ByteArrays.getShort(rawData, VERSION_OFFSET + offset));
-            this.length = ByteArrays.getShort(rawData, LENGTH_OFFSET + offset);
+            this.recordLength = ByteArrays.getShort(rawData, LENGTH_OFFSET + offset);
 
             if (contentType == ContentType.HANDSHAKE) {
-                this.record = HandshakeRecord.newInstance(rawData, offset + RECORD_OFFSET, length);
+                this.record = HandshakeRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.CHANGE_CIPHER_SPEC) {
-                this.record = ChangeCipherSpecRecord.newInstance(rawData, offset + RECORD_OFFSET, length);
+                this.record = ChangeCipherSpecRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.APPLICATION_DATA) {
-
+                this.record = ApplicationDataRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.ALERT) {
-
+                //TODO
             } else {
                 throw new IllegalArgumentException("Unknown content type: " + contentType);
             }
@@ -96,13 +116,14 @@ public class TlsPacket extends AbstractPacket {
             List<byte[]> rawFields = new ArrayList<>();
             rawFields.add(new byte[]{contentType.value()});
             rawFields.add(ByteArrays.toByteArray(version.value()));
-            rawFields.add(ByteArrays.toByteArray(length));
+            rawFields.add(ByteArrays.toByteArray(recordLength));
+            //TODO
             return rawFields;
         }
 
         @Override
         public int length() {
-            return RECORD_OFFSET + length;
+            return RECORD_OFFSET + recordLength;
         }
 
         @Override
