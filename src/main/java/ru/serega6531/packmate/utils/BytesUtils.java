@@ -1,12 +1,18 @@
 package ru.serega6531.packmate.utils;
 
 import lombok.experimental.UtilityClass;
+import org.pcap4j.util.ByteArrays;
+
+import java.nio.ByteOrder;
+
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static org.pcap4j.util.ByteArrays.BYTE_SIZE_IN_BITS;
 
 @UtilityClass
 public class BytesUtils {
 
     /**
-     * @param array где ищем
+     * @param array  где ищем
      * @param target что ищем
      */
     public int indexOf(byte[] array, byte[] target, int start, int end) {
@@ -27,21 +33,54 @@ public class BytesUtils {
     }
 
     /**
-     * @param array где ищем
+     * @param array  где ищем
      * @param target что ищем
      */
     public boolean endsWith(byte[] array, byte[] target) {
-        if(array.length < target.length) {
+        if (array.length < target.length) {
             return false;
         }
 
         for (int i = 0; i < target.length; i++) {
-            if(array[array.length - target.length + i] != target[i]) {
+            if (array[array.length - target.length + i] != target[i]) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * @param array  array
+     * @param offset offset
+     * @return int value.
+     */
+    public int getThreeBytesInt(byte[] array, int offset) {
+        return getThreeBytesInt(array, offset, ByteOrder.BIG_ENDIAN);
+    }
+
+    /**
+     * @param array  array
+     * @param offset offset
+     * @param bo     bo
+     * @return int value.
+     */
+    public int getThreeBytesInt(byte[] array, int offset, ByteOrder bo) {
+        ByteArrays.validateBounds(array, offset, 3);
+
+        if (bo == null) {
+            throw new NullPointerException(" bo: null");
+        }
+
+        if (bo.equals(LITTLE_ENDIAN)) {
+            return ((0xFF & array[offset + 2]) << (BYTE_SIZE_IN_BITS * 2))
+                    | ((0xFF & array[offset + 1]) << (BYTE_SIZE_IN_BITS * 1))
+                    | ((0xFF & array[offset]));
+        } else {
+            return ((0xFF & array[offset]) << (BYTE_SIZE_IN_BITS * 2))
+                    | ((0xFF & array[offset + 1]) << (BYTE_SIZE_IN_BITS * 1))
+                    | ((0xFF & array[offset + 2]));
+        }
     }
 
 }

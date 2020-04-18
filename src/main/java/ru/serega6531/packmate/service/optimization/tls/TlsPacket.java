@@ -7,6 +7,7 @@ import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.service.optimization.tls.numbers.ContentType;
 import ru.serega6531.packmate.service.optimization.tls.numbers.TlsVersion;
 import ru.serega6531.packmate.service.optimization.tls.records.ChangeCipherSpecRecord;
+import ru.serega6531.packmate.service.optimization.tls.records.HandshakeRecord;
 import ru.serega6531.packmate.service.optimization.tls.records.TlsRecord;
 
 import java.util.ArrayList;
@@ -72,12 +73,13 @@ public class TlsPacket extends AbstractPacket {
         }
 
         private TlsHeader(byte[] rawData, int offset, int length) throws IllegalRawDataException {
+            //TODO check length
             this.contentType = ContentType.getInstance(ByteArrays.getByte(rawData, CONTENT_TYPE_OFFSET + offset));
             this.version = TlsVersion.getInstance(ByteArrays.getShort(rawData, VERSION_OFFSET + offset));
             this.length = ByteArrays.getShort(rawData, LENGTH_OFFSET + offset);
 
             if (contentType == ContentType.HANDSHAKE) {
-
+                this.record = HandshakeRecord.newInstance(rawData, offset + RECORD_OFFSET, length);
             } else if (contentType == ContentType.CHANGE_CIPHER_SPEC) {
                 this.record = ChangeCipherSpecRecord.newInstance(rawData, offset + RECORD_OFFSET, length);
             } else if (contentType == ContentType.APPLICATION_DATA) {
@@ -101,6 +103,14 @@ public class TlsPacket extends AbstractPacket {
         @Override
         public int length() {
             return RECORD_OFFSET + length;
+        }
+
+        @Override
+        protected String buildString() {
+            return "TLS Header [" + length() + " bytes]\n" +
+                    "  Version: " + version + "\n" +
+                    "  Type: " + contentType + "\n" +
+                    record.toString();
         }
     }
 
