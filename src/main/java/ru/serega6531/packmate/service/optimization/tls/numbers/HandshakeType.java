@@ -5,6 +5,7 @@ import org.pcap4j.packet.namednumber.NamedNumber;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public class HandshakeType extends NamedNumber<Byte, HandshakeType> {
 
     private static final Map<Byte, HandshakeType> registry = new HashMap<>();

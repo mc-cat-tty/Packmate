@@ -1,17 +1,29 @@
 package ru.serega6531.packmate.service.optimization.tls.extensions;
 
+import org.pcap4j.util.ByteArrays;
+import ru.serega6531.packmate.service.optimization.tls.extensions.keyshare.KeyShareExtension;
 import ru.serega6531.packmate.service.optimization.tls.numbers.ExtensionType;
 
-public class TlsExtension {
+public abstract class TlsExtension {
 
-    private ExtensionType type;
-    private short length;
-    private byte[] data;  // TODO create packets for each extension
+    protected ExtensionType type;
+    protected short extensionLength;
 
-    public TlsExtension(ExtensionType type, short length, byte[] data) {
+    public static TlsExtension newInstance(ExtensionType type, byte[] rawData, int offset, short extensionLength) {
+        if (extensionLength > 0) {
+            ByteArrays.validateBounds(rawData, offset, extensionLength);
+        }
+
+        if (type == ExtensionType.KEY_SHARE) {
+            return new KeyShareExtension(type, rawData, offset, extensionLength);
+        } else {
+            return new UnimplementedTlsExtension(type, rawData, offset, extensionLength);
+        }
+    }
+
+    public TlsExtension(ExtensionType type, short extensionLength) {
         this.type = type;
-        this.length = length;
-        this.data = data;
+        this.extensionLength = extensionLength;
     }
 
     public ExtensionType getType() {
@@ -19,19 +31,11 @@ public class TlsExtension {
     }
 
     public short getLength() {
-        return length;
-    }
-
-    public byte[] getData() {
-        return data;
+        return extensionLength;
     }
 
     @Override
     public String toString() {
-        if (data.length == 0) {
-            return type.name();
-        }
-
-        return type.name() + " [" + data.length + " bytes]";
+        return type.name();
     }
 }

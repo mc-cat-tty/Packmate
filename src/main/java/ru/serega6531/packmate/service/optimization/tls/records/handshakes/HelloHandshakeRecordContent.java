@@ -49,10 +49,7 @@ public abstract class HelloHandshakeRecordContent implements HandshakeRecordCont
             short extensionLength = ByteArrays.getShort(rawData, cursor);
             cursor += SHORT_SIZE_IN_BYTES;
 
-            byte[] extensionData = new byte[extensionLength];
-            System.arraycopy(rawData, cursor, extensionData, 0, extensionLength);
-
-            extensions.add(new TlsExtension(extensionType, extensionLength, extensionData));
+            extensions.add(TlsExtension.newInstance(extensionType, rawData, cursor, extensionLength));
 
             cursor += extensionLength;
         }
