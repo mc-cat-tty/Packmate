@@ -7,10 +7,13 @@ import java.util.Map;
 
 public class ContentType extends NamedNumber<Byte, ContentType> {
 
+    // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml
+
     public static final ContentType CHANGE_CIPHER_SPEC = new ContentType((byte) 20, "Change Cipher Spec");
     public static final ContentType ALERT = new ContentType((byte) 21, "Alert");
     public static final ContentType HANDSHAKE = new ContentType((byte) 22, "Handshake");
     public static final ContentType APPLICATION_DATA = new ContentType((byte) 23, "Application Data");
+    public static final ContentType HEARTBEAT = new ContentType((byte) 24, "Heartbeat");
 
     private static final Map<Byte, ContentType> registry = new HashMap<>();
 

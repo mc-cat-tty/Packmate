@@ -4,7 +4,6 @@ import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.service.optimization.tls.extensions.TlsExtension;
 import ru.serega6531.packmate.service.optimization.tls.numbers.ExtensionType;
 import ru.serega6531.packmate.service.optimization.tls.numbers.TlsVersion;
-import ru.serega6531.packmate.utils.BytesUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +13,11 @@ import static org.pcap4j.util.ByteArrays.SHORT_SIZE_IN_BYTES;
 
 public abstract class HelloHandshakeRecordContent implements HandshakeRecordContent {
 
-    private static final int LENGTH_OFFSET = 0;
-    private static final int VERSION_OFFSET = LENGTH_OFFSET + 3;
+    private static final int VERSION_OFFSET = 0;
     private static final int RANDOM_OFFSET = VERSION_OFFSET + SHORT_SIZE_IN_BYTES;
     private static final int SESSION_ID_LENGTH_OFFSET = RANDOM_OFFSET + 32;
     protected static final int SESSION_ID_OFFSET = SESSION_ID_LENGTH_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    protected int length;   // 3 bytes
     protected TlsVersion version;
     protected byte[] random = new byte[32];
     protected byte sessionIdLength;
@@ -30,7 +27,6 @@ public abstract class HelloHandshakeRecordContent implements HandshakeRecordCont
     private List<TlsExtension> extensions;
 
     protected void readCommonPart(byte[] rawData, int offset) {
-        this.length = BytesUtils.getThreeBytesInt(rawData, LENGTH_OFFSET + offset);
         this.version = TlsVersion.getInstance(ByteArrays.getShort(rawData, VERSION_OFFSET + offset));
         System.arraycopy(rawData, RANDOM_OFFSET + offset, random, 0, 32);
         this.sessionIdLength = ByteArrays.getByte(rawData, SESSION_ID_LENGTH_OFFSET + offset);
@@ -64,8 +60,7 @@ public abstract class HelloHandshakeRecordContent implements HandshakeRecordCont
 
     @Override
     public String toString() {
-        return "    Handshake length: " + length + "\n" +
-                "    TLS version: " + version + "\n" +
+        return "    TLS version: " + version + "\n" +
                 "    Client random: " + ByteArrays.toHexString(random, "") + "\n" +
                 "    Session id: " + (sessionIdLength > 0 ? ByteArrays.toHexString(sessionId, "") : "null") + "\n" +
                 "    Extensions: " + extensions.toString();

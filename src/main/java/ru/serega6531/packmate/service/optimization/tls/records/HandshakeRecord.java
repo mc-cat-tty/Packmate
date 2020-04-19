@@ -5,15 +5,19 @@ import ru.serega6531.packmate.service.optimization.tls.numbers.HandshakeType;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.UnknownRecordContent;
+import ru.serega6531.packmate.utils.BytesUtils;
 
 import static org.pcap4j.util.ByteArrays.BYTE_SIZE_IN_BYTES;
 
 public class HandshakeRecord extends TlsRecord {
 
     private static final int HANDSHAKE_TYPE_OFFSET = 0;
-    private static final int CONTENT_OFFSET = HANDSHAKE_TYPE_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int LENGTH_OFFSET = HANDSHAKE_TYPE_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int CONTENT_OFFSET = LENGTH_OFFSET + 3;
 
     private HandshakeType handshakeType;
+    private int handshakeLength;  // 3 bytes
     private HandshakeRecordContent content;
 
     public static HandshakeRecord newInstance(byte[] rawData, int offset, int length) {
@@ -22,37 +26,24 @@ public class HandshakeRecord extends TlsRecord {
 
     private HandshakeRecord(byte[] rawData, int offset, int length) {
         this.handshakeType = HandshakeType.getInstance(ByteArrays.getByte(rawData, HANDSHAKE_TYPE_OFFSET + offset));
+        this.handshakeLength = BytesUtils.getThreeBytesInt(rawData, LENGTH_OFFSET + offset);
 
-        if (handshakeType == HandshakeType.HELLO_REQUEST) {
-
-        } else if (handshakeType == HandshakeType.CLIENT_HELLO) {
+        if (handshakeType == HandshakeType.CLIENT_HELLO) {
             this.content = ClientHelloHandshakeRecordContent.newInstance(
-                    rawData, offset + CONTENT_OFFSET);
+                    rawData, offset + CONTENT_OFFSET, handshakeLength);
         } else if (handshakeType == HandshakeType.SERVER_HELLO) {
             this.content = ServerHelloHandshakeRecordContent.newInstance(
-                    rawData, offset + CONTENT_OFFSET);
-        } else if (handshakeType == HandshakeType.CERTIFICATE) {
-
-        } else if (handshakeType == HandshakeType.SERVER_KEY_EXCHANGE) {
-
-        } else if (handshakeType == HandshakeType.CERTIFICATE_REQUEST) {
-
-        } else if (handshakeType == HandshakeType.SERVER_HELLO_DONE) {
-
-        } else if (handshakeType == HandshakeType.CERTIFICATE_VERIFY) {
-
-        } else if (handshakeType == HandshakeType.CLIENT_KEY_EXCHANGE) {
-
-        } else if (handshakeType == HandshakeType.FINISHED) {
-
+                    rawData, offset + CONTENT_OFFSET, handshakeLength);
         } else {
-            throw new IllegalArgumentException("Unknown handshake type " + handshakeType);
+            this.content = UnknownRecordContent.newInstance(
+                    rawData, offset + CONTENT_OFFSET, handshakeLength);
         }
     }
 
     @Override
     public String toString() {
-        return "    Handshake type: " + handshakeType + "\n" +
+        return "    Handshake length: " + handshakeLength + "\n" +
+                "    Handshake type: " + handshakeType + "\n" +
                 content.toString();
     }
 }

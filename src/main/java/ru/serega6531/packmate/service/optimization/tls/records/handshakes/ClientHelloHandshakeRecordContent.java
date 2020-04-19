@@ -27,7 +27,8 @@ public class ClientHelloHandshakeRecordContent extends HelloHandshakeRecordConte
     private byte compressionMethodsLength;
     private List<CompressionMethod> compressionMethods;
 
-    public static ClientHelloHandshakeRecordContent newInstance(byte[] rawData, int offset) {
+    public static ClientHelloHandshakeRecordContent newInstance(byte[] rawData, int offset, int length) {
+        ByteArrays.validateBounds(rawData, offset, length);
         return new ClientHelloHandshakeRecordContent(rawData, offset);
     }
 

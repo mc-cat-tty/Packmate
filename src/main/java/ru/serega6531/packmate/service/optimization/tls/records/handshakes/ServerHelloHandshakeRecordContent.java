@@ -17,7 +17,8 @@ public class ServerHelloHandshakeRecordContent extends HelloHandshakeRecordConte
     private CipherSuite cipherSuite;
     private CompressionMethod compressionMethod;
 
-    public static ServerHelloHandshakeRecordContent newInstance(byte[] rawData, int offset) {
+    public static ServerHelloHandshakeRecordContent newInstance(byte[] rawData, int offset, int length) {
+        ByteArrays.validateBounds(rawData, offset, length);
         return new ServerHelloHandshakeRecordContent(rawData, offset);
     }
 
