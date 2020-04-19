@@ -52,7 +52,7 @@ public class HandshakeRecord extends TlsRecord {
 
     @Override
     public String toString() {
-        return "  Handshake type: " + handshakeType + "\n" +
+        return "    Handshake type: " + handshakeType + "\n" +
                 content.toString();
     }
 }
