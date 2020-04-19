@@ -22,6 +22,7 @@ public class ContentType extends NamedNumber<Byte, ContentType> {
         registry.put(ALERT.value(), ALERT);
         registry.put(HANDSHAKE.value(), HANDSHAKE);
         registry.put(APPLICATION_DATA.value(), APPLICATION_DATA);
+        registry.put(HEARTBEAT.value(), HEARTBEAT);
     }
 
     public ContentType(Byte value, String name) {

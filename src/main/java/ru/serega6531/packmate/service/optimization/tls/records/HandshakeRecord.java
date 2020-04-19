@@ -21,10 +21,11 @@ public class HandshakeRecord extends TlsRecord {
     private HandshakeRecordContent content;
 
     public static HandshakeRecord newInstance(byte[] rawData, int offset, int length) {
-        return new HandshakeRecord(rawData, offset, length);
+        ByteArrays.validateBounds(rawData, offset, length);
+        return new HandshakeRecord(rawData, offset);
     }
 
-    private HandshakeRecord(byte[] rawData, int offset, int length) {
+    private HandshakeRecord(byte[] rawData, int offset) {
         this.handshakeType = HandshakeType.getInstance(ByteArrays.getByte(rawData, HANDSHAKE_TYPE_OFFSET + offset));
         this.handshakeLength = BytesUtils.getThreeBytesInt(rawData, LENGTH_OFFSET + offset);
 

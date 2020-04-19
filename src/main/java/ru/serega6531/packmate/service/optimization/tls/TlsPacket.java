@@ -106,6 +106,8 @@ public class TlsPacket extends AbstractPacket {
                 this.record = ApplicationDataRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.ALERT) {
                 //TODO
+            } else if (contentType == ContentType.HEARTBEAT) {
+                //TODO
             } else {
                 throw new IllegalArgumentException("Unknown content type: " + contentType);
             }

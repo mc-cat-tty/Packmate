@@ -1,10 +1,13 @@
 package ru.serega6531.packmate.service.optimization.tls.records;
 
+import org.pcap4j.util.ByteArrays;
+
 public class ApplicationDataRecord extends TlsRecord {
 
     private byte[] data;
 
     public static ApplicationDataRecord newInstance(byte[] rawData, int offset, int length) {
+        ByteArrays.validateBounds(rawData, offset, length);
         return new ApplicationDataRecord(rawData, offset, length);
     }
 

@@ -7,6 +7,7 @@ public class ChangeCipherSpecRecord extends TlsRecord {
     private byte changeCipherSpecMessage;
 
     public static ChangeCipherSpecRecord newInstance(byte[] rawData, int offset, int length) {
+        ByteArrays.validateBounds(rawData, offset, length);
         return new ChangeCipherSpecRecord(rawData, offset);
     }
 

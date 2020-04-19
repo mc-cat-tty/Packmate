@@ -7,7 +7,11 @@ import java.util.Map;
 
 public class CompressionMethod extends NamedNumber<Byte, CompressionMethod> {
 
+    // https://www.iana.org/assignments/comp-meth-ids/comp-meth-ids.xhtml
+
     public static final CompressionMethod NULL = new CompressionMethod((byte) 0, "null");
+    public static final CompressionMethod DEFLATE = new CompressionMethod((byte) 1, "Deflate");
+    public static final CompressionMethod LZS = new CompressionMethod((byte) 64, "LZS");
 
     private static final Map<Byte, CompressionMethod> registry = new HashMap<>();
 
