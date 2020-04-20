@@ -10,7 +10,14 @@ import ru.serega6531.packmate.utils.BytesUtils;
 
 import static org.pcap4j.util.ByteArrays.BYTE_SIZE_IN_BYTES;
 
-public class HandshakeRecord extends TlsRecord {
+public class HandshakeRecord implements TlsRecord {
+
+    /*
+    0x0 - Handshake type
+    0x1 - Handshake length
+    0x4 - Handshake version
+    0x6 - Handshake content
+     */
 
     private static final int HANDSHAKE_TYPE_OFFSET = 0;
     private static final int LENGTH_OFFSET = HANDSHAKE_TYPE_OFFSET + BYTE_SIZE_IN_BYTES;

@@ -2,7 +2,12 @@ package ru.serega6531.packmate.service.optimization.tls.records;
 
 import org.pcap4j.util.ByteArrays;
 
-public class ApplicationDataRecord extends TlsRecord {
+public class ApplicationDataRecord implements TlsRecord {
+
+    /**
+     * 0x0          - Encrypted Application Data
+     * 0x0 + length - End
+     */
 
     private byte[] data;
 

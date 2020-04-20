@@ -2,7 +2,12 @@ package ru.serega6531.packmate.service.optimization.tls.records;
 
 import org.pcap4j.util.ByteArrays;
 
-public class ChangeCipherSpecRecord extends TlsRecord {
+public class ChangeCipherSpecRecord implements TlsRecord {
+
+    /*
+    0x0 - Change Cipher Spec Message
+    0x1 - End
+     */
 
     private byte changeCipherSpecMessage;
 

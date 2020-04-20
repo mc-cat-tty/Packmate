@@ -12,6 +12,19 @@ import static org.pcap4j.util.ByteArrays.SHORT_SIZE_IN_BYTES;
 
 public class ClientHelloHandshakeRecordContent extends HelloHandshakeRecordContent {
 
+    /*
+    0x0                  - Client random
+    0x20                 - Session id length (sidl)
+    0x21                 - Session id
+    0x21+sidl            - Cipher suites length (csl)
+    0x23+sidl            - Cipher suite 1..(csl/2)
+    0x23+sidl+csl        - Compression methods length (cml)
+    0x24+sidl+csl        - Compression method 1..cml
+    0x24+sidl+csl+cml    - Extensions Length (el)
+    0x26+sidl+csl+cml    - Extension 1..N
+    0x26+sidl+csl+cml+el - End
+     */
+
     private static final int CIPHER_SUITES_LENGTH_OFFSET = HelloHandshakeRecordContent.SESSION_ID_OFFSET;  // + sessionIdLength
     private static final int CIPHER_SUITE_OFFSET =
             CIPHER_SUITES_LENGTH_OFFSET + SHORT_SIZE_IN_BYTES; // + sessionIdLength + SHORT_SIZE_IN_BYTES*i

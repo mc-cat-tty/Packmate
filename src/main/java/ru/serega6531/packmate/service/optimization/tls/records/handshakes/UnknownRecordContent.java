@@ -4,6 +4,11 @@ import org.pcap4j.util.ByteArrays;
 
 public class UnknownRecordContent implements HandshakeRecordContent {
 
+    /**
+     * 0x0          - Content
+     * 0x0 + length - End
+     */
+
     private byte[] content;
 
     public static UnknownRecordContent newInstance(byte[] rawData, int offset, int length) {

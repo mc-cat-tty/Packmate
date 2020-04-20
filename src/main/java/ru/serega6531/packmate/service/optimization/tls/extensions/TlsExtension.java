@@ -6,6 +6,13 @@ import ru.serega6531.packmate.service.optimization.tls.numbers.ExtensionType;
 
 public abstract class TlsExtension {
 
+    /*
+    0x0        - Type
+    0x2        - Length
+    0x4        - Content
+    0x4+length - End
+     */
+
     protected ExtensionType type;
     protected short extensionLength;
 

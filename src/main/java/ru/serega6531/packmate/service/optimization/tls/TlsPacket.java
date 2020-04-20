@@ -78,6 +78,13 @@ public class TlsPacket extends AbstractPacket {
 
     public static final class TlsHeader extends AbstractHeader {
 
+        /*
+        0x0 - Content Type
+        0x1 - Version
+        0x3 - Length
+        0x5 - Record content
+         */
+
         private static final int CONTENT_TYPE_OFFSET = 0;
         private static final int VERSION_OFFSET = CONTENT_TYPE_OFFSET + BYTE_SIZE_IN_BYTES;
         private static final int LENGTH_OFFSET = VERSION_OFFSET + SHORT_SIZE_IN_BYTES;
