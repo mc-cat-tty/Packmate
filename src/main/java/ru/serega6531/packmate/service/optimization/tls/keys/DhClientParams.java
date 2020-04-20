@@ -1,37 +1,35 @@
 package ru.serega6531.packmate.service.optimization.tls.keys;
 
-import ru.serega6531.packmate.service.optimization.tls.keys.enums.CurveType;
-import ru.serega6531.packmate.service.optimization.tls.keys.enums.NamedCurve;
 import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureHashAlgorithmHash;
 import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureHashAlgorithmSignature;
 
-public class EcdheServerParams {
+public class DhClientParams {
 
-    private final CurveType curveType;
-    private final NamedCurve namedCurve;
+    private final byte[] p;
+    private final byte[] g;
     private final byte[] pubkey;
     private final SignatureHashAlgorithmHash signatureHashAlgorithmHash;
     private final SignatureHashAlgorithmSignature signatureHashAlgorithmSignature;
     private final byte[] signature;
 
-    public EcdheServerParams(CurveType curveType, NamedCurve namedCurve, byte[] pubkey,
-                             SignatureHashAlgorithmHash signatureHashAlgorithmHash,
-                             SignatureHashAlgorithmSignature signatureHashAlgorithmSignature,
-                             byte[] signature) {
-        this.curveType = curveType;
-        this.namedCurve = namedCurve;
+    public DhClientParams(byte[] p, byte[] g, byte[] pubkey,
+                          SignatureHashAlgorithmHash signatureHashAlgorithmHash,
+                          SignatureHashAlgorithmSignature signatureHashAlgorithmSignature,
+                          byte[] signature) {
+        this.p = p;
+        this.g = g;
         this.pubkey = pubkey;
         this.signatureHashAlgorithmHash = signatureHashAlgorithmHash;
         this.signatureHashAlgorithmSignature = signatureHashAlgorithmSignature;
         this.signature = signature;
     }
 
-    public CurveType getCurveType() {
-        return curveType;
+    public byte[] getP() {
+        return p;
     }
 
-    public NamedCurve getNamedCurve() {
-        return namedCurve;
+    public byte[] getG() {
+        return g;
     }
 
     public byte[] getPubkey() {

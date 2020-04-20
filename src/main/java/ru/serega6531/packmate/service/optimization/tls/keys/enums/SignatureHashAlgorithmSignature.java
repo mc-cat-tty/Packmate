@@ -5,7 +5,8 @@ import java.util.Map;
 
 public enum  SignatureHashAlgorithmSignature {
 
-    RSA((byte) 1);
+    RSA((byte) 1),
+    ECDSA((byte) 3);
 
     private final byte value;
 

@@ -5,7 +5,8 @@ import java.util.Map;
 
 public enum SignatureHashAlgorithmHash {
 
-    SHA256((byte) 4);
+    SHA256((byte) 4),
+    SHA512((byte) 6);
 
     private final byte value;
 

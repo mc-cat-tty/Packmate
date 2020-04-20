@@ -4,7 +4,7 @@ public enum CurveType {
 
     NAMED((byte) 0x03);
 
-    private byte value;
+    private final byte value;
 
     CurveType(byte value) {
         this.value = value;
