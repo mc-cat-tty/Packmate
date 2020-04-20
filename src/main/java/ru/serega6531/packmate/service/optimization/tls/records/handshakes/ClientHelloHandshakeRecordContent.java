@@ -56,7 +56,8 @@ public class ClientHelloHandshakeRecordContent extends HelloHandshakeRecordConte
         this.extensionsLength = ByteArrays.getShort(rawData,
                 EXTENSIONS_LENGTH_OFFSET + compressionMethodsLength + sessionIdLength + cipherSuitesLength + offset);
 
-        readExtensions(rawData, EXTENSIONS_OFFSET + compressionMethodsLength + sessionIdLength + cipherSuitesLength + offset);
+        readExtensions(rawData, EXTENSIONS_OFFSET + compressionMethodsLength +
+                sessionIdLength + cipherSuitesLength + offset, true);
     }
 
     @Override

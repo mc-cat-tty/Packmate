@@ -9,13 +9,14 @@ public abstract class TlsExtension {
     protected ExtensionType type;
     protected short extensionLength;
 
-    public static TlsExtension newInstance(ExtensionType type, byte[] rawData, int offset, short extensionLength) {
+    public static TlsExtension newInstance(ExtensionType type, byte[] rawData, int offset,
+                                           short extensionLength, boolean client) {
         if (extensionLength > 0) {
             ByteArrays.validateBounds(rawData, offset, extensionLength);
         }
 
         if (type == ExtensionType.KEY_SHARE) {
-            return new KeyShareExtension(type, rawData, offset, extensionLength);
+            return KeyShareExtension.newInstance(type, rawData, offset, extensionLength, client);
         } else {
             return new UnimplementedTlsExtension(type, rawData, offset, extensionLength);
         }

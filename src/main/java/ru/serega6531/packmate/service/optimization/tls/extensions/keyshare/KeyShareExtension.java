@@ -7,29 +7,36 @@ import ru.serega6531.packmate.service.optimization.tls.numbers.ExtensionType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.pcap4j.util.ByteArrays.SHORT_SIZE_IN_BYTES;
+public abstract class KeyShareExtension extends TlsExtension {
 
-public class KeyShareExtension extends TlsExtension {
+    private final List<KeyShareEntry> entries = new ArrayList<>();
 
-    private static final int KEY_SHARE_LENGTH_OFFSET = 0;
-    private static final int KEY_SHARE_ENTRY_OFFSET = KEY_SHARE_LENGTH_OFFSET + SHORT_SIZE_IN_BYTES;
+    public static KeyShareExtension newInstance(ExtensionType type, byte[] rawData, int offset,
+                                                short extensionLength, boolean client) {
+        ByteArrays.validateBounds(rawData, offset, extensionLength);
 
-    private short keyShareLength;
-    private List<KeyShareEntry> entries = new ArrayList<>();
+        if(client) {
+            return new ClientKeyShareExtension(type, rawData, offset, extensionLength);
+        } else {
+            return new ServerKeyShareExtension(type, rawData, offset, extensionLength);
+        }
+    }
 
-    public KeyShareExtension(ExtensionType type, byte[] rawData, int offset, short extensionLength) {
+    protected KeyShareExtension(ExtensionType type, short extensionLength) {
         super(type, extensionLength);
+    }
 
-        this.keyShareLength = ByteArrays.getShort(rawData, KEY_SHARE_LENGTH_OFFSET + offset);  // the field is not always there
-        ByteArrays.validateBounds(rawData, KEY_SHARE_ENTRY_OFFSET + offset, keyShareLength);
-
-        int cursor = KEY_SHARE_ENTRY_OFFSET + offset;
-
-        while (cursor < offset + this.keyShareLength) {
-            KeyShareEntry entry = new KeyShareEntry(rawData, cursor);
-            entries.add(entry);
+    protected void readEntries(byte[] rawData, int cursor, int end) {
+        while (cursor < end) {
+            KeyShareEntry entry = readEntry(rawData, cursor);
             cursor += entry.size();
         }
+    }
+
+    protected KeyShareEntry readEntry(byte[] rawData, int cursor) {
+        KeyShareEntry entry = new KeyShareEntry(rawData, cursor);
+        entries.add(entry);
+        return entry;
     }
 
     @Override

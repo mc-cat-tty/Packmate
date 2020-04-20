@@ -32,7 +32,7 @@ public class ServerHelloHandshakeRecordContent extends HelloHandshakeRecordConte
 
         this.extensionsLength = ByteArrays.getShort(rawData,
                 EXTENSIONS_LENGTH_OFFSET + sessionIdLength + offset);
-        readExtensions(rawData, EXTENSIONS_OFFSET + sessionIdLength + offset);
+        readExtensions(rawData, EXTENSIONS_OFFSET + sessionIdLength + offset, false);
     }
 
     @Override

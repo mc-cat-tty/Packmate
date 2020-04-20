@@ -15,6 +15,10 @@ public class UnimplementedTlsExtension extends TlsExtension {
 
     @Override
     public String toString() {
-        return type.name() + "[" + extensionLength + " bytes]";
+        if(extensionLength > 0) {
+            return type.name() + " [" + extensionLength + " bytes]";
+        } else {
+            return type.name();
+        }
     }
 }
