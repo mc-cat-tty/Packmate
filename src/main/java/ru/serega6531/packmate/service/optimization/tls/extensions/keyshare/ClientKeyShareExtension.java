@@ -16,7 +16,7 @@ public class ClientKeyShareExtension extends KeyShareExtension {
         super(type, extensionLength);
         this.keyShareLength = ByteArrays.getShort(rawData, KEY_SHARE_LENGTH_OFFSET + offset);  // the field is not always there
         int cursor = KEY_SHARE_ENTRY_OFFSET + offset;
-        ByteArrays.validateBounds(rawData, cursor + offset, keyShareLength);
+        ByteArrays.validateBounds(rawData, cursor, keyShareLength);
         readEntries(rawData, KEY_SHARE_ENTRY_OFFSET + offset, offset + keyShareLength);
     }
 

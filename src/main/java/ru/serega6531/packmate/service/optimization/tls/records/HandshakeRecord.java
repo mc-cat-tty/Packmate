@@ -2,10 +2,10 @@ package ru.serega6531.packmate.service.optimization.tls.records;
 
 import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.service.optimization.tls.numbers.HandshakeType;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.BasicRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.UnknownRecordContent;
 import ru.serega6531.packmate.utils.BytesUtils;
 
 import static org.pcap4j.util.ByteArrays.BYTE_SIZE_IN_BYTES;
@@ -29,11 +29,19 @@ public class HandshakeRecord implements TlsRecord {
 
     public static HandshakeRecord newInstance(byte[] rawData, int offset, int length) {
         ByteArrays.validateBounds(rawData, offset, length);
-        return new HandshakeRecord(rawData, offset);
+        return new HandshakeRecord(rawData, offset, length);
     }
 
-    private HandshakeRecord(byte[] rawData, int offset) {
+    private HandshakeRecord(byte[] rawData, int offset, int length) {
         this.handshakeType = HandshakeType.getInstance(ByteArrays.getByte(rawData, HANDSHAKE_TYPE_OFFSET + offset));
+
+        if (handshakeType == HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE) {
+            this.content = BasicRecordContent.newInstance(
+                    rawData, offset, handshakeLength);
+            this.handshakeLength = length;
+            return;
+        }
+
         this.handshakeLength = BytesUtils.getThreeBytesInt(rawData, LENGTH_OFFSET + offset);
 
         if (handshakeType == HandshakeType.CLIENT_HELLO) {
@@ -43,7 +51,7 @@ public class HandshakeRecord implements TlsRecord {
             this.content = ServerHelloHandshakeRecordContent.newInstance(
                     rawData, offset + CONTENT_OFFSET, handshakeLength);
         } else {
-            this.content = UnknownRecordContent.newInstance(
+            this.content = BasicRecordContent.newInstance(
                     rawData, offset + CONTENT_OFFSET, handshakeLength);
         }
     }

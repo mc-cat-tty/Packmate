@@ -12,7 +12,7 @@ public class TlsPacketTest {
 
     @Test
     public void testHandshake() throws IOException, IllegalRawDataException {
-        List<Packet> packets = new PackmateDumpFileLoader("tls.pkmt").getPackets();
+        List<Packet> packets = new PackmateDumpFileLoader("tls-wolfram.pkmt").getPackets();
 
         for (int i = 0; i < packets.size(); i++) {
             Packet packet = packets.get(i);

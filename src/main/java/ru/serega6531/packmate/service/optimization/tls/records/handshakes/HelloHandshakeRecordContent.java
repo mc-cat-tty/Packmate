@@ -58,7 +58,7 @@ public abstract class HelloHandshakeRecordContent implements HandshakeRecordCont
     @Override
     public String toString() {
         return "    TLS version: " + version + "\n" +
-                "    Client random: " + ByteArrays.toHexString(random, "") + "\n" +
+                "    Random: " + ByteArrays.toHexString(random, "") + "\n" +
                 "    Session id: " + (sessionIdLength > 0 ? ByteArrays.toHexString(sessionId, "") : "null") + "\n" +
                 "    Extensions: " + extensions.toString();
     }

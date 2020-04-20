@@ -34,17 +34,15 @@ public class HandshakeType extends NamedNumber<Byte, HandshakeType> {
     public static final HandshakeType COMPRESSED_CERTIFICATE = new HandshakeType((byte) 25, "Compressed Certificate");
     public static final HandshakeType MESSAGE_HASH = new HandshakeType((byte) 254, "Message Hash");
 
+    public static final HandshakeType ENCRYPTED_HANDSHAKE_MESSAGE = new HandshakeType((byte) 255, "Encrypted Handshake Message");
+
     public HandshakeType(Byte value, String name) {
         super(value, name);
         registry.put(value, this);
     }
 
     public static HandshakeType getInstance(Byte value) {
-        if (registry.containsKey(value)) {
-            return registry.get(value);
-        } else {
-            throw new IllegalArgumentException("Unknown handshake type " + value);
-        }
+        return registry.getOrDefault(value, ENCRYPTED_HANDSHAKE_MESSAGE);
     }
 
     @Override
