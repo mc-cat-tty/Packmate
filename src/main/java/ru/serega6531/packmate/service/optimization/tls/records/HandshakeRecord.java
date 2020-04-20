@@ -36,9 +36,9 @@ public class HandshakeRecord implements TlsRecord {
         this.handshakeType = HandshakeType.getInstance(ByteArrays.getByte(rawData, HANDSHAKE_TYPE_OFFSET + offset));
 
         if (handshakeType == HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE) {
+            this.handshakeLength = length;
             this.content = BasicRecordContent.newInstance(
                     rawData, offset, handshakeLength);
-            this.handshakeLength = length;
             return;
         }
 
