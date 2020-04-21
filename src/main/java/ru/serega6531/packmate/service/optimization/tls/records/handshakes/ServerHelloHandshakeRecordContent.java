@@ -46,6 +46,14 @@ public class ServerHelloHandshakeRecordContent extends HelloHandshakeRecordConte
         readExtensions(rawData, EXTENSIONS_OFFSET + sessionIdLength + offset, false);
     }
 
+    public CipherSuite getCipherSuite() {
+        return cipherSuite;
+    }
+
+    public CompressionMethod getCompressionMethod() {
+        return compressionMethod;
+    }
+
     @Override
     public String toString() {
         return super.toString() + "\n" +

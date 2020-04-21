@@ -120,6 +120,18 @@ public class TlsPacket extends AbstractPacket {
             }
         }
 
+        public ContentType getContentType() {
+            return contentType;
+        }
+
+        public TlsVersion getVersion() {
+            return version;
+        }
+
+        public TlsRecord getRecord() {
+            return record;
+        }
+
         @Override
         protected List<byte[]> getRawFields() {
             List<byte[]> rawFields = new ArrayList<>();

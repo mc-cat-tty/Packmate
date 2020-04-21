@@ -4,19 +4,17 @@ import com.google.common.base.Splitter;
 import lombok.SneakyThrows;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.KeyStore;
-import java.security.SecureRandom;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class SSLUtils {
+public class TlsUtils {
 
     @SneakyThrows
-    public static SSLContext createContext(File pemFile, File keyFile, SecureRandom random) {
+    public static X509KeyManager createKeyManager(File pemFile, File keyFile) {
         final String pass = "abcdef";
 
         File jksKeystoreFile = File.createTempFile("packmate_", ".jks");
@@ -43,13 +41,7 @@ public class SSLUtils {
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keystore, pass.toCharArray());
 
-        SSLContext ret = SSLContext.getInstance("TLSv1.2");
-        TrustManagerFactory factory = TrustManagerFactory.getInstance(
-                TrustManagerFactory.getDefaultAlgorithm());
-        factory.init(keystore);
-        ret.init(keyManagerFactory.getKeyManagers(), factory.getTrustManagers(), random);
-
-        return ret;
+        return (X509KeyManager) keyManagerFactory.getKeyManagers()[0];
     }
 
 }

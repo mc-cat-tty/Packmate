@@ -2,9 +2,7 @@ package ru.serega6531.packmate.service.optimization.tls.keys;
 
 import ru.serega6531.packmate.service.optimization.tls.keys.enums.CurveType;
 import ru.serega6531.packmate.service.optimization.tls.keys.enums.NamedCurve;
-import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureHashAlgorithmHash;
-import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureHashAlgorithmSignature;
-import ru.serega6531.packmate.service.optimization.tls.numbers.TlsVersion;
+import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureScheme;
 
 import java.nio.ByteBuffer;
 
@@ -31,13 +29,10 @@ public final class TlsKeyUtils {
         byte[] pubKey = new byte[pubKeyLength];  // aka Ys
         bb.get(pubKey);
 
-        SignatureHashAlgorithmHash signatureHashAlgorithmHash =
-                SignatureHashAlgorithmHash.findByValue(bb.getShort());
-        SignatureHashAlgorithmSignature signatureHashAlgorithmSignature =
-                SignatureHashAlgorithmSignature.findByValue(bb.getShort());
+        SignatureScheme signatureScheme = SignatureScheme.findByValue(bb.getShort());
 
-        if (signatureHashAlgorithmHash == null || signatureHashAlgorithmSignature == null) {
-            throw new IllegalArgumentException("Unknown signature data");
+        if (signatureScheme == null) {
+            throw new IllegalArgumentException("Unknown signature scheme");
         }
 
         short signatureLength = bb.getShort();
@@ -45,7 +40,7 @@ public final class TlsKeyUtils {
 
         bb.get(signature);
 
-        return new DhClientParams(p, g, pubKey, signatureHashAlgorithmHash, signatureHashAlgorithmSignature, signature);
+        return new DhClientParams(p, g, pubKey, signatureScheme, signature);
     }
 
     /**
@@ -70,13 +65,10 @@ public final class TlsKeyUtils {
         byte[] pubkey = new byte[pubkeyLength];
         bb.get(pubkey);
 
-        SignatureHashAlgorithmHash signatureHashAlgorithmHash =
-                SignatureHashAlgorithmHash.findByValue(bb.getShort());
-        SignatureHashAlgorithmSignature signatureHashAlgorithmSignature =
-                SignatureHashAlgorithmSignature.findByValue(bb.getShort());
+        SignatureScheme signatureScheme = SignatureScheme.findByValue(bb.getShort());
 
-        if (signatureHashAlgorithmHash == null || signatureHashAlgorithmSignature == null) {
-            throw new IllegalArgumentException("Unknown signature data");
+        if (signatureScheme == null) {
+            throw new IllegalArgumentException("Unknown signature scheme");
         }
 
         short signatureLength = bb.getShort();
@@ -84,8 +76,7 @@ public final class TlsKeyUtils {
 
         bb.get(signature);
 
-        return new EcdheServerParams(curveType, namedCurve, pubkey,
-                signatureHashAlgorithmHash, signatureHashAlgorithmSignature, signature);
+        return new EcdheServerParams(curveType, namedCurve, pubkey, signatureScheme, signature);
     }
 
     // https://ldapwiki.com/wiki/ClientKeyExchange
@@ -104,14 +95,14 @@ public final class TlsKeyUtils {
         return pubkey;
     }
 
-    public static RsaServerParams parseClientRsa(byte[] rawData, int offset) {
+    public static byte[] getClientRsaPreMaster(byte[] rawData, int offset) {
         ByteBuffer bb = ByteBuffer.wrap(rawData).position(offset);
 
-        TlsVersion version = TlsVersion.getInstance(bb.getShort());
-        byte[] encryptedPreMasterSecret = new byte[46];
-        bb.get(encryptedPreMasterSecret);
+        int length = bb.getShort();
+        byte[] encryptedPreMaster = new byte[length];
+        bb.get(encryptedPreMaster);
 
-        return new RsaServerParams(version, encryptedPreMasterSecret);
+        return encryptedPreMaster;
     }
 
 }

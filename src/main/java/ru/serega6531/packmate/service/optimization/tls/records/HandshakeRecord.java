@@ -56,6 +56,14 @@ public class HandshakeRecord implements TlsRecord {
         }
     }
 
+    public HandshakeType getHandshakeType() {
+        return handshakeType;
+    }
+
+    public HandshakeRecordContent getContent() {
+        return content;
+    }
+
     @Override
     public String toString() {
         return "    Handshake length: " + handshakeLength + "\n" +

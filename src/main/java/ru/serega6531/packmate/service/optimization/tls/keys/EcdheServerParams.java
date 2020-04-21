@@ -2,27 +2,23 @@ package ru.serega6531.packmate.service.optimization.tls.keys;
 
 import ru.serega6531.packmate.service.optimization.tls.keys.enums.CurveType;
 import ru.serega6531.packmate.service.optimization.tls.keys.enums.NamedCurve;
-import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureHashAlgorithmHash;
-import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureHashAlgorithmSignature;
+import ru.serega6531.packmate.service.optimization.tls.keys.enums.SignatureScheme;
 
 public class EcdheServerParams {
 
     private final CurveType curveType;
     private final NamedCurve namedCurve;
     private final byte[] pubkey;
-    private final SignatureHashAlgorithmHash signatureHashAlgorithmHash;
-    private final SignatureHashAlgorithmSignature signatureHashAlgorithmSignature;
+    private final SignatureScheme signatureScheme;
     private final byte[] signature;
 
     public EcdheServerParams(CurveType curveType, NamedCurve namedCurve, byte[] pubkey,
-                             SignatureHashAlgorithmHash signatureHashAlgorithmHash,
-                             SignatureHashAlgorithmSignature signatureHashAlgorithmSignature,
+                             SignatureScheme signatureScheme,
                              byte[] signature) {
         this.curveType = curveType;
         this.namedCurve = namedCurve;
         this.pubkey = pubkey;
-        this.signatureHashAlgorithmHash = signatureHashAlgorithmHash;
-        this.signatureHashAlgorithmSignature = signatureHashAlgorithmSignature;
+        this.signatureScheme = signatureScheme;
         this.signature = signature;
     }
 
@@ -38,12 +34,8 @@ public class EcdheServerParams {
         return pubkey;
     }
 
-    public SignatureHashAlgorithmHash getSignatureHashAlgorithmHash() {
-        return signatureHashAlgorithmHash;
-    }
-
-    public SignatureHashAlgorithmSignature getSignatureHashAlgorithmSignature() {
-        return signatureHashAlgorithmSignature;
+    public SignatureScheme getSignatureScheme() {
+        return signatureScheme;
     }
 
     public byte[] getSignature() {

@@ -2,19 +2,26 @@ package ru.serega6531.packmate.service.optimization;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.security.crypto.codec.Hex;
 import ru.serega6531.packmate.model.Packet;
-import ru.serega6531.packmate.utils.PacketUtils;
-import ru.serega6531.packmate.utils.SSLUtils;
+import ru.serega6531.packmate.service.optimization.tls.TlsPacket;
+import ru.serega6531.packmate.service.optimization.tls.keys.TlsKeyUtils;
+import ru.serega6531.packmate.service.optimization.tls.numbers.CipherSuite;
+import ru.serega6531.packmate.service.optimization.tls.numbers.ContentType;
+import ru.serega6531.packmate.service.optimization.tls.numbers.HandshakeType;
+import ru.serega6531.packmate.service.optimization.tls.records.HandshakeRecord;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.BasicRecordContent;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
+import ru.serega6531.packmate.utils.TlsUtils;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
+import javax.crypto.Cipher;
+import javax.net.ssl.X509KeyManager;
 import java.io.File;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class TlsDecryptor {
@@ -23,86 +30,65 @@ public class TlsDecryptor {
 
     @SneakyThrows
     public void decryptTls() {
-        List<List<Packet>> sides = PacketUtils.sliceToSides(packets);
-
         File pemFile = new File(getClass().getClassLoader().getResource("tls.pem").getFile());
         File keyFile = new File(getClass().getClassLoader().getResource("tls.key").getFile());
-        SSLContext context = SSLUtils.createContext(pemFile, keyFile, new TlsFakeSecureRandom());
-        SSLEngine serverEngine = context.createSSLEngine();
-        serverEngine.setUseClientMode(false);
-        serverEngine.setNeedClientAuth(true);
+        X509KeyManager keyManager = TlsUtils.createKeyManager(pemFile, keyFile);
 
-        ByteBuffer decodedServerBuf = ByteBuffer.allocate(1000);
-        ByteBuffer tmp = ByteBuffer.allocate(50);
-        ByteBuffer tmp2 = ByteBuffer.allocate(50000);
-//        tmp.put((byte)1);
+        X509Certificate[] certificateChain = keyManager.getCertificateChain("1");
+        RSAPrivateKey privateKey = ((RSAPrivateKey) keyManager.getPrivateKey("1"));
 
-        unwrap(serverEngine, packets.get(0).getContent(), decodedServerBuf);
-        wrap(serverEngine, tmp, tmp2);
-        wrap(serverEngine, tmp, tmp2);
-        wrap(serverEngine, tmp, tmp2);
-        unwrap(serverEngine, packets.get(2).getContent(), decodedServerBuf);
-        unwrap(serverEngine, packets.get(3).getContent(), decodedServerBuf);
-        unwrap(serverEngine, packets.get(4).getContent(), decodedServerBuf);
-        unwrap(serverEngine, packets.get(5).getContent(), decodedServerBuf);
+        Map<Packet, List<TlsPacket.TlsHeader>> tlsPackets = packets.stream()
+                .collect(Collectors.toMap(p -> p, this::createTlsHeaders));
 
-        System.out.println();
+        ClientHelloHandshakeRecordContent clientHello = (ClientHelloHandshakeRecordContent)
+                        getHandshake(tlsPackets.values(), HandshakeType.CLIENT_HELLO).orElseThrow();
+        ServerHelloHandshakeRecordContent serverHello = (ServerHelloHandshakeRecordContent)
+                getHandshake(tlsPackets.values(), HandshakeType.SERVER_HELLO).orElseThrow();
+
+        byte[] clientRandom = clientHello.getRandom();
+        byte[] serverRandom = serverHello.getRandom();
+
+        CipherSuite cipherSuite = serverHello.getCipherSuite();
+
+        if(cipherSuite.name().startsWith("TLS_RSA_")) {
+            BasicRecordContent clientKeyExchange = (BasicRecordContent)
+                    getHandshake(tlsPackets.values(), HandshakeType.CLIENT_KEY_EXCHANGE).orElseThrow();
+
+            byte[] encryptedPreMaster = TlsKeyUtils.getClientRsaPreMaster(clientKeyExchange.getContent(), 0);
+
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            byte[] preMaster = cipher.doFinal(encryptedPreMaster);
+
+            System.out.println();
+        }
+
+    }
+
+    private Optional<HandshakeRecordContent> getHandshake(Collection<List<TlsPacket.TlsHeader>> packets,
+                                                      HandshakeType handshakeType) {
+        return packets.stream()
+                .flatMap(Collection::stream)
+                .filter(p -> p.getContentType() == ContentType.HANDSHAKE)
+                .map(p -> ((HandshakeRecord) p.getRecord()))
+                .filter(r -> r.getHandshakeType() == handshakeType)
+                .map(HandshakeRecord::getContent)
+                .findFirst();
     }
 
     @SneakyThrows
-    private void unwrap(SSLEngine serverEngine, byte[] content, ByteBuffer buf) {
-        SSLEngineResult unwrap = serverEngine.unwrap(ByteBuffer.wrap(content), buf);
-        System.out.println("UNWRAP " + unwrap);
-        Runnable delegatedTask = serverEngine.getDelegatedTask();
-        if(delegatedTask != null) {
-            delegatedTask.run();
-        }
-    }
+    private List<TlsPacket.TlsHeader> createTlsHeaders(Packet p) {
+        List<TlsPacket.TlsHeader> headers = new ArrayList<>();
+        TlsPacket tlsPacket = TlsPacket.newPacket(p.getContent(), 0, p.getContent().length);
 
-    @SneakyThrows
-    private void wrap(SSLEngine serverEngine, ByteBuffer src, ByteBuffer dest) {
-        SSLEngineResult wrap = serverEngine.wrap(src, dest);
-        System.out.println("WRAP " + wrap);
-        Runnable delegatedTask = serverEngine.getDelegatedTask();
-        if(delegatedTask != null) {
-            delegatedTask.run();
-        }
-    }
+        headers.add(tlsPacket.getHeader());
 
-    private static class TlsFakeSecureRandom extends SecureRandom {
-
-        /*
-        state 0 - engineInit(SSLContextImpl.java:117)
-        stage 1 - SessionId.<init> -> RandomCookie
-        stage 2 - server random (ServerHello.java:575)
-        stage 3 - XDHKeyPairGenerator.generateKeyPair -> XECOperations.generatePrivate
-         */
-
-        private int state = 0;
-
-        @Override
-        public void nextBytes(byte[] bytes) {
-            System.out.println("STATE " + state);
-            StackWalker.getInstance().forEach(System.out::println);
-            System.out.println("-----------------");
-
-            switch (state) {
-                case 0 -> Arrays.fill(bytes, (byte) 0);
-                case 1, 2, 3 -> System.arraycopy(getFakeBytes(), 0, bytes, 0, bytes.length);
-            }
-
-            state++;
+        while (tlsPacket.getPayload() != null) {
+            tlsPacket = (TlsPacket) tlsPacket.getPayload();
+            headers.add(tlsPacket.getHeader());
         }
 
-        private byte[] getFakeBytes() {
-            return switch (state) {
-                case 1 -> Hex.decode("0ab8b3409555d3d658b1844f52dfc0116467c4b9088d1deb504f3935c10de893");
-                case 2 -> Hex.decode("b5474b785c5e9bbadf2b0cd136e9aaf8bc2d89583ef96c479b531b94808349cc");
-                case 3 -> Hex.decode("801d96be72cbbd2f4e33b5ec7e5e0b073636269e42c17d1d8996fdd28c9f7230");
-                default -> throw new IllegalStateException("Unexpected value: " + state);
-            };
-        }
-
+        return headers;
     }
 
 }

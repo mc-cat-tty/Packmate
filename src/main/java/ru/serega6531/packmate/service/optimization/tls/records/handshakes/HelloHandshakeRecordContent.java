@@ -55,6 +55,22 @@ public abstract class HelloHandshakeRecordContent implements HandshakeRecordCont
         }
     }
 
+    public TlsVersion getVersion() {
+        return version;
+    }
+
+    public byte[] getRandom() {
+        return random;
+    }
+
+    public byte[] getSessionId() {
+        return sessionId;
+    }
+
+    public List<TlsExtension> getExtensions() {
+        return extensions;
+    }
+
     @Override
     public String toString() {
         return "    TLS version: " + version + "\n" +

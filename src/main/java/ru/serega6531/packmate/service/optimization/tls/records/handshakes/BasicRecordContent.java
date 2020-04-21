@@ -25,6 +25,10 @@ public class BasicRecordContent implements HandshakeRecordContent {
         }
     }
 
+    public byte[] getContent() {
+        return content;
+    }
+
     @Override
     public String toString() {
         return "    [" + content.length + " bytes]";
