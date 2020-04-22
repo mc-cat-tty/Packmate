@@ -2,6 +2,7 @@ package ru.serega6531.packmate.service.optimization;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.ArrayUtils;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.service.optimization.tls.TlsPacket;
 import ru.serega6531.packmate.service.optimization.tls.keys.TlsKeyUtils;
@@ -13,6 +14,7 @@ import ru.serega6531.packmate.service.optimization.tls.records.handshakes.BasicR
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
+import ru.serega6531.packmate.utils.PRF;
 import ru.serega6531.packmate.utils.TlsUtils;
 
 import javax.crypto.Cipher;
@@ -21,10 +23,14 @@ import java.io.File;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class TlsDecryptor {
+
+    private static final Pattern cipherSuitePattern = Pattern.compile("TLS_RSA_WITH_([A-Z0-9_]+)_([A-Z0-9]+)");
 
     private final List<Packet> packets;
 
@@ -50,7 +56,12 @@ public class TlsDecryptor {
 
         CipherSuite cipherSuite = serverHello.getCipherSuite();
 
-        if(cipherSuite.name().startsWith("TLS_RSA_")) {
+        if(cipherSuite.name().startsWith("TLS_RSA_WITH_")) {
+            Matcher matcher = cipherSuitePattern.matcher(cipherSuite.name());
+            matcher.find();
+            String blockCipher = matcher.group(1);
+            String hashAlgo = matcher.group(2);
+
             BasicRecordContent clientKeyExchange = (BasicRecordContent)
                     getHandshake(tlsPackets.values(), HandshakeType.CLIENT_KEY_EXCHANGE).orElseThrow();
 
@@ -59,7 +70,11 @@ public class TlsDecryptor {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             byte[] preMaster = cipher.doFinal(encryptedPreMaster);
+            byte[] seed1 = ArrayUtils.addAll(clientRandom, serverRandom);
+            byte[] seed2 = ArrayUtils.addAll(serverRandom, clientRandom);
 
+            byte[] masterSecret = PRF.getBytes(preMaster, "master secret", seed1, 48);
+            byte[] expanded = PRF.getBytes(masterSecret, "key expansion", seed2, 136);
             System.out.println();
         }
 
