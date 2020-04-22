@@ -21,6 +21,10 @@ public class ApplicationDataRecord implements TlsRecord {
         System.arraycopy(rawData, offset, data, 0, length);
     }
 
+    public byte[] getData() {
+        return data;
+    }
+
     @Override
     public String toString() {
         return "  Encrypted data: [" + data.length + " bytes]";

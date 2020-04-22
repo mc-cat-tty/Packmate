@@ -18,8 +18,11 @@ import ru.serega6531.packmate.utils.PRF;
 import ru.serega6531.packmate.utils.TlsUtils;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.X509KeyManager;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
@@ -67,14 +70,48 @@ public class TlsDecryptor {
 
             byte[] encryptedPreMaster = TlsKeyUtils.getClientRsaPreMaster(clientKeyExchange.getContent(), 0);
 
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            byte[] preMaster = cipher.doFinal(encryptedPreMaster);
-            byte[] seed1 = ArrayUtils.addAll(clientRandom, serverRandom);
-            byte[] seed2 = ArrayUtils.addAll(serverRandom, clientRandom);
+            Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            rsa.init(Cipher.DECRYPT_MODE, privateKey);
+            byte[] preMaster = rsa.doFinal(encryptedPreMaster);
+            byte[] randomCS = ArrayUtils.addAll(clientRandom, serverRandom);
+            byte[] randomSC = ArrayUtils.addAll(serverRandom, clientRandom);
 
-            byte[] masterSecret = PRF.getBytes(preMaster, "master secret", seed1, 48);
-            byte[] expanded = PRF.getBytes(masterSecret, "key expansion", seed2, 136);
+            byte[] masterSecret = PRF.getBytes(preMaster, "master secret", randomCS, 48);
+            byte[] expanded = PRF.getBytes(masterSecret, "key expansion", randomSC, 136);
+
+            byte[] clientMacKey = new byte[20];
+            byte[] serverMacKey = new byte[20];
+            byte[] clientEncryptionKey = new byte[32];
+            byte[] serverEncryptionKey = new byte[32];
+            byte[] clientIV = new byte[16];
+            byte[] serverIV = new byte[16];
+
+            ByteBuffer bb = ByteBuffer.wrap(expanded);
+            bb.get(clientMacKey);
+            bb.get(serverMacKey);
+            bb.get(clientEncryptionKey);
+            bb.get(serverEncryptionKey);
+            bb.get(clientIV);
+            bb.get(serverIV);
+
+            Cipher aes = Cipher.getInstance("AES/CBC/NoPadding");  // TLS_RSA_WITH_AES_256_CBC_SHA
+            SecretKeySpec skeySpec = new SecretKeySpec(clientEncryptionKey, "AES");
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(clientIV);
+            aes.init(Cipher.DECRYPT_MODE, skeySpec, ivParameterSpec);
+
+            byte[] data = tlsPackets.entrySet().stream()
+                    .filter(ent -> ent.getKey().isIncoming())
+                    .map(Map.Entry::getValue)
+                    .flatMap(Collection::stream)
+                    .filter(p -> p.getContentType() == ContentType.HANDSHAKE)
+                    .map(p -> ((HandshakeRecord) p.getRecord()))
+                    .filter(r -> r.getHandshakeType() == HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE)
+                    .map(r -> ((BasicRecordContent) r.getContent()))
+                    .findFirst()
+                    .orElseThrow()
+                    .getContent();
+
+            byte[] decrypt = aes.doFinal(data);
             System.out.println();
         }
 
