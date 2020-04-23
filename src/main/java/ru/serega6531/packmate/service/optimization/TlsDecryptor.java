@@ -20,16 +20,17 @@ import ru.serega6531.packmate.service.optimization.tls.numbers.ContentType;
 import ru.serega6531.packmate.service.optimization.tls.numbers.HandshakeType;
 import ru.serega6531.packmate.service.optimization.tls.records.ApplicationDataRecord;
 import ru.serega6531.packmate.service.optimization.tls.records.HandshakeRecord;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.BasicRecordContent;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.*;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,9 +51,9 @@ public class TlsDecryptor {
 
         packets.forEach(p -> tlsPackets.putAll(p, createTlsHeaders(p)));
 
-        ClientHelloHandshakeRecordContent clientHello = (ClientHelloHandshakeRecordContent)
+        var clientHello = (ClientHelloHandshakeRecordContent)
                 getHandshake(tlsPackets.values(), HandshakeType.CLIENT_HELLO).orElseThrow();
-        ServerHelloHandshakeRecordContent serverHello = (ServerHelloHandshakeRecordContent)
+        var serverHello = (ServerHelloHandshakeRecordContent)
                 getHandshake(tlsPackets.values(), HandshakeType.SERVER_HELLO).orElseThrow();
 
         byte[] clientRandom = clientHello.getRandom();
@@ -64,17 +65,24 @@ public class TlsDecryptor {
             Matcher matcher = cipherSuitePattern.matcher(cipherSuite.name());
             //noinspection ResultOfMethodCallIgnored
             matcher.find();
-            String blockCipher = matcher.group(1);
+            String blockCipher = matcher.group(1);  //TODO использовать не только AES256
             String hashAlgo = matcher.group(2);
 
-            //TODO
-            RSAPrivateKey privateKey = keysHolder.getKey(null);
+            var certificateHandshake = ((CertificateHandshakeRecordContent)
+                    getHandshake(tlsPackets.values(), HandshakeType.CERTIFICATE).orElseThrow());
+            List<byte[]> chain = certificateHandshake.getRawCertificates();
+            byte[] rawCertificate = chain.get(0);
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(rawCertificate));
+            RSAPublicKey publicKey = (RSAPublicKey) certificate.getPublicKey();
+
+            RSAPrivateKey privateKey = keysHolder.getKey(publicKey.getModulus());
             if(privateKey == null) {
-                log.warn("Key for modulus not found: {}", "TODO");
+                log.warn("Key for modulus not found: {}", publicKey.getModulus());
                 return;
             }
 
-            BasicRecordContent clientKeyExchange = (BasicRecordContent)
+            var clientKeyExchange = (BasicHandshakeRecordContent)
                     getHandshake(tlsPackets.values(), HandshakeType.CLIENT_KEY_EXCHANGE).orElseThrow();
 
             byte[] encryptedPreMaster = TlsKeyUtils.getClientRsaPreMaster(clientKeyExchange.getContent(), 0);
@@ -110,29 +118,28 @@ public class TlsDecryptor {
             byte[] serverFinishedEncrypted = getFinishedData(tlsPackets, false);
 
             Cipher clientCipher = createCipher(clientEncryptionKey, clientIV, clientFinishedEncrypted);
-//            byte[] clientFinishedData = clientCipher.update(clientFinishedEncrypted);
-//            HandshakeRecord clientFinished = HandshakeRecord.newInstance(clientFinishedData, 16, clientFinishedData.length - 16);
-
             Cipher serverCipher = createCipher(serverEncryptionKey, serverIV, serverFinishedEncrypted);
-//            byte[] serverFinishedData = serverCipher.update(serverFinishedEncrypted);
-//            HandshakeRecord serverFinished = HandshakeRecord.newInstance(serverFinishedData, 16, serverFinishedData.length - 16);
 
-            for (Map.Entry<Packet, TlsPacket.TlsHeader> entry : tlsPackets.entries()) {
-                if (entry.getValue().getContentType() == ContentType.APPLICATION_DATA) {
-                    byte[] data = ((ApplicationDataRecord) entry.getValue().getRecord()).getData();
-                    boolean client = entry.getKey().isIncoming();
+            for (Packet packet : packets) {
+                List<TlsPacket.TlsHeader> tlsData = (List<TlsPacket.TlsHeader>) tlsPackets.get(packet);
 
-                    byte[] decoded;
+                for (TlsPacket.TlsHeader tlsPacket : tlsData) {
+                    if (tlsPacket.getContentType() == ContentType.APPLICATION_DATA) {
+                        byte[] data = ((ApplicationDataRecord) tlsPacket.getRecord()).getData();
+                        boolean client = packet.isIncoming();
 
-                    if(client) {
-                        decoded = clientCipher.update(data);
-                    } else {
-                        decoded = serverCipher.update(data);
+                        byte[] decoded;
+
+                        if(client) {
+                            decoded = clientCipher.update(data);
+                        } else {
+                            decoded = serverCipher.update(data);
+                        }
+
+                        decoded = clearDecodedData(decoded);
+                        String string = new String(decoded);
+                        log.info(string);
                     }
-
-                    decoded = clearDecodedData(decoded);
-                    String string = new String(decoded);
-                    System.out.println(string);
                 }
             }
         }
@@ -158,7 +165,7 @@ public class TlsDecryptor {
     }
 
     private byte[] getFinishedData(ListMultimap<Packet, TlsPacket.TlsHeader> tlsPackets, boolean incoming) {
-        return  ((BasicRecordContent) getHandshake(tlsPackets.asMap().entrySet().stream()
+        return  ((BasicHandshakeRecordContent) getHandshake(tlsPackets.asMap().entrySet().stream()
                 .filter(ent -> ent.getKey().isIncoming() == incoming)
                 .map(Map.Entry::getValue)
                 .flatMap(Collection::stream), HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE))
@@ -169,7 +176,7 @@ public class TlsDecryptor {
         return stream.filter(p -> p.getContentType() == ContentType.HANDSHAKE)
                 .map(p -> ((HandshakeRecord) p.getRecord()))
                 .filter(r -> r.getHandshakeType() == handshakeType)
-                .map(r -> ((BasicRecordContent) r.getContent()))
+                .map(r -> ((BasicHandshakeRecordContent) r.getContent()))
                 .findFirst()
                 .orElseThrow();
     }

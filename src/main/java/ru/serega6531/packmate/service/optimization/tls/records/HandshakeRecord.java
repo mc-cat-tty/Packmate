@@ -2,10 +2,7 @@ package ru.serega6531.packmate.service.optimization.tls.records;
 
 import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.service.optimization.tls.numbers.HandshakeType;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.BasicRecordContent;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
-import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
+import ru.serega6531.packmate.service.optimization.tls.records.handshakes.*;
 import ru.serega6531.packmate.utils.BytesUtils;
 
 import static org.pcap4j.util.ByteArrays.BYTE_SIZE_IN_BYTES;
@@ -37,7 +34,7 @@ public class HandshakeRecord implements TlsRecord {
 
         if (handshakeType == HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE) {
             this.handshakeLength = length;
-            this.content = BasicRecordContent.newInstance(
+            this.content = BasicHandshakeRecordContent.newInstance(
                     rawData, offset, handshakeLength);
             return;
         }
@@ -50,8 +47,11 @@ public class HandshakeRecord implements TlsRecord {
         } else if (handshakeType == HandshakeType.SERVER_HELLO) {
             this.content = ServerHelloHandshakeRecordContent.newInstance(
                     rawData, offset + CONTENT_OFFSET, handshakeLength);
+        } else if (handshakeType == HandshakeType.CERTIFICATE) {
+            this.content = CertificateHandshakeRecordContent.newInstance(
+                    rawData, offset + CONTENT_OFFSET, handshakeLength);
         } else {
-            this.content = BasicRecordContent.newInstance(
+            this.content = BasicHandshakeRecordContent.newInstance(
                     rawData, offset + CONTENT_OFFSET, handshakeLength);
         }
     }
