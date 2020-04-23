@@ -15,6 +15,7 @@ import ru.serega6531.packmate.model.pojo.Pagination;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.repository.StreamRepository;
+import ru.serega6531.packmate.service.optimization.RsaKeysHolder;
 import ru.serega6531.packmate.service.optimization.StreamOptimizer;
 
 import java.util.HashSet;
@@ -33,6 +34,7 @@ public class StreamService {
     private final ServicesService servicesService;
     private final CountingService countingService;
     private final SubscriptionService subscriptionService;
+    private final RsaKeysHolder keysHolder;
 
     private final boolean ignoreEmptyPackets;
 
@@ -44,12 +46,14 @@ public class StreamService {
                          ServicesService servicesService,
                          CountingService countingService,
                          SubscriptionService subscriptionService,
+                         RsaKeysHolder keysHolder,
                          @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
         this.countingService = countingService;
         this.subscriptionService = subscriptionService;
+        this.keysHolder = keysHolder;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
@@ -94,7 +98,7 @@ public class StreamService {
 
         countingService.countStream(service.getPort(), packets.size());
 
-        packets = new StreamOptimizer(service, packets).optimizeStream();
+        packets = new StreamOptimizer(keysHolder, service, packets).optimizeStream();
         processUserAgent(packets, stream);
 
         Stream savedStream = save(stream);

@@ -1,5 +1,7 @@
 package ru.serega6531.packmate.service.optimization;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.utils.TlsUtils;
 
@@ -23,13 +25,17 @@ public class RsaKeysHolder {
 
         X509KeyManager keyManager = TlsUtils.createKeyManager(pemFile, keyFile);
 
-//        X509Certificate[] certificateChain = keyManager.getCertificateChain("1");
         RSAPrivateKey privateKey = ((RSAPrivateKey) keyManager.getPrivateKey("1"));
         keys.put(privateKey.getModulus(), privateKey);
     }
 
     public RSAPrivateKey getKey(BigInteger modulus) {
         return keys.get(modulus);
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void afterStartup(ApplicationReadyEvent event) {
+        //TODO load keys
     }
 
 }

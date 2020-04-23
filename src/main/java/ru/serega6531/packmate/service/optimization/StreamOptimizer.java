@@ -12,6 +12,7 @@ import java.util.List;
 @Slf4j
 public class StreamOptimizer {
 
+    private final RsaKeysHolder keysHolder;
     private final CtfService service;
     private List<Packet> packets;
 
@@ -19,6 +20,10 @@ public class StreamOptimizer {
      * Вызвать для выполнения оптимизаций на переданном списке пакетов.
      */
     public List<Packet> optimizeStream() {
+        if (service.isDecryptTls()) {
+            decryptTls();
+        }
+
         if (service.isProcessChunkedEncoding()) {
             processChunkedEncoding();
         }
@@ -40,6 +45,11 @@ public class StreamOptimizer {
         }
 
         return packets;
+    }
+
+    private void decryptTls() {
+        final TlsDecryptor tlsDecryptor = new TlsDecryptor(packets, keysHolder);
+        tlsDecryptor.decryptTls();  // TODO
     }
 
     /**
