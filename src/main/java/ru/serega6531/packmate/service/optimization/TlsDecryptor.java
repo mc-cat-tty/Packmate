@@ -3,6 +3,11 @@ package ru.serega6531.packmate.service.optimization;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.tls.ExporterLabel;
+import org.bouncycastle.tls.PRFAlgorithm;
+import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsSecret;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.service.optimization.tls.TlsPacket;
 import ru.serega6531.packmate.service.optimization.tls.keys.TlsKeyUtils;
@@ -14,7 +19,6 @@ import ru.serega6531.packmate.service.optimization.tls.records.handshakes.BasicR
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ClientHelloHandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.HandshakeRecordContent;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.ServerHelloHandshakeRecordContent;
-import ru.serega6531.packmate.utils.PRF;
 import ru.serega6531.packmate.utils.TlsUtils;
 
 import javax.crypto.Cipher;
@@ -50,7 +54,7 @@ public class TlsDecryptor {
                 .collect(Collectors.toMap(p -> p, this::createTlsHeaders));
 
         ClientHelloHandshakeRecordContent clientHello = (ClientHelloHandshakeRecordContent)
-                        getHandshake(tlsPackets.values(), HandshakeType.CLIENT_HELLO).orElseThrow();
+                getHandshake(tlsPackets.values(), HandshakeType.CLIENT_HELLO).orElseThrow();
         ServerHelloHandshakeRecordContent serverHello = (ServerHelloHandshakeRecordContent)
                 getHandshake(tlsPackets.values(), HandshakeType.SERVER_HELLO).orElseThrow();
 
@@ -59,7 +63,7 @@ public class TlsDecryptor {
 
         CipherSuite cipherSuite = serverHello.getCipherSuite();
 
-        if(cipherSuite.name().startsWith("TLS_RSA_WITH_")) {
+        if (cipherSuite.name().startsWith("TLS_RSA_WITH_")) {
             Matcher matcher = cipherSuitePattern.matcher(cipherSuite.name());
             matcher.find();
             String blockCipher = matcher.group(1);
@@ -76,8 +80,10 @@ public class TlsDecryptor {
             byte[] randomCS = ArrayUtils.addAll(clientRandom, serverRandom);
             byte[] randomSC = ArrayUtils.addAll(serverRandom, clientRandom);
 
-            byte[] masterSecret = PRF.getBytes(preMaster, "master secret", randomCS, 48);
-            byte[] expanded = PRF.getBytes(masterSecret, "key expansion", randomSC, 136);
+            BcTlsSecret preSecret = new BcTlsSecret(new BcTlsCrypto(null), preMaster);
+            TlsSecret masterSecret = preSecret.deriveUsingPRF(
+                    PRFAlgorithm.tls_prf_sha256, ExporterLabel.master_secret, randomCS, 48);
+            byte[] expanded = masterSecret.deriveUsingPRF(PRFAlgorithm.tls_prf_sha256, ExporterLabel.key_expansion, randomSC, 136).extract(); // для sha256
 
             byte[] clientMacKey = new byte[20];
             byte[] serverMacKey = new byte[20];
@@ -94,7 +100,7 @@ public class TlsDecryptor {
             bb.get(clientIV);
             bb.get(serverIV);
 
-            Cipher aes = Cipher.getInstance("AES/CBC/NoPadding");  // TLS_RSA_WITH_AES_256_CBC_SHA
+            Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");  // TLS_RSA_WITH_AES_256_CBC_SHA
             SecretKeySpec skeySpec = new SecretKeySpec(clientEncryptionKey, "AES");
             IvParameterSpec ivParameterSpec = new IvParameterSpec(clientIV);
             aes.init(Cipher.DECRYPT_MODE, skeySpec, ivParameterSpec);
@@ -118,7 +124,7 @@ public class TlsDecryptor {
     }
 
     private Optional<HandshakeRecordContent> getHandshake(Collection<List<TlsPacket.TlsHeader>> packets,
-                                                      HandshakeType handshakeType) {
+                                                          HandshakeType handshakeType) {
         return packets.stream()
                 .flatMap(Collection::stream)
                 .filter(p -> p.getContentType() == ContentType.HANDSHAKE)
