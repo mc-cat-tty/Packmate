@@ -16,9 +16,8 @@ public class TlsDecryptorTest {
         List<Packet> packets = new PackmateDumpFileLoader("tls.pkmt").getPackets();
 
         RsaKeysHolder keysHolder = new RsaKeysHolder();
-        File pemFile = new File(getClass().getClassLoader().getResource("tls.pem").getFile());
         File keyFile = new File(getClass().getClassLoader().getResource("tls.key").getFile());
-        keysHolder.addKey(pemFile, keyFile);
+        keysHolder.addKey(keyFile);
 
         TlsDecryptor decryptor = new TlsDecryptor(packets, keysHolder);
         decryptor.decryptTls();

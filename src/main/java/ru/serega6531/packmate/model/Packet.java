@@ -55,6 +55,8 @@ public class Packet {
 
     private boolean webSocketParsed;
 
+    private boolean tlsDecrypted;
+
     private byte[] content;
 
     @Transient

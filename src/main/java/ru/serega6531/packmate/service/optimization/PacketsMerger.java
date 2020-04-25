@@ -50,7 +50,8 @@ public class PacketsMerger {
         final long timestamp = cut.get(0).getTimestamp();
         final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
         final boolean webSocketParsed = cut.stream().anyMatch(Packet::isWebSocketParsed);
-        boolean incoming = cut.get(0).isIncoming();
+        final boolean tlsDecrypted = cut.get(0).isTlsDecrypted();
+        final boolean incoming = cut.get(0).isIncoming();
         //noinspection OptionalGetWithoutIsPresent
         final byte[] content = PacketUtils.mergePackets(cut).get();
 
@@ -60,6 +61,7 @@ public class PacketsMerger {
                 .timestamp(timestamp)
                 .ungzipped(ungzipped)
                 .webSocketParsed(webSocketParsed)
+                .tlsDecrypted(tlsDecrypted)
                 .content(content)
                 .build());
     }

@@ -105,6 +105,7 @@ public class HttpGzipProcessor {
                     .timestamp(cut.get(0).getTimestamp())
                     .ungzipped(true)
                     .webSocketParsed(false)
+                    .tlsDecrypted(cut.get(0).isTlsDecrypted())
                     .content(newContent)
                     .build();
         } catch (ZipException e) {

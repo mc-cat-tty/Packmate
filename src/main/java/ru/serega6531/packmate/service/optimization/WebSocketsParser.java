@@ -132,6 +132,7 @@ public class WebSocketsParser {
                             .ttl(lastPacket.getTtl())
                             .ungzipped(lastPacket.isUngzipped())
                             .webSocketParsed(true)
+                            .tlsDecrypted(lastPacket.isTlsDecrypted())
                             .build()
                     );
                 }

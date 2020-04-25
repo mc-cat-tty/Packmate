@@ -49,7 +49,11 @@ public class StreamOptimizer {
 
     private void decryptTls() {
         final TlsDecryptor tlsDecryptor = new TlsDecryptor(packets, keysHolder);
-        tlsDecryptor.decryptTls();  // TODO
+        tlsDecryptor.decryptTls();
+
+        if(tlsDecryptor.isParsed()) {
+            packets = tlsDecryptor.getParsedPackets();
+        }
     }
 
     /**

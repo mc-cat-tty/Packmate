@@ -2,6 +2,7 @@ package ru.serega6531.packmate.service.optimization;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -22,12 +23,18 @@ import ru.serega6531.packmate.service.optimization.tls.records.ApplicationDataRe
 import ru.serega6531.packmate.service.optimization.tls.records.HandshakeRecord;
 import ru.serega6531.packmate.service.optimization.tls.records.handshakes.*;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -45,10 +52,18 @@ public class TlsDecryptor {
     private final List<Packet> packets;
     private final RsaKeysHolder keysHolder;
 
+    @Getter
+    private boolean parsed = false;
+    private List<Packet> result;
+
+    private ListMultimap<Packet, TlsPacket.TlsHeader> tlsPackets;
+    private CipherSuite cipherSuite;
+    private byte[] clientRandom;
+    private byte[] serverRandom;
+
     @SneakyThrows
     public void decryptTls() {
-        ListMultimap<Packet, TlsPacket.TlsHeader> tlsPackets = ArrayListMultimap.create(packets.size(), 1);
-
+        tlsPackets = ArrayListMultimap.create(packets.size(), 1);
         packets.forEach(p -> tlsPackets.putAll(p, createTlsHeaders(p)));
 
         var clientHello = (ClientHelloHandshakeRecordContent)
@@ -56,10 +71,7 @@ public class TlsDecryptor {
         var serverHello = (ServerHelloHandshakeRecordContent)
                 getHandshake(tlsPackets.values(), HandshakeType.SERVER_HELLO).orElseThrow();
 
-        byte[] clientRandom = clientHello.getRandom();
-        byte[] serverRandom = serverHello.getRandom();
-
-        CipherSuite cipherSuite = serverHello.getCipherSuite();
+        cipherSuite = serverHello.getCipherSuite();
 
         if (cipherSuite.name().startsWith("TLS_RSA_WITH_")) {
             Matcher matcher = cipherSuitePattern.matcher(cipherSuite.name());
@@ -68,82 +80,115 @@ public class TlsDecryptor {
             String blockCipher = matcher.group(1);  //TODO использовать не только AES256
             String hashAlgo = matcher.group(2);
 
-            var certificateHandshake = ((CertificateHandshakeRecordContent)
-                    getHandshake(tlsPackets.values(), HandshakeType.CERTIFICATE).orElseThrow());
-            List<byte[]> chain = certificateHandshake.getRawCertificates();
-            byte[] rawCertificate = chain.get(0);
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(rawCertificate));
-            RSAPublicKey publicKey = (RSAPublicKey) certificate.getPublicKey();
+            clientRandom = clientHello.getRandom();
+            serverRandom = serverHello.getRandom();
 
-            RSAPrivateKey privateKey = keysHolder.getKey(publicKey.getModulus());
-            if(privateKey == null) {
-                log.warn("Key for modulus not found: {}", publicKey.getModulus());
-                return;
-            }
+            decryptTlsRsa(blockCipher, hashAlgo);
+        }
+    }
 
-            var clientKeyExchange = (BasicHandshakeRecordContent)
-                    getHandshake(tlsPackets.values(), HandshakeType.CLIENT_KEY_EXCHANGE).orElseThrow();
+    private void decryptTlsRsa(String blockCipher, String hashAlgo) throws CertificateException, NoSuchPaddingException, NoSuchAlgorithmException {
+        RSAPublicKey publicKey = getRsaPublicKey();
+        RSAPrivateKey privateKey = keysHolder.getKey(publicKey.getModulus());
+        if (privateKey == null) {
+            String n = publicKey.getModulus().toString();
+            log.warn("Key for modulus not found: {}...", n.substring(0, Math.min(n.length(), 8)));
+            return;
+        }
 
-            byte[] encryptedPreMaster = TlsKeyUtils.getClientRsaPreMaster(clientKeyExchange.getContent(), 0);
+        BcTlsSecret preMaster;
+        try {
+            preMaster = getPreMaster(privateKey);
+        } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            log.warn("Failed do get pre-master key", e);
+            return;
+        }
 
-            Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            rsa.init(Cipher.DECRYPT_MODE, privateKey);
-            byte[] preMaster = rsa.doFinal(encryptedPreMaster);
-            byte[] randomCS = ArrayUtils.addAll(clientRandom, serverRandom);
-            byte[] randomSC = ArrayUtils.addAll(serverRandom, clientRandom);
+        byte[] randomCS = ArrayUtils.addAll(clientRandom, serverRandom);
+        byte[] randomSC = ArrayUtils.addAll(serverRandom, clientRandom);
 
-            BcTlsSecret preSecret = new BcTlsSecret(new BcTlsCrypto(null), preMaster);
-            TlsSecret masterSecret = preSecret.deriveUsingPRF(
-                    PRFAlgorithm.tls_prf_sha256, ExporterLabel.master_secret, randomCS, 48);
-            byte[] expanded = masterSecret.deriveUsingPRF(
-                    PRFAlgorithm.tls_prf_sha256, ExporterLabel.key_expansion, randomSC, 136).extract(); // для sha256
+        TlsSecret masterSecret = preMaster.deriveUsingPRF(
+                PRFAlgorithm.tls_prf_sha256, ExporterLabel.master_secret, randomCS, 48);
+        byte[] expanded = masterSecret.deriveUsingPRF(
+                PRFAlgorithm.tls_prf_sha256, ExporterLabel.key_expansion, randomSC, 136).extract(); // для sha256
 
-            byte[] clientMacKey = new byte[20];
-            byte[] serverMacKey = new byte[20];
-            byte[] clientEncryptionKey = new byte[32];
-            byte[] serverEncryptionKey = new byte[32];
-            byte[] clientIV = new byte[16];
-            byte[] serverIV = new byte[16];
+        byte[] clientMacKey = new byte[20];
+        byte[] serverMacKey = new byte[20];
+        byte[] clientEncryptionKey = new byte[32];
+        byte[] serverEncryptionKey = new byte[32];
+        byte[] clientIV = new byte[16];
+        byte[] serverIV = new byte[16];
 
-            ByteBuffer bb = ByteBuffer.wrap(expanded);
-            bb.get(clientMacKey);
-            bb.get(serverMacKey);
-            bb.get(clientEncryptionKey);
-            bb.get(serverEncryptionKey);
-            bb.get(clientIV);
-            bb.get(serverIV);
+        ByteBuffer bb = ByteBuffer.wrap(expanded);
+        bb.get(clientMacKey);
+        bb.get(serverMacKey);
+        bb.get(clientEncryptionKey);
+        bb.get(serverEncryptionKey);
+        bb.get(clientIV);
+        bb.get(serverIV);
 
-            byte[] clientFinishedEncrypted = getFinishedData(tlsPackets, true);
-            byte[] serverFinishedEncrypted = getFinishedData(tlsPackets, false);
+        byte[] clientFinishedEncrypted = getFinishedData(tlsPackets, true);
+        byte[] serverFinishedEncrypted = getFinishedData(tlsPackets, false);
 
-            Cipher clientCipher = createCipher(clientEncryptionKey, clientIV, clientFinishedEncrypted);
-            Cipher serverCipher = createCipher(serverEncryptionKey, serverIV, serverFinishedEncrypted);
+        Cipher clientCipher = createCipher(clientEncryptionKey, clientIV, clientFinishedEncrypted);
+        Cipher serverCipher = createCipher(serverEncryptionKey, serverIV, serverFinishedEncrypted);
 
-            for (Packet packet : packets) {
-                List<TlsPacket.TlsHeader> tlsData = (List<TlsPacket.TlsHeader>) tlsPackets.get(packet);
+        result = new ArrayList<>(packets.size());
 
-                for (TlsPacket.TlsHeader tlsPacket : tlsData) {
-                    if (tlsPacket.getContentType() == ContentType.APPLICATION_DATA) {
-                        byte[] data = ((ApplicationDataRecord) tlsPacket.getRecord()).getData();
-                        boolean client = packet.isIncoming();
+        for (Packet packet : packets) {
+            List<TlsPacket.TlsHeader> tlsData = tlsPackets.get(packet);
 
-                        byte[] decoded;
+            for (TlsPacket.TlsHeader tlsPacket : tlsData) {
+                if (tlsPacket.getContentType() == ContentType.APPLICATION_DATA) {
+                    byte[] data = ((ApplicationDataRecord) tlsPacket.getRecord()).getData();
+                    boolean client = packet.isIncoming();
 
-                        if(client) {
-                            decoded = clientCipher.update(data);
-                        } else {
-                            decoded = serverCipher.update(data);
-                        }
+                    byte[] decoded;
 
-                        decoded = clearDecodedData(decoded);
-                        String string = new String(decoded);
-                        log.info(string);
+                    if (client) {
+                        decoded = clientCipher.update(data);
+                    } else {
+                        decoded = serverCipher.update(data);
                     }
+
+                    decoded = clearDecodedData(decoded);
+
+                    result.add(Packet.builder()
+                            .content(decoded)
+                            .incoming(packet.isIncoming())
+                            .timestamp(packet.getTimestamp())
+                            .ungzipped(false)
+                            .webSocketParsed(false)
+                            .tlsDecrypted(true)
+                            .ttl(packet.getTtl())
+                            .build());
                 }
             }
         }
 
+        parsed = true;
+    }
+
+    private BcTlsSecret getPreMaster(RSAPrivateKey privateKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        var clientKeyExchange = (BasicHandshakeRecordContent)
+                getHandshake(tlsPackets.values(), HandshakeType.CLIENT_KEY_EXCHANGE).orElseThrow();
+
+        byte[] encryptedPreMaster = TlsKeyUtils.getClientRsaPreMaster(clientKeyExchange.getContent(), 0);
+
+        Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        rsa.init(Cipher.DECRYPT_MODE, privateKey);
+        byte[] preMaster = rsa.doFinal(encryptedPreMaster);
+        return new BcTlsSecret(new BcTlsCrypto(null), preMaster);
+    }
+
+    private RSAPublicKey getRsaPublicKey() throws CertificateException {
+        var certificateHandshake = ((CertificateHandshakeRecordContent)
+                getHandshake(tlsPackets.values(), HandshakeType.CERTIFICATE).orElseThrow());
+        List<byte[]> chain = certificateHandshake.getRawCertificates();
+        byte[] rawCertificate = chain.get(0);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(rawCertificate));
+        return (RSAPublicKey) certificate.getPublicKey();
     }
 
     @SneakyThrows
@@ -165,7 +210,7 @@ public class TlsDecryptor {
     }
 
     private byte[] getFinishedData(ListMultimap<Packet, TlsPacket.TlsHeader> tlsPackets, boolean incoming) {
-        return  ((BasicHandshakeRecordContent) getHandshake(tlsPackets.asMap().entrySet().stream()
+        return ((BasicHandshakeRecordContent) getHandshake(tlsPackets.asMap().entrySet().stream()
                 .filter(ent -> ent.getKey().isIncoming() == incoming)
                 .map(Map.Entry::getValue)
                 .flatMap(Collection::stream), HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE))
@@ -204,6 +249,14 @@ public class TlsDecryptor {
         }
 
         return headers;
+    }
+
+    public List<Packet> getParsedPackets() {
+        if (!parsed) {
+            throw new IllegalStateException("TLS is not parsed");
+        }
+
+        return result;
     }
 
 }
