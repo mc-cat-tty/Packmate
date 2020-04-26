@@ -12,6 +12,7 @@ import org.bouncycastle.tls.PRFAlgorithm;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsSecret;
+import org.pcap4j.packet.IllegalRawDataException;
 import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.service.optimization.tls.TlsPacket;
@@ -31,6 +32,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
@@ -41,7 +43,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -57,21 +58,32 @@ public class TlsDecryptor {
     private List<Packet> result;
 
     private ListMultimap<Packet, TlsPacket.TlsHeader> tlsPackets;
-    private CipherSuite cipherSuite;
     private byte[] clientRandom;
     private byte[] serverRandom;
 
-    @SneakyThrows
     public void decryptTls() {
         tlsPackets = ArrayListMultimap.create(packets.size(), 1);
-        packets.forEach(p -> tlsPackets.putAll(p, createTlsHeaders(p)));
 
-        var clientHello = (ClientHelloHandshakeRecordContent)
-                getHandshake(tlsPackets.values(), HandshakeType.CLIENT_HELLO).orElseThrow();
-        var serverHello = (ServerHelloHandshakeRecordContent)
-                getHandshake(tlsPackets.values(), HandshakeType.SERVER_HELLO).orElseThrow();
+        try {
+            for (Packet p : packets) {
+                tlsPackets.putAll(p, createTlsHeaders(p));
+            }
+        } catch (IllegalRawDataException e) {
+            log.warn("Failed to parse TLS packets", e);
+            return;
+        }
 
-        cipherSuite = serverHello.getCipherSuite();
+        var clientHelloOpt = getHandshake(HandshakeType.CLIENT_HELLO);
+        var serverHelloOpt = getHandshake(HandshakeType.SERVER_HELLO);
+
+        if (clientHelloOpt.isEmpty() || serverHelloOpt.isEmpty()) {
+            return;
+        }
+
+        var clientHello = (ClientHelloHandshakeRecordContent) clientHelloOpt.get();
+        var serverHello = (ServerHelloHandshakeRecordContent) serverHelloOpt.get();
+
+        CipherSuite cipherSuite = serverHello.getCipherSuite();
 
         if (cipherSuite.name().startsWith("TLS_RSA_WITH_")) {
             Matcher matcher = cipherSuitePattern.matcher(cipherSuite.name());
@@ -87,8 +99,14 @@ public class TlsDecryptor {
         }
     }
 
-    private void decryptTlsRsa(String blockCipher, String hashAlgo) throws CertificateException, NoSuchPaddingException, NoSuchAlgorithmException {
-        RSAPublicKey publicKey = getRsaPublicKey();
+    private void decryptTlsRsa(String blockCipher, String hashAlgo) {
+        Optional<RSAPublicKey> publicKeyOpt = getRsaPublicKey();
+
+        if (publicKeyOpt.isEmpty()) {
+            return;
+        }
+
+        RSAPublicKey publicKey = publicKeyOpt.get();
         RSAPrivateKey privateKey = keysHolder.getKey(publicKey.getModulus());
         if (privateKey == null) {
             String n = publicKey.getModulus().toString();
@@ -96,13 +114,12 @@ public class TlsDecryptor {
             return;
         }
 
-        BcTlsSecret preMaster;
-        try {
-            preMaster = getPreMaster(privateKey);
-        } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            log.warn("Failed do get pre-master key", e);
+        Optional<BcTlsSecret> preMasterOptional = getPreMaster(privateKey);
+        if (preMasterOptional.isEmpty()) {
             return;
         }
+
+        BcTlsSecret preMaster = preMasterOptional.get();
 
         byte[] randomCS = ArrayUtils.addAll(clientRandom, serverRandom);
         byte[] randomSC = ArrayUtils.addAll(serverRandom, clientRandom);
@@ -127,11 +144,25 @@ public class TlsDecryptor {
         bb.get(clientIV);
         bb.get(serverIV);
 
-        byte[] clientFinishedEncrypted = getFinishedData(tlsPackets, true);
-        byte[] serverFinishedEncrypted = getFinishedData(tlsPackets, false);
+        Optional<byte[]> clientFinishedOpt = getFinishedData(true);
+        Optional<byte[]> serverFinishedOpt = getFinishedData(false);
 
-        Cipher clientCipher = createCipher(clientEncryptionKey, clientIV, clientFinishedEncrypted);
-        Cipher serverCipher = createCipher(serverEncryptionKey, serverIV, serverFinishedEncrypted);
+        if (clientFinishedOpt.isEmpty() || serverFinishedOpt.isEmpty()) {
+            return;
+        }
+
+        byte[] clientFinishedEncrypted = clientFinishedOpt.get();
+        byte[] serverFinishedEncrypted = serverFinishedOpt.get();
+
+        Optional<Cipher> clientCipherOpt = createCipher(clientEncryptionKey, clientIV, clientFinishedEncrypted);
+        Optional<Cipher> serverCipherOpt = createCipher(serverEncryptionKey, serverIV, serverFinishedEncrypted);
+
+        if (clientCipherOpt.isEmpty() || serverCipherOpt.isEmpty()) {
+            return;
+        }
+
+        Cipher clientCipher = clientCipherOpt.get();
+        Cipher serverCipher = serverCipherOpt.get();
 
         result = new ArrayList<>(packets.size());
 
@@ -169,37 +200,66 @@ public class TlsDecryptor {
         parsed = true;
     }
 
-    private BcTlsSecret getPreMaster(RSAPrivateKey privateKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        var clientKeyExchange = (BasicHandshakeRecordContent)
-                getHandshake(tlsPackets.values(), HandshakeType.CLIENT_KEY_EXCHANGE).orElseThrow();
+    @SneakyThrows(value = {NoSuchAlgorithmException.class, NoSuchPaddingException.class})
+    private Optional<BcTlsSecret> getPreMaster(RSAPrivateKey privateKey) {
+        Optional<HandshakeRecordContent> opt = getHandshake(HandshakeType.CLIENT_KEY_EXCHANGE);
 
-        byte[] encryptedPreMaster = TlsKeyUtils.getClientRsaPreMaster(clientKeyExchange.getContent(), 0);
+        if (opt.isEmpty()) {
+            return Optional.empty();
+        }
 
-        Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        rsa.init(Cipher.DECRYPT_MODE, privateKey);
-        byte[] preMaster = rsa.doFinal(encryptedPreMaster);
-        return new BcTlsSecret(new BcTlsCrypto(null), preMaster);
+        var clientKeyExchange = (BasicHandshakeRecordContent) opt.get();
+
+        try {
+            byte[] encryptedPreMaster = TlsKeyUtils.getClientRsaPreMaster(clientKeyExchange.getContent(), 0);
+
+            Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            rsa.init(Cipher.DECRYPT_MODE, privateKey);
+            byte[] preMaster = rsa.doFinal(encryptedPreMaster);
+            return Optional.of(new BcTlsSecret(new BcTlsCrypto(null), preMaster));
+        } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            log.warn("Failed do get pre-master key", e);
+            return Optional.empty();
+        }
     }
 
-    private RSAPublicKey getRsaPublicKey() throws CertificateException {
-        var certificateHandshake = ((CertificateHandshakeRecordContent)
-                getHandshake(tlsPackets.values(), HandshakeType.CERTIFICATE).orElseThrow());
+    private Optional<RSAPublicKey> getRsaPublicKey() {
+        var certificateHandshakeOpt = getHandshake(HandshakeType.CERTIFICATE);
+
+        if (certificateHandshakeOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var certificateHandshake = (CertificateHandshakeRecordContent) certificateHandshakeOpt.get();
         List<byte[]> chain = certificateHandshake.getRawCertificates();
         byte[] rawCertificate = chain.get(0);
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(rawCertificate));
-        return (RSAPublicKey) certificate.getPublicKey();
+
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(rawCertificate));
+            RSAPublicKey publicKey = (RSAPublicKey) certificate.getPublicKey();
+            return Optional.of(publicKey);
+        } catch (CertificateException e) {
+            log.warn("Error while getting certificate", e);
+            return Optional.empty();
+        }
     }
 
-    @SneakyThrows
-    private Cipher createCipher(byte[] key, byte[] iv, byte[] initData) {
+    @SneakyThrows(value = {NoSuchAlgorithmException.class, NoSuchPaddingException.class})
+    private Optional<Cipher> createCipher(byte[] key, byte[] iv, byte[] initData) {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");  // TLS_RSA_WITH_AES_256_CBC_SHA
         SecretKeySpec serverSkeySpec = new SecretKeySpec(key, "AES");
         IvParameterSpec serverIvParameterSpec = new IvParameterSpec(iv);
-        cipher.init(Cipher.DECRYPT_MODE, serverSkeySpec, serverIvParameterSpec);
-        cipher.update(initData);
 
-        return cipher;
+        try {
+            cipher.init(Cipher.DECRYPT_MODE, serverSkeySpec, serverIvParameterSpec);
+            cipher.update(initData);
+
+            return Optional.of(cipher);
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+            log.warn("Error decrypting TLS", e);
+            return Optional.empty();
+        }
     }
 
     private byte[] clearDecodedData(byte[] decoded) {
@@ -209,26 +269,22 @@ public class TlsDecryptor {
         return decoded;
     }
 
-    private byte[] getFinishedData(ListMultimap<Packet, TlsPacket.TlsHeader> tlsPackets, boolean incoming) {
-        return ((BasicHandshakeRecordContent) getHandshake(tlsPackets.asMap().entrySet().stream()
+    private Optional<byte[]> getFinishedData(boolean incoming) {
+        var contentOpt = tlsPackets.asMap().entrySet().stream()
                 .filter(ent -> ent.getKey().isIncoming() == incoming)
                 .map(Map.Entry::getValue)
-                .flatMap(Collection::stream), HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE))
-                .getContent();
-    }
-
-    private HandshakeRecordContent getHandshake(Stream<TlsPacket.TlsHeader> stream, HandshakeType handshakeType) {
-        return stream.filter(p -> p.getContentType() == ContentType.HANDSHAKE)
+                .flatMap(Collection::stream)
+                .filter(p -> p.getContentType() == ContentType.HANDSHAKE)
                 .map(p -> ((HandshakeRecord) p.getRecord()))
-                .filter(r -> r.getHandshakeType() == handshakeType)
+                .filter(r -> r.getHandshakeType() == HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE)
                 .map(r -> ((BasicHandshakeRecordContent) r.getContent()))
-                .findFirst()
-                .orElseThrow();
+                .findFirst();
+
+        return contentOpt.map(BasicHandshakeRecordContent::getContent);
     }
 
-    private Optional<HandshakeRecordContent> getHandshake(Collection<TlsPacket.TlsHeader> packets,
-                                                          HandshakeType handshakeType) {
-        return packets.stream()
+    private Optional<HandshakeRecordContent> getHandshake(HandshakeType handshakeType) {
+        return tlsPackets.values().stream()
                 .filter(p -> p.getContentType() == ContentType.HANDSHAKE)
                 .map(p -> ((HandshakeRecord) p.getRecord()))
                 .filter(r -> r.getHandshakeType() == handshakeType)
@@ -236,8 +292,7 @@ public class TlsDecryptor {
                 .findFirst();
     }
 
-    @SneakyThrows
-    private List<TlsPacket.TlsHeader> createTlsHeaders(Packet p) {
+    private List<TlsPacket.TlsHeader> createTlsHeaders(Packet p) throws IllegalRawDataException {
         List<TlsPacket.TlsHeader> headers = new ArrayList<>();
         TlsPacket tlsPacket = TlsPacket.newPacket(p.getContent(), 0, p.getContent().length);
 
