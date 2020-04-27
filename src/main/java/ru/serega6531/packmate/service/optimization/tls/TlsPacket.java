@@ -97,7 +97,7 @@ public class TlsPacket extends AbstractPacket {
         }
 
         private TlsHeader(byte[] rawData, int offset, int length) throws IllegalRawDataException {
-            //TODO check length
+            ByteArrays.validateBounds(rawData, offset, RECORD_OFFSET);
             this.contentType = ContentType.getInstance(ByteArrays.getByte(rawData, CONTENT_TYPE_OFFSET + offset));
             this.version = TlsVersion.getInstance(ByteArrays.getShort(rawData, VERSION_OFFSET + offset));
             this.recordLength = ByteArrays.getShort(rawData, LENGTH_OFFSET + offset);
@@ -109,9 +109,9 @@ public class TlsPacket extends AbstractPacket {
             } else if (contentType == ContentType.APPLICATION_DATA) {
                 this.record = ApplicationDataRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.ALERT) {
-                this.record = new AlertRecord(rawData, offset + RECORD_OFFSET, recordLength);
+                this.record = AlertRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.HEARTBEAT) {
-                //TODO
+                this.record = HeartbeatRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else {
                 throw new IllegalArgumentException("Unknown content type: " + contentType);
             }

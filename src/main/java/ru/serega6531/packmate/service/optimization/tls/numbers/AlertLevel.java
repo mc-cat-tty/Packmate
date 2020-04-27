@@ -13,7 +13,6 @@ public class AlertLevel extends NamedNumber<Byte, AlertLevel> {
     public static final AlertLevel WARNING = new AlertLevel((byte) 1, "warning");
     public static final AlertLevel FATAL = new AlertLevel((byte) 2, "fatal");
 
-
     public AlertLevel(Byte value, String name) {
         super(value, name);
         registry.put(value, this);

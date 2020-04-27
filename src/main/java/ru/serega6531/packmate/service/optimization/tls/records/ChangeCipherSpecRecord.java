@@ -4,7 +4,7 @@ import org.pcap4j.util.ByteArrays;
 
 public class ChangeCipherSpecRecord implements TlsRecord {
 
-    /*
+    /**
     0x0 - Change Cipher Spec Message
     0x1 - End
      */
