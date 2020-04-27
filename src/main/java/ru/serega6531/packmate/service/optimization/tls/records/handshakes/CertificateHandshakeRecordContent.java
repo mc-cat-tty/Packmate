@@ -36,4 +36,17 @@ public class CertificateHandshakeRecordContent implements HandshakeRecordContent
     public List<byte[]> getRawCertificates() {
         return rawCertificates;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("    Chain length: " + rawCertificates.size());
+
+        for (byte[] cert : rawCertificates) {
+            sb.append('\n');
+            sb.append("    [").append(cert.length).append(" bytes]");
+        }
+
+        return sb.toString();
+    }
+
 }

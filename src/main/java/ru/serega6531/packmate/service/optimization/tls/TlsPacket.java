@@ -6,10 +6,7 @@ import org.pcap4j.packet.Packet;
 import org.pcap4j.util.ByteArrays;
 import ru.serega6531.packmate.service.optimization.tls.numbers.ContentType;
 import ru.serega6531.packmate.service.optimization.tls.numbers.TlsVersion;
-import ru.serega6531.packmate.service.optimization.tls.records.ApplicationDataRecord;
-import ru.serega6531.packmate.service.optimization.tls.records.ChangeCipherSpecRecord;
-import ru.serega6531.packmate.service.optimization.tls.records.HandshakeRecord;
-import ru.serega6531.packmate.service.optimization.tls.records.TlsRecord;
+import ru.serega6531.packmate.service.optimization.tls.records.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,7 +109,7 @@ public class TlsPacket extends AbstractPacket {
             } else if (contentType == ContentType.APPLICATION_DATA) {
                 this.record = ApplicationDataRecord.newInstance(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.ALERT) {
-                //TODO
+                this.record = new AlertRecord(rawData, offset + RECORD_OFFSET, recordLength);
             } else if (contentType == ContentType.HEARTBEAT) {
                 //TODO
             } else {
