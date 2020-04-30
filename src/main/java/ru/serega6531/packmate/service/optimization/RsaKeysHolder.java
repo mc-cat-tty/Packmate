@@ -33,6 +33,7 @@ public class RsaKeysHolder {
 
     @EventListener(ApplicationReadyEvent.class)
     public void afterStartup(ApplicationReadyEvent event) {
+        log.info("Loading RSA keys...");
         File dir = new File("rsa_keys");
         if (dir.exists() && dir.isDirectory()) {
             for (File keyFile : Objects.requireNonNull(dir.listFiles())) {

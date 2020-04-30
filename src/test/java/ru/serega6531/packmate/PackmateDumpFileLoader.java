@@ -22,6 +22,10 @@ public class PackmateDumpFileLoader {
         List<Packet> packets = new ArrayList<>();
 
         for (String line : Files.readAllLines(file.toPath())) {
+            if (line.startsWith("#")) {
+                continue;
+            }
+
             switch (line) {
                 case "in" -> in = true;
                 case "out" -> in = false;

@@ -99,6 +99,7 @@ public class TlsDecryptor {
         }
     }
 
+    @SneakyThrows
     private void decryptTlsRsa(String blockCipher, String hashAlgo) {
         Optional<RSAPublicKey> publicKeyOpt = getRsaPublicKey();
 
@@ -144,18 +145,8 @@ public class TlsDecryptor {
         bb.get(clientIV);
         bb.get(serverIV);
 
-        Optional<byte[]> clientFinishedOpt = getFinishedData(true);
-        Optional<byte[]> serverFinishedOpt = getFinishedData(false);
-
-        if (clientFinishedOpt.isEmpty() || serverFinishedOpt.isEmpty()) {
-            return;
-        }
-
-        byte[] clientFinishedEncrypted = clientFinishedOpt.get();
-        byte[] serverFinishedEncrypted = serverFinishedOpt.get();
-
-        Optional<Cipher> clientCipherOpt = createCipher(clientEncryptionKey, clientIV, clientFinishedEncrypted);
-        Optional<Cipher> serverCipherOpt = createCipher(serverEncryptionKey, serverIV, serverFinishedEncrypted);
+        Optional<Cipher> clientCipherOpt = createCipher(clientEncryptionKey, clientIV);
+        Optional<Cipher> serverCipherOpt = createCipher(serverEncryptionKey, serverIV);
 
         if (clientCipherOpt.isEmpty() || serverCipherOpt.isEmpty()) {
             return;
@@ -174,13 +165,8 @@ public class TlsDecryptor {
                     byte[] data = ((ApplicationDataRecord) tlsPacket.getRecord()).getData();
                     boolean client = packet.isIncoming();
 
-                    byte[] decoded;
-
-                    if (client) {
-                        decoded = clientCipher.update(data);
-                    } else {
-                        decoded = serverCipher.update(data);
-                    }
+                    Cipher cipher = client ? clientCipher : serverCipher;
+                    byte[] decoded = cipher.doFinal(data);
 
                     decoded = clearDecodedData(decoded);
 
@@ -246,14 +232,13 @@ public class TlsDecryptor {
     }
 
     @SneakyThrows(value = {NoSuchAlgorithmException.class, NoSuchPaddingException.class})
-    private Optional<Cipher> createCipher(byte[] key, byte[] iv, byte[] initData) {
+    private Optional<Cipher> createCipher(byte[] key, byte[] iv) {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");  // TLS_RSA_WITH_AES_256_CBC_SHA
         SecretKeySpec serverSkeySpec = new SecretKeySpec(key, "AES");
         IvParameterSpec serverIvParameterSpec = new IvParameterSpec(iv);
 
         try {
             cipher.init(Cipher.DECRYPT_MODE, serverSkeySpec, serverIvParameterSpec);
-            cipher.update(initData);
 
             return Optional.of(cipher);
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
@@ -263,24 +248,10 @@ public class TlsDecryptor {
     }
 
     private byte[] clearDecodedData(byte[] decoded) {
-        int start = 32;
-        int end = decoded.length - 6; //FIXME
+        int start = 16;
+        int end = decoded.length - 21; // почему?)
         decoded = ByteArrays.getSubArray(decoded, start, end - start);
         return decoded;
-    }
-
-    private Optional<byte[]> getFinishedData(boolean incoming) {
-        var contentOpt = tlsPackets.asMap().entrySet().stream()
-                .filter(ent -> ent.getKey().isIncoming() == incoming)
-                .map(Map.Entry::getValue)
-                .flatMap(Collection::stream)
-                .filter(p -> p.getContentType() == ContentType.HANDSHAKE)
-                .map(p -> ((HandshakeRecord) p.getRecord()))
-                .filter(r -> r.getHandshakeType() == HandshakeType.ENCRYPTED_HANDSHAKE_MESSAGE)
-                .map(r -> ((BasicHandshakeRecordContent) r.getContent()))
-                .findFirst();
-
-        return contentOpt.map(BasicHandshakeRecordContent::getContent);
     }
 
     private Optional<HandshakeRecordContent> getHandshake(HandshakeType handshakeType) {

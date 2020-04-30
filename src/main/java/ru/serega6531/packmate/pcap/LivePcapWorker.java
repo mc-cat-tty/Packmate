@@ -39,16 +39,18 @@ public class LivePcapWorker extends AbstractPcapWorker {
 
         applyFilter();
 
-        try {
-            log.info("Intercept started");
-            pcap.loop(-1, this, loopExecutorService);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
-            // выходим
-        } catch (Exception e) {
-            log.error("Error while capturing packet", e);
-            stop();
-        }
+        loopExecutorService.execute(() -> {
+            try {
+                log.info("Intercept started");
+                pcap.loop(-1, this);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+                // выходим
+            } catch (Exception e) {
+                log.error("Error while capturing packet", e);
+                stop();
+            }
+        });
     }
 
     @SneakyThrows

@@ -21,27 +21,57 @@ public class StreamOptimizer {
      */
     public List<Packet> optimizeStream() {
         if (service.isDecryptTls()) {
-            decryptTls();
+            try {
+                decryptTls();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (tls)", e);
+                return packets;
+            }
         }
 
         if (service.isProcessChunkedEncoding()) {
-            processChunkedEncoding();
+            try {
+                processChunkedEncoding();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (chunks)", e);
+                return packets;
+            }
         }
 
         if (service.isUngzipHttp()) {
-            unpackGzip();
+            try {
+                unpackGzip();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (gzip)", e);
+                return packets;
+            }
         }
 
         if (service.isParseWebSockets()) {
-            parseWebSockets();
+            try {
+                parseWebSockets();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (websocketss)", e);
+                return packets;
+            }
         }
 
         if (service.isUrldecodeHttpRequests()) {
-            urldecodeRequests();
+            try {
+                urldecodeRequests();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (urldecode)", e);
+                return packets;
+            }
         }
 
         if (service.isMergeAdjacentPackets()) {
-            mergeAdjacentPackets();
+            try {
+                mergeAdjacentPackets();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (adjacent)", e);
+                return packets;
+            }
         }
 
         return packets;
@@ -51,7 +81,7 @@ public class StreamOptimizer {
         final TlsDecryptor tlsDecryptor = new TlsDecryptor(packets, keysHolder);
         tlsDecryptor.decryptTls();
 
-        if(tlsDecryptor.isParsed()) {
+        if (tlsDecryptor.isParsed()) {
             packets = tlsDecryptor.getParsedPackets();
         }
     }
