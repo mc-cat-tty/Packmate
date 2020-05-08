@@ -21,6 +21,7 @@ Advanced network traffic flow analyzer for A/D CTFs.
 * Can urldecode text automatically
 * Can automatically decompress GZIPed HTTP
 * Can automatically deflate WebSockets with permessages-deflate extension
+* Decrypts TLS with RSA using given private key
 
 ![Main window](screenshots/Screenshot.png)
 ## Cloning
@@ -106,6 +107,8 @@ In LIVE mode the system will start automatically capture streams and show them i
 In FILE mode you'll have to press appropriate button in a sidebar to start processing a file.  
 Click at a stream to view a list of packets;
 you can click a button in the sidebar to switch between binary and text views.
+
+To decrypt TLS, put the private key used to generate a certificate into the `rsa_keys` folder.
 
 ### Shortcuts
 To quickly navigate streams you can use the following shortcuts:
