@@ -11,6 +11,7 @@ public class AlertRecord implements TlsRecord {
     private static final int LEVEL_OFFSET = 0;
     private static final int DESCRIPTION_OFFSET = LEVEL_OFFSET + BYTE_SIZE_IN_BYTES;
 
+    private int length;
     private AlertLevel level;
     private AlertDescription description;
 
@@ -20,12 +21,20 @@ public class AlertRecord implements TlsRecord {
     }
 
     public AlertRecord(byte[] rawData, int offset, int length) {
+        this.length = length;
         this.level = AlertLevel.getInstance(ByteArrays.getByte(rawData, LEVEL_OFFSET + offset));
-        this.description = AlertDescription.getInstance(ByteArrays.getByte(rawData, DESCRIPTION_OFFSET + offset));
+
+        if (level != AlertLevel.ENCRYPTED_ALERT) {
+            this.description = AlertDescription.getInstance(ByteArrays.getByte(rawData, DESCRIPTION_OFFSET + offset));
+        }
     }
 
     @Override
     public String toString() {
-        return "  Alert [level: " + level.name() + ", description: " + description.name() + "]";
+        if (level != AlertLevel.ENCRYPTED_ALERT) {
+            return "  Alert [level: " + level.name() + ", description: " + description.name() + "]";
+        } else {
+            return "  Encrypted Alert [" + length + " bytes]";
+        }
     }
 }

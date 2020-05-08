@@ -40,7 +40,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -101,6 +103,17 @@ public class TlsDecryptor {
 
     @SneakyThrows
     private void decryptTlsRsa(String blockCipher, String hashAlgo) {
+        String[] blockCipherParts = blockCipher.split("_");
+        String blockCipherAlgo = blockCipherParts[0];
+        int blockCipherSize = Integer.parseInt(blockCipherParts[1]);
+        String blockCipherMode = blockCipherParts[2];
+
+        if (!blockCipherAlgo.equals("AES")) {
+            return;
+        }
+
+        int keyLength = blockCipherSize / 8;
+
         Optional<RSAPublicKey> publicKeyOpt = getRsaPublicKey();
 
         if (publicKeyOpt.isEmpty()) {
@@ -128,12 +141,12 @@ public class TlsDecryptor {
         TlsSecret masterSecret = preMaster.deriveUsingPRF(
                 PRFAlgorithm.tls_prf_sha256, ExporterLabel.master_secret, randomCS, 48);
         byte[] expanded = masterSecret.deriveUsingPRF(
-                PRFAlgorithm.tls_prf_sha256, ExporterLabel.key_expansion, randomSC, 136).extract(); // для sha256
+                PRFAlgorithm.tls_prf_sha256, ExporterLabel.key_expansion, randomSC, 72 + keyLength * 2).extract(); // для sha256
 
         byte[] clientMacKey = new byte[20];
         byte[] serverMacKey = new byte[20];
-        byte[] clientEncryptionKey = new byte[32];
-        byte[] serverEncryptionKey = new byte[32];
+        byte[] clientEncryptionKey = new byte[keyLength];
+        byte[] serverEncryptionKey = new byte[keyLength];
         byte[] clientIV = new byte[16];
         byte[] serverIV = new byte[16];
 
@@ -145,8 +158,8 @@ public class TlsDecryptor {
         bb.get(clientIV);
         bb.get(serverIV);
 
-        Optional<Cipher> clientCipherOpt = createCipher(clientEncryptionKey, clientIV);
-        Optional<Cipher> serverCipherOpt = createCipher(serverEncryptionKey, serverIV);
+        Optional<Cipher> clientCipherOpt = createCipher(blockCipherMode, clientEncryptionKey, clientIV);
+        Optional<Cipher> serverCipherOpt = createCipher(blockCipherMode, serverEncryptionKey, serverIV);
 
         if (clientCipherOpt.isEmpty() || serverCipherOpt.isEmpty()) {
             return;
@@ -232,8 +245,8 @@ public class TlsDecryptor {
     }
 
     @SneakyThrows(value = {NoSuchAlgorithmException.class, NoSuchPaddingException.class})
-    private Optional<Cipher> createCipher(byte[] key, byte[] iv) {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");  // TLS_RSA_WITH_AES_256_CBC_SHA
+    private Optional<Cipher> createCipher(String mode, byte[] key, byte[] iv) {
+        Cipher cipher = Cipher.getInstance("AES/" + mode + "/PKCS5Padding");
         SecretKeySpec serverSkeySpec = new SecretKeySpec(key, "AES");
         IvParameterSpec serverIvParameterSpec = new IvParameterSpec(iv);
 
