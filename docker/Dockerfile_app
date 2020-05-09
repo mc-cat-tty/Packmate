@@ -13,7 +13,7 @@ RUN npm install && npm run build && npm cache clean --force \
 
 WORKDIR /app/
 
-RUN ./gradlew --no-daemon --no-build-cache build \
+RUN ./gradlew --no-daemon --no-build-cache build -x test \
     && cp build/libs/packmate-*.jar app.jar \
     && ./gradlew --no-daemon clean
 

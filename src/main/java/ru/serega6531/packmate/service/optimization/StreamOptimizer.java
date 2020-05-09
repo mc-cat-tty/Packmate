@@ -12,6 +12,7 @@ import java.util.List;
 @Slf4j
 public class StreamOptimizer {
 
+    private final RsaKeysHolder keysHolder;
     private final CtfService service;
     private List<Packet> packets;
 
@@ -19,27 +20,70 @@ public class StreamOptimizer {
      * Вызвать для выполнения оптимизаций на переданном списке пакетов.
      */
     public List<Packet> optimizeStream() {
+        if (service.isDecryptTls()) {
+            try {
+                decryptTls();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (tls)", e);
+                return packets;
+            }
+        }
+
         if (service.isProcessChunkedEncoding()) {
-            processChunkedEncoding();
+            try {
+                processChunkedEncoding();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (chunks)", e);
+                return packets;
+            }
         }
 
         if (service.isUngzipHttp()) {
-            unpackGzip();
+            try {
+                unpackGzip();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (gzip)", e);
+                return packets;
+            }
         }
 
         if (service.isParseWebSockets()) {
-            parseWebSockets();
+            try {
+                parseWebSockets();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (websocketss)", e);
+                return packets;
+            }
         }
 
         if (service.isUrldecodeHttpRequests()) {
-            urldecodeRequests();
+            try {
+                urldecodeRequests();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (urldecode)", e);
+                return packets;
+            }
         }
 
         if (service.isMergeAdjacentPackets()) {
-            mergeAdjacentPackets();
+            try {
+                mergeAdjacentPackets();
+            } catch (Exception e) {
+                log.warn("Error optimizing stream (adjacent)", e);
+                return packets;
+            }
         }
 
         return packets;
+    }
+
+    private void decryptTls() {
+        final TlsDecryptor tlsDecryptor = new TlsDecryptor(packets, keysHolder);
+        tlsDecryptor.decryptTls();
+
+        if (tlsDecryptor.isParsed()) {
+            packets = tlsDecryptor.getParsedPackets();
+        }
     }
 
     /**

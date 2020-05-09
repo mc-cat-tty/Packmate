@@ -137,6 +137,7 @@ public class HttpChunksProcessor {
                 .timestamp(packets.get(0).getTimestamp())
                 .ungzipped(false)
                 .webSocketParsed(false)
+                .tlsDecrypted(packets.get(0).isTlsDecrypted())
                 .content(output.toByteArray())
                 .build();
 

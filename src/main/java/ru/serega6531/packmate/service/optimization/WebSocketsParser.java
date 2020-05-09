@@ -104,7 +104,7 @@ public class WebSocketsParser {
     }
 
     private void parse(final List<Packet> wsPackets, final List<Packet> handshakes, Draft_6455 draft) {
-        List<List<Packet>> sides = sliceToSides(wsPackets);
+        List<List<Packet>> sides = PacketUtils.sliceToSides(wsPackets);
         parsedPackets = new ArrayList<>(handshakes);
 
         for (List<Packet> side : sides) {
@@ -132,6 +132,7 @@ public class WebSocketsParser {
                             .ttl(lastPacket.getTtl())
                             .ungzipped(lastPacket.isUngzipped())
                             .webSocketParsed(true)
+                            .tlsDecrypted(lastPacket.isTlsDecrypted())
                             .build()
                     );
                 }
@@ -147,31 +148,6 @@ public class WebSocketsParser {
         }
 
         return parsedPackets;
-    }
-
-    private List<List<Packet>> sliceToSides(List<Packet> packets) {
-        List<List<Packet>> result = new ArrayList<>();
-        List<Packet> side = new ArrayList<>();
-        boolean incoming = true;
-
-        for (Packet packet : packets) {
-            if(packet.isIncoming() != incoming) {
-                incoming = packet.isIncoming();
-
-                if(!side.isEmpty()) {
-                    result.add(side);
-                    side = new ArrayList<>();
-                }
-            }
-
-            side.add(packet);
-        }
-
-        if(!side.isEmpty()) {
-            result.add(side);
-        }
-
-        return result;
     }
 
     private String getHandshake(final List<Packet> packets) {

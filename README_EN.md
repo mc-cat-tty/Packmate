@@ -21,6 +21,7 @@ Advanced network traffic flow analyzer for A/D CTFs.
 * Can urldecode text automatically
 * Can automatically decompress GZIPed HTTP
 * Can automatically deflate WebSockets with permessages-deflate extension
+* Decrypts TLS with RSA using given private key
 
 ![Main window](screenshots/Screenshot.png)
 ## Cloning
@@ -73,6 +74,8 @@ PACKMATE_MODE=FILE
 # Path to pcap file from project root
 PACKMATE_PCAP_FILE=dump.pcap
 ```
+
+To decrypt TLS, put the private key used to generate a certificate into the `rsa_keys` folder.
 
 ### Launch
 After filling in env file you can launch the app:
