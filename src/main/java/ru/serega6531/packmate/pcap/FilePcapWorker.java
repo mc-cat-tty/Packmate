@@ -32,7 +32,7 @@ public class FilePcapWorker extends AbstractPcapWorker {
         this.subscriptionService = subscriptionService;
 
         file = new File(filename);
-        if(!file.exists()) {
+        if (!file.exists()) {
             throw new IllegalArgumentException("File " + file.getAbsolutePath() + " does not exist");
         }
 
@@ -61,10 +61,8 @@ public class FilePcapWorker extends AbstractPcapWorker {
                 //noinspection BusyWait
                 Thread.sleep(100);  // чтобы ошибки не летели слишком быстро
             } catch (EOFException e) {
-                stop();
-
                 log.info("All packets processed");
-                break;
+                stop();
             }
         }
     }
