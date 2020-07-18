@@ -16,12 +16,12 @@ Advanced network traffic flow analyzer for A/D CTFs.
 * Can make certain streams favorite and show only favorite streams
 * Supports several simultaneous services, can show streams for a specific service or pattern
 * Allows navigating streams using shortcuts
-* Has the option to copy packet content in the required format
+* Has the option to copy packet content in various formats
 * Can concatenate adjacent packets
 * Can urldecode text automatically
 * Can automatically decompress GZIPed HTTP
 * Can automatically deflate WebSockets with permessages-deflate extension
-* Decrypts TLS with RSA using given private key
+* Can automatically decrypt TLS with RSA using given private key (like Wireshark)
 
 ![Main window](screenshots/Screenshot.png)
 ## Cloning
@@ -43,7 +43,7 @@ git submodule update --init --recursive
 This program uses Docker and docker-compose.
 
 `packmate-db` will listen to port 65001 at localhost.  
-Database files are saved in ./docker/postgres_data, so to reset database you have to delete that directory.
+Database files are saved in ./docker/postgres_data, so to reset database you'll have to delete that directory.
 
 ### Settings
 This program retrieves settings from environment variables, 
@@ -88,7 +88,7 @@ If everything went fine, Packmate will be available on port `65000` from any hos
 ### Accessing the web interface
 When you open a web interface for the first time, you will be asked for a login and password
 you specified in the env file.  
-After entering the credentials, open the settings by clicking on the cogs 
+After entering the credentials, open the settings by clicking the cogs 
 in the top right corner and enter the specified login and password again.
 
 ![Settings](screenshots/Screenshot_Settings.png)
@@ -98,15 +98,16 @@ lost only upon changing server IP or port.
 
 ## Usage
 First of all, you should create game services.  
-To do that click `+` in the navbar, 
-then fill in the service name, port, and optimization to perform.
+To do that, click `+` in the navbar, 
+then fill in the service name, port, and optimizations to perform on streams.
 
-For simple monitoring of flags, there is a system of patterns.  
-To create a pattern open `Patterns` dropdown menu, press `+`, then 
+For a simple monitoring of flags, there is a system of patterns.  
+To create a pattern, open `Patterns` dropdown menu, press `+`, then 
 specify the type of pattern, the pattern itself, highlight color and other things.
 
-In LIVE mode the system will start automatically capture streams and show them in a sidebar.
-In FILE mode you'll have to press appropriate button in a sidebar to start processing a file.  
+In LIVE mode the system will automatically capture streams and show them in a sidebar.
+In FILE mode you'll have to press appropriate button in a sidebar to start processing a file. 
+Note that you should only do that after all services are created.  
 Click at a stream to view a list of packets;
 you can click a button in the sidebar to switch between binary and text views.
 
