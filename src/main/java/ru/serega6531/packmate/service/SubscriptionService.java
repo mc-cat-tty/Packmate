@@ -12,16 +12,15 @@ import org.springframework.web.socket.sockjs.SockJsTransportFailureException;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 @Slf4j
 public class SubscriptionService {
 
-    private final List<WebSocketSession> subscribers = Collections.synchronizedList(new ArrayList<>());
+    private final List<WebSocketSession> subscribers = new CopyOnWriteArrayList<>();
 
     private final ObjectMapper mapper;
 

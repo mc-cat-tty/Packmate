@@ -58,7 +58,8 @@ public class HttpChunksProcessor {
     }
 
     private void checkCompleteChunk(List<Packet> packets, int start) {
-        boolean end = BytesUtils.endsWith(packets.get(packets.size() - 1).getContent(), "\r\n0\r\n\r\n".getBytes());
+        boolean end = Arrays.equals(packets.get(packets.size() - 1).getContent(), "0\r\n\r\n".getBytes()) ||
+                BytesUtils.endsWith(packets.get(packets.size() - 1).getContent(), "\r\n0\r\n\r\n".getBytes());
 
         if (end) {
             processChunk(packets, start);
@@ -122,7 +123,7 @@ public class HttpChunksProcessor {
         int c1 = buf.get();
         int c2 = buf.get();
 
-        if(c1 != '\r' || c2 != '\n') {
+        if (c1 != '\r' || c2 != '\n') {
             log.warn("Failed to merge chunks, chunk trailer is not equal to \\r\\n");
             resetChunk();
             return false;
@@ -162,7 +163,7 @@ public class HttpChunksProcessor {
             if ((b >= '0' && b <= '9') || (b >= 'a' && b <= 'f')) {
                 sb.append((char) b);
             } else if (b == '\r') {
-                if(buf.get() == '\n') {
+                if (buf.get() == '\n') {
                     return Integer.parseInt(sb.toString(), 16);
                 } else {
                     return -1; // после \r не идет \n
