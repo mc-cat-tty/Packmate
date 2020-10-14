@@ -8,7 +8,7 @@ apply plugin: 'io.spring.dependency-management'
 group = 'ru.serega6531'
 version = '1.0-SNAPSHOT'
 
-sourceCompatibility = JavaVersion.VERSION_14
+sourceCompatibility = JavaVersion.VERSION_14  // сменить на 15 после фикса https://github.com/rzwitserloot/lombok/issues/2579
 targetCompatibility = JavaVersion.VERSION_14
 
 configurations {
@@ -19,9 +19,6 @@ configurations {
 
 repositories {
     mavenCentral()
-
-    // удалить после выхода стабильной версии Java-WebSocket
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {

@@ -1,20 +1,16 @@
-FROM openjdk:15-ea-jdk-alpine
+FROM node:current-alpine
+WORKDIR /tmp/build/
+COPY ./frontend/ .
+RUN npm install && npm run build
 
-RUN apk --no-cache add libpcap npm
+FROM adoptopenjdk/openjdk15:alpine
+WORKDIR /tmp/compile/
+COPY ./ .
+COPY --from=0 /tmp/build/dist/ ./src/main/resources/static/
+RUN ./gradlew --no-daemon build -x test
 
-COPY ./ /app/
-
-WORKDIR /app/frontend/
-
-RUN npm install && npm run build && npm cache clean --force \
-    && mkdir -p ../src/main/resources/static/ \
-	&& mv ./dist/* ../src/main/resources/static/ \
-	&& rm -rf node_modules
-
-WORKDIR /app/
-
-RUN ./gradlew --no-daemon --no-build-cache build -x test \
-    && cp build/libs/packmate-*.jar app.jar \
-    && ./gradlew --no-daemon clean
-
+FROM adoptopenjdk/openjdk15:alpine-jre
+WORKDIR /app
+RUN apk --no-cache add libpcap
+COPY --from=1 /tmp/compile/build/libs/packmate-*.jar app.jar
 EXPOSE 65000:65000
