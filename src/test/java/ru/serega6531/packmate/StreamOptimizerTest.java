@@ -2,7 +2,6 @@ package ru.serega6531.packmate;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
-import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.service.optimization.HttpGzipProcessor;
 import ru.serega6531.packmate.service.optimization.HttpUrldecodeProcessor;
@@ -34,9 +33,6 @@ class StreamOptimizerTest {
 
     @Test
     void testUrldecodeRequests() {
-        CtfService service = new CtfService();
-        service.setUrldecodeHttpRequests(true);
-
         Packet p = createPacket("GET /?q=%D0%B0+%D0%B1 HTTP/1.1\r\n\r\n".getBytes(), true);
         List<Packet> list = new ArrayList<>();
         list.add(p);
@@ -48,9 +44,6 @@ class StreamOptimizerTest {
 
     @Test
     void testMergeAdjacentPackets() {
-        CtfService service = new CtfService();
-        service.setMergeAdjacentPackets(true);
-
         Packet p1 = createPacket(1, false);
         Packet p2 = createPacket(2, true);
         Packet p3 = createPacket(3, true);

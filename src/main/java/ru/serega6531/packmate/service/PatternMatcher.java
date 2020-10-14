@@ -101,8 +101,9 @@ public class PatternMatcher {
     }
 
     private void addIfPossible(FoundPattern found) {
-        if (result.stream().noneMatch(match -> between(match.getStartPosition(), match.getEndPosition(), found.getStartPosition()) ||
-                between(match.getStartPosition(), match.getEndPosition(), found.getEndPosition()))) {
+        if (result.stream().noneMatch(match ->
+                between(match.getStartPosition(), match.getEndPosition(), found.getStartPosition()) ||
+                        between(match.getStartPosition(), match.getEndPosition(), found.getEndPosition()))) {
             result.add(found);
         }
     }

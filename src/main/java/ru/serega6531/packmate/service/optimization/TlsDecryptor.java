@@ -50,7 +50,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class TlsDecryptor {
 
-    private static final Pattern cipherSuitePattern = Pattern.compile("TLS_RSA_WITH_([A-Z0-9_]+)_([A-Z0-9]+)");
+    private static final Pattern cipherSuitePattern = Pattern.compile("TLS_RSA_WITH_([A-Z0-9_]+)_[A-Z0-9]+");
 
     private final List<Packet> packets;
     private final RsaKeysHolder keysHolder;
@@ -91,24 +91,23 @@ public class TlsDecryptor {
             Matcher matcher = cipherSuitePattern.matcher(cipherSuite.name());
             //noinspection ResultOfMethodCallIgnored
             matcher.find();
-            String blockCipher = matcher.group(1);  //TODO использовать не только AES256
-            String hashAlgo = matcher.group(2);
+            String blockCipher = matcher.group(1);
 
             clientRandom = clientHello.getRandom();
             serverRandom = serverHello.getRandom();
 
-            decryptTlsRsa(blockCipher, hashAlgo);
+            decryptTlsRsa(blockCipher);
         }
     }
 
     @SneakyThrows
-    private void decryptTlsRsa(String blockCipher, String hashAlgo) {
+    private void decryptTlsRsa(String blockCipher) {
         String[] blockCipherParts = blockCipher.split("_");
         String blockCipherAlgo = blockCipherParts[0];
         int blockCipherSize = Integer.parseInt(blockCipherParts[1]);
         String blockCipherMode = blockCipherParts[2];
 
-        if (!blockCipherAlgo.equals("AES")) {
+        if (!blockCipherAlgo.equals("AES")) {  //TODO использовать не только AES256
             return;
         }
 
@@ -141,7 +140,7 @@ public class TlsDecryptor {
         TlsSecret masterSecret = preMaster.deriveUsingPRF(
                 PRFAlgorithm.tls_prf_sha256, ExporterLabel.master_secret, randomCS, 48);
         byte[] expanded = masterSecret.deriveUsingPRF(
-                PRFAlgorithm.tls_prf_sha256, ExporterLabel.key_expansion, randomSC, 72 + keyLength * 2).extract(); // для sha256
+                PRFAlgorithm.tls_prf_sha256, ExporterLabel.key_expansion, randomSC, 72 + keyLength * 2).extract();
 
         byte[] clientMacKey = new byte[20];
         byte[] serverMacKey = new byte[20];
