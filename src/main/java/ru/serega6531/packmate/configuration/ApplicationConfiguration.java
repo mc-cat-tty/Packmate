@@ -22,6 +22,7 @@ import ru.serega6531.packmate.WebSocketHandler;
 import ru.serega6531.packmate.model.enums.CaptureMode;
 import ru.serega6531.packmate.pcap.FilePcapWorker;
 import ru.serega6531.packmate.pcap.LivePcapWorker;
+import ru.serega6531.packmate.pcap.NoOpPcapWorker;
 import ru.serega6531.packmate.pcap.PcapWorker;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
@@ -58,11 +59,11 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
                                  @Value("${interface-name}") String interfaceName,
                                  @Value("${pcap-file}") String filename,
                                  @Value("${capture-mode}") CaptureMode captureMode) throws PcapNativeException, UnknownHostException {
-        if(captureMode == CaptureMode.LIVE) {
-            return new LivePcapWorker(servicesService, streamService, localIpString, interfaceName);
-        } else {
-            return new FilePcapWorker(servicesService, streamService, subscriptionService, localIpString, filename);
-        }
+        return switch (captureMode) {
+            case LIVE -> new LivePcapWorker(servicesService, streamService, localIpString, interfaceName);
+            case FILE -> new FilePcapWorker(servicesService, streamService, subscriptionService, localIpString, filename);
+            default -> new NoOpPcapWorker();
+        };
     }
 
     @Autowired

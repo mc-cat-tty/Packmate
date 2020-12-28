@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.service;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.pcap4j.core.PcapNativeException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
+import ru.serega6531.packmate.pcap.NoOpPcapWorker;
 import ru.serega6531.packmate.pcap.PcapWorker;
 
 import java.util.Collection;
@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PcapService {
 
-    @Getter
     private boolean started = false;
 
     private final SubscriptionService subscriptionService;
@@ -27,6 +26,10 @@ public class PcapService {
     public PcapService(SubscriptionService subscriptionService, PcapWorker worker) {
         this.subscriptionService = subscriptionService;
         this.worker = worker;
+    }
+
+    public boolean isStarted() {
+        return started || worker instanceof NoOpPcapWorker;
     }
 
     public synchronized void start() throws PcapNativeException {
