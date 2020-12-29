@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,16 +31,13 @@ public class Packet {
     private Long id;
 
     @Transient
-    @JsonIgnore
     private Long tempId;
 
     @Transient
-    @JsonIgnore
     private byte ttl;
 
     @ManyToOne
     @JoinColumn(name = "stream_id", nullable = false)
-    @JsonIgnore
     private Stream stream;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
@@ -60,7 +56,6 @@ public class Packet {
     private byte[] content;
 
     @Transient
-    @JsonIgnore
     public String getContentString() {
         return new String(content);
     }

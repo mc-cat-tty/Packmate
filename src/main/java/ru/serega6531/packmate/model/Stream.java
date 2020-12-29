@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
@@ -34,7 +33,6 @@ public class Stream {
     private Protocol protocol;
 
     @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL)
-    @JsonIgnore
     @OrderBy("id")
     private List<Packet> packets;
 

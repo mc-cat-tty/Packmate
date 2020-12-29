@@ -3,9 +3,11 @@ package ru.serega6531.packmate.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.serega6531.packmate.model.Pattern;
+import ru.serega6531.packmate.model.pojo.PatternDto;
 import ru.serega6531.packmate.service.PatternService;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/pattern/")
@@ -19,8 +21,10 @@ public class PatternController {
     }
 
     @GetMapping
-    public Collection<Pattern> getPatterns() {
-        return service.findAll();
+    public List<PatternDto> getPatterns() {
+        return service.findAll()
+                .stream().map(service::toDto)
+                .collect(Collectors.toList());
     }
 
     @PostMapping("/{id}")
@@ -29,9 +33,11 @@ public class PatternController {
     }
 
     @PostMapping
-    public Pattern addPattern(@RequestBody Pattern pattern) {
-        pattern.setEnabled(true);
-        return service.save(pattern);
+    public PatternDto addPattern(@RequestBody PatternDto dto) {
+        dto.setEnabled(true);
+        Pattern pattern = service.fromDto(dto);
+        Pattern saved = service.save(pattern);
+        return service.toDto(saved);
     }
 
 }

@@ -1,12 +1,14 @@
 package ru.serega6531.packmate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
+import ru.serega6531.packmate.model.pojo.ServiceDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.ServiceRepository;
 
@@ -29,6 +31,7 @@ public class ServicesService {
     private final InetAddress localIp;
 
     private final Map<Integer, CtfService> services = new HashMap<>();
+    private final ModelMapper modelMapper = new ModelMapper();
 
     @Autowired
     public ServicesService(ServiceRepository repository,
@@ -42,6 +45,10 @@ public class ServicesService {
 
         repository.findAll().forEach(s -> services.put(s.getPort(), s));
         log.info("Loaded {} services", services.size());
+    }
+
+    public CtfService find(int id) {
+        return services.get(id);
     }
 
     public Optional<CtfService> findService(Inet4Address firstIp, int firstPort, Inet4Address secondIp, int secondPort) {
@@ -79,11 +86,19 @@ public class ServicesService {
         final CtfService saved = repository.save(service);
         services.put(saved.getPort(), saved);
 
-        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_SERVICE, saved));
+        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_SERVICE, toDto(saved)));
 
         pcapService.updateFilter(findAll());
 
         return saved;
+    }
+
+    public ServiceDto toDto(CtfService service) {
+        return modelMapper.map(service, ServiceDto.class);
+    }
+
+    public CtfService fromDto(ServiceDto dto) {
+        return modelMapper.map(dto, CtfService.class);
     }
 
 }

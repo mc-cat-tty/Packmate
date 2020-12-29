@@ -1,6 +1,7 @@
 package ru.serega6531.packmate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.FoundPattern;
@@ -8,6 +9,7 @@ import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
+import ru.serega6531.packmate.model.pojo.PatternDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.PatternRepository;
 
@@ -23,6 +25,7 @@ public class PatternService {
     private final SubscriptionService subscriptionService;
 
     private final Map<Integer, Pattern> patterns = new HashMap<>();
+    private final ModelMapper modelMapper = new ModelMapper();
 
     @Autowired
     public PatternService(PatternRepository repository,
@@ -80,8 +83,16 @@ public class PatternService {
         final Pattern saved = repository.save(pattern);
         patterns.put(saved.getId(), saved);
         log.info("Added new pattern '{}' with value '{}'", pattern.getName(), pattern.getValue());
-        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, saved));
+        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, toDto(saved)));
         return saved;
+    }
+
+    public Pattern fromDto(PatternDto dto) {
+        return modelMapper.map(dto, Pattern.class);
+    }
+
+    public PatternDto toDto(Pattern pattern) {
+        return modelMapper.map(pattern, PatternDto.class);
     }
 
 }

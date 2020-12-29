@@ -1,6 +1,7 @@
 package ru.serega6531.packmate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -11,9 +12,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.*;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
-import ru.serega6531.packmate.model.pojo.Pagination;
-import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
-import ru.serega6531.packmate.model.pojo.UnfinishedStream;
+import ru.serega6531.packmate.model.pojo.*;
 import ru.serega6531.packmate.repository.StreamRepository;
 import ru.serega6531.packmate.service.optimization.RsaKeysHolder;
 import ru.serega6531.packmate.service.optimization.StreamOptimizer;
@@ -39,6 +38,7 @@ public class StreamService {
     private final boolean ignoreEmptyPackets;
 
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\r\\n");
+    private final ModelMapper modelMapper = new ModelMapper();
 
     @Autowired
     public StreamService(StreamRepository repository,
@@ -108,7 +108,7 @@ public class StreamService {
         savedStream.setPackets(packets);
         savedStream = save(savedStream);
 
-        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, savedStream));
+        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, streamToDto(savedStream)));
         return true;
     }
 
@@ -132,7 +132,7 @@ public class StreamService {
         char[] alphabet = "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
         int l = alphabet.length;
         int hashCode = ua.hashCode();
-        if(hashCode == Integer.MIN_VALUE) {  // abs(MIN_VALUE) вернет то же значение
+        if (hashCode == Integer.MIN_VALUE) {  // abs(MIN_VALUE) вернет то же значение
             hashCode = Integer.MAX_VALUE;
         }
         final int hash = Math.abs(hashCode) % (l * l * l);
@@ -182,25 +182,33 @@ public class StreamService {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
         Specification<Stream> spec;
-        if(pagination.getDirection() == Sort.Direction.ASC) {
+        if (pagination.getDirection() == Sort.Direction.ASC) {
             spec = streamIdGreaterThan(pagination.getStartingFrom());
         } else {
             spec = streamIdLessThan(pagination.getStartingFrom());
         }
 
-        if(service.isPresent()) {
+        if (service.isPresent()) {
             spec = spec.and(streamServiceEquals(service.get()));
         }
 
-        if(onlyFavorites) {
+        if (onlyFavorites) {
             spec = spec.and(streamIsFavorite());
         }
 
-        if(pagination.getPattern() != null) {
+        if (pagination.getPattern() != null) {
             spec = spec.and(streamPatternsContains(pagination.getPattern()));
         }
 
         return repository.findAll(spec, page).getContent();
+    }
+
+    public StreamDto streamToDto(Stream stream) {
+        return modelMapper.map(stream, StreamDto.class);
+    }
+
+    public PacketDto packetToDto(Packet packet) {
+        return modelMapper.map(packet, PacketDto.class);
     }
 
     private Specification<Stream> streamServiceEquals(long service) {

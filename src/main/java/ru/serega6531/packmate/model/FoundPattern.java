@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -28,10 +27,12 @@ public class FoundPattern {
 
     @Id
     @GeneratedValue(generator = "found_pattern_generator")
-    @JsonIgnore
     private int id;
+
     private int patternId;
+
     private int startPosition;
+
     private int endPosition;
 
 }

@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
@@ -41,7 +40,6 @@ public class Pattern {
     private PatternDirectionType directionType;
 
     @ManyToMany(mappedBy = "foundPatterns", fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<Stream> matchedStreams;
 
 }

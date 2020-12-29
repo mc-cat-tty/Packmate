@@ -3,9 +3,11 @@ package ru.serega6531.packmate.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.serega6531.packmate.model.CtfService;
+import ru.serega6531.packmate.model.pojo.ServiceDto;
 import ru.serega6531.packmate.service.ServicesService;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/service/")
@@ -19,8 +21,10 @@ public class ServiceController {
     }
 
     @GetMapping
-    public Collection<CtfService> getServices() {
-        return service.findAll();
+    public List<ServiceDto> getServices() {
+        return service.findAll().stream()
+                .map(service::toDto)
+                .collect(Collectors.toList());
     }
 
     @DeleteMapping("/{port}")
@@ -29,8 +33,9 @@ public class ServiceController {
     }
 
     @PostMapping
-    public CtfService addService(@RequestBody CtfService ctfService) {
-        return service.save(ctfService);
+    public CtfService addService(@RequestBody ServiceDto dto) {
+        CtfService newService = this.service.fromDto(dto);
+        return this.service.save(newService);
     }
 
 }

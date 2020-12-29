@@ -2,42 +2,47 @@ package ru.serega6531.packmate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.pojo.Pagination;
+import ru.serega6531.packmate.model.pojo.StreamDto;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/stream/")
 public class StreamController {
 
-    private final StreamService streamService;
+    private final StreamService service;
 
     @Autowired
-    public StreamController(StreamService streamService) {
-        this.streamService = streamService;
+    public StreamController(StreamService service) {
+        this.service = service;
     }
 
     @PostMapping("/all")
-    public List<Stream> getStreams(@RequestBody Pagination pagination) {
-        return streamService.findAll(pagination, Optional.empty(), pagination.isFavorites());
+    public List<StreamDto> getStreams(@RequestBody Pagination pagination) {
+        return service.findAll(pagination, Optional.empty(), pagination.isFavorites()).stream()
+                .map(service::streamToDto)
+                .collect(Collectors.toList());
     }
 
     @PostMapping("/{port}")
-    public List<Stream> getStreams(@PathVariable int port, @RequestBody Pagination pagination) {
-        return streamService.findAll(pagination, Optional.of(port), pagination.isFavorites());
+    public List<StreamDto> getStreams(@PathVariable int port, @RequestBody Pagination pagination) {
+        return service.findAll(pagination, Optional.of(port), pagination.isFavorites()).stream()
+                .map(service::streamToDto)
+                .collect(Collectors.toList());
     }
 
     @PostMapping("/{id}/favorite")
     public void favoriteStream(@PathVariable long id) {
-        streamService.setFavorite(id, true);
+        service.setFavorite(id, true);
     }
 
     @PostMapping("/{id}/unfavorite")
     public void unfavoriteStream(@PathVariable long id) {
-        streamService.setFavorite(id, false);
+        service.setFavorite(id, false);
     }
 
 }
