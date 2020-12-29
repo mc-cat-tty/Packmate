@@ -13,6 +13,7 @@ Advanced network traffic flow analyzer for A/D CTFs.
   * Substring
   * Regular expression
   * Binary substring
+* Can automatically delete streams with content that you don't need
 * Can make certain streams favorite and show only favorite streams
 * Supports several simultaneous services, can show streams for a specific service or pattern
 * Allows navigating streams using shortcuts
@@ -89,7 +90,7 @@ If everything went fine, Packmate will be available on port `65000` from any hos
 When you open a web interface for the first time, you will be asked for a login and password
 you specified in the env file.  
 After entering the credentials, open the settings by clicking the cogs 
-in the top right corner and enter the specified login and password again.
+in the top right corner and modify additional parameters.
 
 ![Settings](screenshots/Screenshot_Settings.png)
 
@@ -103,7 +104,9 @@ then fill in the service name, port, and optimizations to perform on streams.
 
 For a simple monitoring of flags, there is a system of patterns.  
 To create a pattern, open `Patterns` dropdown menu, press `+`, then 
-specify the type of pattern, the pattern itself, highlight color and other things.
+specify the type of pattern, the pattern itself, highlight color and other things.  
+If you choose IGNORE as the type of a pattern, all matching streams will be automatically deleted.
+This can be useful to filter out exploits you have already patched against.
 
 In LIVE mode the system will automatically capture streams and show them in a sidebar.
 In FILE mode you'll have to press appropriate button in a sidebar to start processing a file. 

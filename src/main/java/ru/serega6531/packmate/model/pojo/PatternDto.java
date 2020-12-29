@@ -1,6 +1,7 @@
 package ru.serega6531.packmate.model.pojo;
 
 import lombok.Data;
+import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 
@@ -11,8 +12,9 @@ public class PatternDto {
     private boolean enabled;
     private String name;
     private String value;
-    private String color;  // для вставки в css
+    private String color;
     private PatternSearchType searchType;
     private PatternDirectionType directionType;
+    private PatternActionType actionType;
 
 }

@@ -3,6 +3,7 @@ package ru.serega6531.packmate.model;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
+import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 
@@ -38,6 +39,8 @@ public class Pattern {
     private PatternSearchType searchType;
 
     private PatternDirectionType directionType;
+
+    private PatternActionType actionType;
 
     @ManyToMany(mappedBy = "foundPatterns", fetch = FetchType.LAZY)
     private List<Stream> matchedStreams;

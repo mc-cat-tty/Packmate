@@ -1,9 +1,6 @@
 package ru.serega6531.packmate.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -24,6 +21,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @Table(indexes = { @Index(name = "stream_id_index", columnList = "stream_id") })
+@EqualsAndHashCode(exclude = "stream")
 public class Packet {
 
     @Id
@@ -40,7 +38,7 @@ public class Packet {
     @JoinColumn(name = "stream_id", nullable = false)
     private Stream stream;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "packet", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<FoundPattern> matches;
 
     private long timestamp;

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
+import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
@@ -45,11 +46,11 @@ public class PatternService {
         return patterns.values();
     }
 
-    public Set<FoundPattern> findMatches(byte[] bytes, boolean incoming) {
+    public Set<FoundPattern> findMatches(byte[] bytes, PatternDirectionType directionType, PatternActionType actionType) {
         final List<Pattern> list = patterns.values().stream()
                 .filter(Pattern::isEnabled)
-                .filter(p -> p.getDirectionType() == (incoming ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT)
-                        || p.getDirectionType() == PatternDirectionType.BOTH)
+                .filter(p -> p.getActionType() == actionType)
+                .filter(p -> p.getDirectionType() == directionType || p.getDirectionType() == PatternDirectionType.BOTH)
                 .collect(Collectors.toList());
         return new PatternMatcher(bytes, list).findMatches();
     }

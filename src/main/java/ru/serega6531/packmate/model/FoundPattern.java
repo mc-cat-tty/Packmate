@@ -3,9 +3,7 @@ package ru.serega6531.packmate.model;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
 @GenericGenerator(
@@ -22,12 +20,17 @@ import javax.persistence.Id;
 @Builder
 @Getter
 @ToString
-@EqualsAndHashCode
+@EqualsAndHashCode(exclude = "packet")
 public class FoundPattern {
 
     @Id
     @GeneratedValue(generator = "found_pattern_generator")
     private int id;
+
+    @ManyToOne
+    @JoinColumn(name = "packet_id", nullable = false)
+    @Setter
+    private Packet packet;
 
     private int patternId;
 

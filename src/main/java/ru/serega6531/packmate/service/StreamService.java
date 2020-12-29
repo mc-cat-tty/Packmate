@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.*;
+import ru.serega6531.packmate.model.enums.PatternActionType;
+import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.*;
 import ru.serega6531.packmate.repository.StreamRepository;
@@ -99,11 +101,20 @@ public class StreamService {
         countingService.countStream(service.getPort(), packets.size());
 
         packets = new StreamOptimizer(keysHolder, service, packets).optimizeStream();
-        processUserAgent(packets, stream);
 
+        if (isStreamIgnored(packets)) {
+            log.debug("New stream is ignored");
+            return false;
+        }
+
+        processUserAgent(packets, stream);
         Stream savedStream = save(stream);
 
-        Set<Pattern> foundPatterns = getFoundPatterns(packets, savedStream);
+        for (Packet packet : packets) {
+            packet.setStream(savedStream);
+        }
+
+        Set<Pattern> foundPatterns = matchPatterns(packets);
         savedStream.setFoundPatterns(foundPatterns);
         savedStream.setPackets(packets);
         savedStream = save(savedStream);
@@ -139,13 +150,16 @@ public class StreamService {
         return "" + alphabet[hash % l] + alphabet[(hash / l) % l] + alphabet[(hash / (l * l)) % l];
     }
 
-    private Set<Pattern> getFoundPatterns(List<Packet> packets, Stream savedStream) {
+    private Set<Pattern> matchPatterns(List<Packet> packets) {
         Set<Pattern> foundPatterns = new HashSet<>();
 
         for (Packet packet : packets) {
-            packet.setStream(savedStream);
-            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), packet.isIncoming());
+            PatternDirectionType direction = packet.isIncoming() ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT;
+            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), direction, PatternActionType.FIND);
+
             packet.setMatches(matches);
+            matches.forEach(m -> m.setPacket(packet));
+
             foundPatterns.addAll(matches.stream()
                     .map(FoundPattern::getPatternId)
                     .map(patternService::find)
@@ -153,6 +167,18 @@ public class StreamService {
         }
 
         return foundPatterns;
+    }
+
+    private boolean isStreamIgnored(List<Packet> packets) {
+        for (Packet packet : packets) {
+            PatternDirectionType direction = packet.isIncoming() ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT;
+            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), direction, PatternActionType.IGNORE);
+            if (!matches.isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private Stream save(Stream stream) {
