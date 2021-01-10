@@ -94,7 +94,7 @@ public class StreamService {
 
         final Stream stream = new Stream();
         stream.setProtocol(unfinishedStream.getProtocol());
-        stream.setTtl(firstIncoming.isPresent() ? firstIncoming.get().getTtl() : 0);
+        stream.setTtl(firstIncoming.map(Packet::getTtl).orElse(0));
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(service.getPort());

@@ -32,7 +32,7 @@ public class Packet {
     private Long tempId;
 
     @Transient
-    private byte ttl;
+    private int ttl;
 
     @ManyToOne
     @JoinColumn(name = "stream_id", nullable = false)

@@ -15,7 +15,7 @@ public class StreamDto {
     private long endTimestamp;
     private Set<PatternDto> foundPatterns;
     private boolean favorite;
-    private byte ttl;
+    private int ttl;
     private String userAgentHash;
 
 }

@@ -53,7 +53,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> fins = HashMultimap.create();
     private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> acks = HashMultimap.create();
 
-    public AbstractPcapWorker(ServicesService servicesService,
+    protected AbstractPcapWorker(ServicesService servicesService,
                               StreamService streamService,
                               String localIpString) throws UnknownHostException {
         this.servicesService = servicesService;
@@ -87,7 +87,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
         Inet4Address sourceIp = ipHeader.getSrcAddr();
         Inet4Address destIp = ipHeader.getDstAddr();
-        byte ttl = ipHeader.getTtl();
+        int ttl = Byte.toUnsignedInt(ipHeader.getTtl());
 
         final TcpPacket packet = rawPacket.get(TcpPacket.class);
         final TcpPacket.TcpHeader tcpHeader = packet.getHeader();
@@ -127,7 +127,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
         Inet4Address sourceIp = ipHeader.getSrcAddr();
         Inet4Address destIp = ipHeader.getDstAddr();
-        byte ttl = ipHeader.getTtl();
+        int ttl = Byte.toUnsignedInt(ipHeader.getTtl());
 
         final UdpPacket packet = rawPacket.get(UdpPacket.class);
         final UdpPacket.UdpHeader udpHeader = packet.getHeader();
@@ -159,7 +159,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     }
 
     private UnfinishedStream addNewPacket(Inet4Address sourceIp, Inet4Address destIp, long time,
-                                          int sourcePort, int destPort, byte ttl, byte[] content, Protocol protocol) {
+                                          int sourcePort, int destPort, int ttl, byte[] content, Protocol protocol) {
         var incoming = destIp.equals(localIp);
         var stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
 

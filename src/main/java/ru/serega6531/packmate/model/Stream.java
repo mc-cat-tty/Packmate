@@ -46,7 +46,8 @@ public class Stream {
 
     private boolean favorite;
 
-    private byte ttl;
+    @Column(columnDefinition = "smallint")
+    private int ttl;
 
     @Column(columnDefinition = "char(3)")
     private String userAgentHash;
