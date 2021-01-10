@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -34,6 +35,7 @@ import java.net.UnknownHostException;
 @EnableWebSecurity
 @EnableScheduling
 @EnableWebSocket
+@EnableAsync
 @Slf4j
 public class ApplicationConfiguration extends WebSecurityConfigurerAdapter implements WebSocketConfigurer {
 

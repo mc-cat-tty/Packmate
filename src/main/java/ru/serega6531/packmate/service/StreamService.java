@@ -125,6 +125,7 @@ public class StreamService {
     }
 
     @Async
+    @Transactional
     public void processLookbackPattern(Pattern pattern, long start, long end) {
         List<Stream> streams = findAllBetweenTimestamps(start, end);
 
@@ -237,7 +238,6 @@ public class StreamService {
         return repository.findById(id);
     }
 
-    @SuppressWarnings("UnusedReturnValue")
     @Transactional
     public void setFavorite(long id, boolean favorite) {
         repository.setFavorite(id, favorite);
