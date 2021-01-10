@@ -42,7 +42,10 @@ public class Pattern {
 
     private PatternActionType actionType;
 
+    private long searchStartTimestamp;
+
     @ManyToMany(mappedBy = "foundPatterns", fetch = FetchType.LAZY)
     private List<Stream> matchedStreams;
+
 
 }

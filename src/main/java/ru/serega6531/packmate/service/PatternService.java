@@ -1,8 +1,10 @@
 package ru.serega6531.packmate.service;
 
+import com.google.common.collect.Iterables;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
@@ -14,7 +16,9 @@ import ru.serega6531.packmate.model.pojo.PatternDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.PatternRepository;
 
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
@@ -23,6 +27,7 @@ import java.util.stream.Collectors;
 public class PatternService {
 
     private final PatternRepository repository;
+    private final StreamService streamService;
     private final SubscriptionService subscriptionService;
 
     private final Map<Integer, Pattern> patterns = new HashMap<>();
@@ -30,8 +35,10 @@ public class PatternService {
 
     @Autowired
     public PatternService(PatternRepository repository,
+                          @Lazy StreamService streamService,
                           SubscriptionService subscriptionService) {
         this.repository = repository;
+        this.streamService = streamService;
         this.subscriptionService = subscriptionService;
 
         repository.findAll().forEach(p -> patterns.put(p.getId(), p));
@@ -53,6 +60,11 @@ public class PatternService {
                 .filter(p -> p.getDirectionType() == directionType || p.getDirectionType() == PatternDirectionType.BOTH)
                 .collect(Collectors.toList());
         return new PatternMatcher(bytes, list).findMatches();
+    }
+
+    public Optional<FoundPattern> tryMatch(byte[] bytes, Pattern pattern) {
+        Set<FoundPattern> matches = new PatternMatcher(bytes, List.of(pattern)).findMatches();
+        return Optional.ofNullable(Iterables.getOnlyElement(matches, null));
     }
 
     public void enable(int id, boolean enabled) {
@@ -81,11 +93,30 @@ public class PatternService {
             }
         }
 
+        pattern.setSearchStartTimestamp(System.currentTimeMillis());
+
         final Pattern saved = repository.save(pattern);
         patterns.put(saved.getId(), saved);
+
         log.info("Added new pattern '{}' with value '{}'", pattern.getName(), pattern.getValue());
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, toDto(saved)));
+
         return saved;
+    }
+
+    public void lookBack(int id, int minutes) {
+        final Pattern pattern = find(id);
+        if (pattern != null && pattern.getActionType() == PatternActionType.FIND) {
+            long end = pattern.getSearchStartTimestamp();
+            long start = end - TimeUnit.MINUTES.toMillis(minutes);
+
+            pattern.setSearchStartTimestamp(start);
+            repository.save(pattern);
+
+            log.info("Scanning for pattern '{}' between {} and {}", pattern.getName(),
+                    Instant.ofEpochMilli(start), Instant.ofEpochMilli(end));
+            streamService.processLookbackPattern(pattern, start, end);
+        }
     }
 
     public Pattern fromDto(PatternDto dto) {

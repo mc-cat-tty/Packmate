@@ -32,6 +32,15 @@ public class PatternController {
         service.enable(id, enabled);
     }
 
+    @PostMapping("/{id}/lookback")
+    public void lookBack(@PathVariable int id, @RequestBody int minutes) {
+        if (minutes < 1) {
+            return;
+        }
+
+        service.lookBack(id, minutes);
+    }
+
     @PostMapping
     public PatternDto addPattern(@RequestBody PatternDto dto) {
         dto.setEnabled(true);

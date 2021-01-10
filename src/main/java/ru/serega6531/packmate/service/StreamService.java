@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -123,6 +124,21 @@ public class StreamService {
         return true;
     }
 
+    @Async
+    public void processLookbackPattern(Pattern pattern, long start, long end) {
+        List<Stream> streams = findAllBetweenTimestamps(start, end);
+
+        for (Stream stream : streams) {
+            boolean found = matchPattern(stream.getPackets(), pattern);
+            if (found) {
+                stream.getFoundPatterns().add(pattern);
+                repository.save(stream);
+            }
+        }
+
+        subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.FINISH_LOOKBACK, pattern.getId()));
+    }
+
     private void processUserAgent(List<Packet> packets, Stream stream) {
         String ua = null;
         for (Packet packet : packets) {
@@ -169,6 +185,30 @@ public class StreamService {
         return foundPatterns;
     }
 
+    private boolean matchPattern(List<Packet> packets, Pattern pattern) {
+        boolean matched = false;
+
+        for (Packet packet : packets) {
+            PatternDirectionType direction = packet.isIncoming() ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT;
+
+            if (pattern.getDirectionType() != PatternDirectionType.BOTH && pattern.getDirectionType() != direction) {
+                continue;
+            }
+
+            final Optional<FoundPattern> matchOpt = patternService.tryMatch(packet.getContent(), pattern);
+
+            if (matchOpt.isPresent()) {
+                FoundPattern match = matchOpt.get();
+                packet.getMatches().add(match);
+                match.setPacket(packet);
+
+                matched = true;
+            }
+        }
+
+        return matched;
+    }
+
     private boolean isStreamIgnored(List<Packet> packets) {
         for (Packet packet : packets) {
             PatternDirectionType direction = packet.isIncoming() ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT;
@@ -203,7 +243,6 @@ public class StreamService {
         repository.setFavorite(id, favorite);
     }
 
-    @SuppressWarnings("ConstantConditions")
     public List<Stream> findAll(Pagination pagination, Optional<Integer> service, boolean onlyFavorites) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
@@ -229,6 +268,11 @@ public class StreamService {
         return repository.findAll(spec, page).getContent();
     }
 
+     public List<Stream> findAllBetweenTimestamps(long start, long end) {
+         Specification<Stream> spec = streamTimestampBetween(start, end);
+         return repository.findAll(spec);
+     }
+
     public StreamDto streamToDto(Stream stream) {
         return modelMapper.map(stream, StreamDto.class);
     }
@@ -251,6 +295,10 @@ public class StreamService {
 
     private Specification<Stream> streamIdLessThan(long id) {
         return (root, query, cb) -> cb.lessThan(root.get("id"), id);
+    }
+
+    private Specification<Stream> streamTimestampBetween(long start, long end) {
+        return (root, query, cb) -> cb.between(root.get("startTimestamp"), start, end);
     }
 
     private Specification<Stream> streamPatternsContains(Pattern pattern) {
