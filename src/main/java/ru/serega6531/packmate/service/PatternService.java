@@ -10,7 +10,6 @@ import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
-import ru.serega6531.packmate.model.enums.PatternSearchType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.PatternDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
@@ -19,7 +18,6 @@ import ru.serega6531.packmate.repository.PatternRepository;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 @Service
@@ -85,12 +83,10 @@ public class PatternService {
     }
 
     public Pattern save(Pattern pattern) {
-        if (pattern.getSearchType() == PatternSearchType.REGEX) {
-            try {
-                PatternMatcher.compilePattern(pattern);
-            } catch (PatternSyntaxException e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
+        try {
+            PatternMatcher.compilePattern(pattern);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
 
         pattern.setSearchStartTimestamp(System.currentTimeMillis());

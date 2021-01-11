@@ -15,7 +15,9 @@ import java.util.regex.Matcher;
 
 public class PatternMatcher {
 
-    private static final Map<String, java.util.regex.Pattern> compiledPatterns = new HashMap<>();
+    private static final Map<String, java.util.regex.Pattern> compiledRegexes = new HashMap<>();
+    private static final Map<String, KMPStringSearcher> compiledStringKmps = new HashMap<>();
+    private static final Map<String, KMPByteSearcher> compiledByteKmps = new HashMap<>();
 
     private final byte[] contentBytes;
     private final String content;
@@ -43,7 +45,7 @@ public class PatternMatcher {
     }
 
     private void matchRegex(Pattern pattern) {
-        final var regex = compilePattern(pattern);
+        final var regex = compileRegex(pattern);
         final Matcher matcher = regex.matcher(content);
         int startPos = 0;
 
@@ -59,7 +61,7 @@ public class PatternMatcher {
 
     private void matchSubstring(Pattern pattern) {
         final String value = pattern.getValue();
-        KMPStringSearcher searcher = new KMPStringSearcher(value.toCharArray());
+        KMPStringSearcher searcher = compileStringKMP(pattern);
         StringReader reader = new StringReader(content);
 
         while (true) {
@@ -81,7 +83,7 @@ public class PatternMatcher {
     @SneakyThrows
     private void matchSubbytes(Pattern pattern) {
         final byte[] value = Hex.decode(pattern.getValue());
-        KMPByteSearcher searcher = new KMPByteSearcher(value);
+        KMPByteSearcher searcher = compileByteKMP(pattern);
         InputStream is = new ByteArrayInputStream(contentBytes);
 
         while (true) {
@@ -112,8 +114,24 @@ public class PatternMatcher {
         return a <= x && x <= b;
     }
 
-    static java.util.regex.Pattern compilePattern(Pattern pattern) {
-        return compiledPatterns.computeIfAbsent(pattern.getValue(), java.util.regex.Pattern::compile);
+    static void compilePattern(Pattern pattern) {
+        switch (pattern.getSearchType()) {
+            case REGEX -> compileRegex(pattern);
+            case SUBSTRING -> compileStringKMP(pattern);
+            case SUBBYTES -> compileByteKMP(pattern);
+        }
+    }
+
+    private static java.util.regex.Pattern compileRegex(Pattern pattern) {
+        return compiledRegexes.computeIfAbsent(pattern.getValue(), java.util.regex.Pattern::compile);
+    }
+
+    private static KMPStringSearcher compileStringKMP(Pattern pattern) {
+        return compiledStringKmps.computeIfAbsent(pattern.getValue(), val -> new KMPStringSearcher(val.toCharArray()));
+    }
+
+    private static KMPByteSearcher compileByteKMP(Pattern pattern) {
+        return compiledByteKmps.computeIfAbsent(pattern.getValue(), val -> new KMPByteSearcher(Hex.decode(val)));
     }
 
 }
