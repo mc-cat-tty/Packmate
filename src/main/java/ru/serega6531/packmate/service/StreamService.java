@@ -37,11 +37,11 @@ public class StreamService {
     private final CountingService countingService;
     private final SubscriptionService subscriptionService;
     private final RsaKeysHolder keysHolder;
+    private final ModelMapper modelMapper;
 
     private final boolean ignoreEmptyPackets;
 
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\r\\n");
-    private final ModelMapper modelMapper = new ModelMapper();
 
     @Autowired
     public StreamService(StreamRepository repository,
@@ -50,6 +50,7 @@ public class StreamService {
                          CountingService countingService,
                          SubscriptionService subscriptionService,
                          RsaKeysHolder keysHolder,
+                         ModelMapper modelMapper,
                          @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
@@ -57,6 +58,7 @@ public class StreamService {
         this.countingService = countingService;
         this.subscriptionService = subscriptionService;
         this.keysHolder = keysHolder;
+        this.modelMapper = modelMapper;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
@@ -103,7 +105,7 @@ public class StreamService {
 
         packets = new StreamOptimizer(keysHolder, service, packets).optimizeStream();
 
-        if (isStreamIgnored(packets)) {
+        if (isStreamIgnored(packets, service)) {
             log.debug("New stream is ignored");
             return false;
         }
@@ -115,7 +117,7 @@ public class StreamService {
             packet.setStream(savedStream);
         }
 
-        Set<Pattern> foundPatterns = matchPatterns(packets);
+        Set<Pattern> foundPatterns = matchPatterns(packets, service);
         savedStream.setFoundPatterns(foundPatterns);
         savedStream.setPackets(packets);
         savedStream = save(savedStream);
@@ -167,12 +169,13 @@ public class StreamService {
         return "" + alphabet[hash % l] + alphabet[(hash / l) % l] + alphabet[(hash / (l * l)) % l];
     }
 
-    private Set<Pattern> matchPatterns(List<Packet> packets) {
+    private Set<Pattern> matchPatterns(List<Packet> packets, CtfService service) {
         Set<Pattern> foundPatterns = new HashSet<>();
 
         for (Packet packet : packets) {
             PatternDirectionType direction = packet.isIncoming() ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT;
-            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), direction, PatternActionType.FIND);
+            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), service,
+                    direction, PatternActionType.FIND);
 
             packet.setMatches(matches);
             matches.forEach(m -> m.setPacket(packet));
@@ -210,10 +213,11 @@ public class StreamService {
         return matched;
     }
 
-    private boolean isStreamIgnored(List<Packet> packets) {
+    private boolean isStreamIgnored(List<Packet> packets, CtfService service) {
         for (Packet packet : packets) {
             PatternDirectionType direction = packet.isIncoming() ? PatternDirectionType.INPUT : PatternDirectionType.OUTPUT;
-            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), direction, PatternActionType.IGNORE);
+            final Set<FoundPattern> matches = patternService.findMatches(packet.getContent(), service,
+                    direction, PatternActionType.IGNORE);
             if (!matches.isEmpty()) {
                 return true;
             }

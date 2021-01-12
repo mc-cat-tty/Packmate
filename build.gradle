@@ -27,6 +27,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-websocket"
     implementation 'org.springframework.session:spring-session-core'
+    compile 'com.github.jmnarloch:modelmapper-spring-boot-starter:1.1.0'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
     compile group: 'commons-io', name: 'commons-io', version: '2.7'
     compile 'org.pcap4j:pcap4j-core:1.8.2'

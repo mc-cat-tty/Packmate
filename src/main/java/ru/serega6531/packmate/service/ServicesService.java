@@ -31,16 +31,18 @@ public class ServicesService {
     private final InetAddress localIp;
 
     private final Map<Integer, CtfService> services = new HashMap<>();
-    private final ModelMapper modelMapper = new ModelMapper();
+    private final ModelMapper modelMapper;
 
     @Autowired
     public ServicesService(ServiceRepository repository,
                            SubscriptionService subscriptionService,
                            @Lazy PcapService pcapService,
+                           ModelMapper modelMapper,
                            @Value("${local-ip}") String localIpString) throws UnknownHostException {
         this.repository = repository;
         this.subscriptionService = subscriptionService;
         this.pcapService = pcapService;
+        this.modelMapper = modelMapper;
         this.localIp = InetAddress.getByName(localIpString);
 
         repository.findAll().forEach(s -> services.put(s.getPort(), s));

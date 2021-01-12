@@ -16,5 +16,6 @@ public class PatternDto {
     private PatternSearchType searchType;
     private PatternDirectionType directionType;
     private PatternActionType actionType;
+    private Integer serviceId;
 
 }

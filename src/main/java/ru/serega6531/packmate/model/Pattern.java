@@ -42,6 +42,8 @@ public class Pattern {
 
     private PatternActionType actionType;
 
+    private Integer serviceId;
+
     private long searchStartTimestamp;
 
     @ManyToMany(mappedBy = "foundPatterns", fetch = FetchType.LAZY)
