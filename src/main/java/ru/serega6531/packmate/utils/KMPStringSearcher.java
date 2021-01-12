@@ -59,4 +59,8 @@ public class KMPStringSearcher {
         }
     }
 
+    public void reset() {
+        this.lastEnd = 0;
+    }
+
 }

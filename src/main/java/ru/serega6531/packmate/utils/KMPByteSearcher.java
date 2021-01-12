@@ -59,4 +59,8 @@ public class KMPByteSearcher {
         }
     }
 
+    public void reset() {
+        this.lastEnd = 0;
+    }
+
 }

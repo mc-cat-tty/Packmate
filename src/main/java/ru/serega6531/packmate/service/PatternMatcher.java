@@ -68,6 +68,7 @@ public class PatternMatcher {
             int end = searcher.search(reader) - 1;
 
             if (end < 0) {
+                searcher.reset();
                 return;
             }
 
@@ -90,6 +91,7 @@ public class PatternMatcher {
             int end = searcher.search(is) - 1;
 
             if (end < 0) {
+                searcher.reset();
                 return;
             }
 
