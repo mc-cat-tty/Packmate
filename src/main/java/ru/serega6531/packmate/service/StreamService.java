@@ -139,6 +139,7 @@ public class StreamService {
             }
         }
 
+        log.info("Finished lookback for pattern '{}'", pattern.getName());
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.FINISH_LOOKBACK, pattern.getId()));
     }
 

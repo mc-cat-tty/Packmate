@@ -44,7 +44,7 @@ git submodule update --init --recursive
 This program uses Docker and docker-compose.
 
 `packmate-db` will listen to port 65001 at localhost.  
-Database files are saved in ./docker/postgres_data, so to reset database you'll have to delete that directory.
+Database files are saved in ./data, so in order to reset database you'll have to delete that directory.
 
 ### Settings
 This program retrieves settings from environment variables, 

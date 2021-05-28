@@ -4,5 +4,5 @@ screenshots
 .*
 docker-compose.yml
 Dockerfile_*
-docker/postgres_data
+data
 README*
