@@ -12,7 +12,6 @@ import ru.serega6531.packmate.model.pojo.ServiceDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.ServiceRepository;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
@@ -53,7 +52,7 @@ public class ServicesService {
         return services.get(id);
     }
 
-    public Optional<CtfService> findService(Inet4Address firstIp, int firstPort, Inet4Address secondIp, int secondPort) {
+    public Optional<CtfService> findService(InetAddress firstIp, int firstPort, InetAddress secondIp, int secondPort) {
         if (firstIp.equals(localIp)) {
             return findByPort(firstPort);
         } else if (secondIp.equals(localIp)) {

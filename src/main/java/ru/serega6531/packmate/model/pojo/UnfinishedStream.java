@@ -4,14 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import ru.serega6531.packmate.model.enums.Protocol;
 
-import java.net.Inet4Address;
+import java.net.InetAddress;
 
 @AllArgsConstructor
 @Getter
 public class UnfinishedStream {
 
-    private final Inet4Address firstIp;
-    private final Inet4Address secondIp;
+    private final InetAddress firstIp;
+    private final InetAddress secondIp;
     private final int firstPort;
     private final int secondPort;
     private final Protocol protocol;

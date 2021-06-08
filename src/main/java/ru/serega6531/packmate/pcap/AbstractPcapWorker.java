@@ -8,17 +8,13 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.pcap4j.core.BpfProgram;
 import org.pcap4j.core.PacketListener;
 import org.pcap4j.core.PcapHandle;
-import org.pcap4j.packet.IpV4Packet;
-import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.TcpPacket;
-import org.pcap4j.packet.UdpPacket;
+import org.pcap4j.packet.*;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.Protocol;
 import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -50,8 +46,8 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     private final ListMultimap<UnfinishedStream, ru.serega6531.packmate.model.Packet> unfinishedUdpStreams = ArrayListMultimap.create();
 
     // в следующих мапах в значениях находится srcIp соответствующего пакета
-    private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> fins = HashMultimap.create();
-    private final SetMultimap<UnfinishedStream, ImmutablePair<Inet4Address, Integer>> acks = HashMultimap.create();
+    private final SetMultimap<UnfinishedStream, ImmutablePair<InetAddress, Integer>> fins = HashMultimap.create();
+    private final SetMultimap<UnfinishedStream, ImmutablePair<InetAddress, Integer>> acks = HashMultimap.create();
 
     protected AbstractPcapWorker(ServicesService servicesService,
                               StreamService streamService,
@@ -60,9 +56,6 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         this.streamService = streamService;
 
         this.localIp = InetAddress.getByName(localIpString);
-        if (!(this.localIp instanceof Inet4Address)) {
-            throw new IllegalArgumentException("Only ipv4 local ips are supported");
-        }
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
                 .namingPattern("pcap-loop").build();
@@ -70,26 +63,36 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     }
 
     public void gotPacket(Packet rawPacket) {
-        if (!rawPacket.contains(IpV4Packet.class)) {
+        InetAddress sourceIp;
+        InetAddress destIp;
+        int ttl;
+
+        if (rawPacket.contains(IpV4Packet.class)) {
+            final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
+            sourceIp = ipHeader.getSrcAddr();
+            destIp = ipHeader.getDstAddr();
+            ttl = Byte.toUnsignedInt(ipHeader.getTtl());
+        } else if (rawPacket.contains(IpV6Packet.class)) {
+            final IpV6Packet.IpV6Header ipHeader = rawPacket.get(IpV6Packet.class).getHeader();
+            sourceIp = ipHeader.getSrcAddr();
+            destIp = ipHeader.getDstAddr();
+            ttl = Byte.toUnsignedInt(ipHeader.getHopLimit());
+        } else {
             return;
         }
 
         final long time = pcap.getTimestamp().getTime();
 
         if (rawPacket.contains(TcpPacket.class)) {
-            gotTcpPacket(rawPacket, time);
+            final TcpPacket packet = rawPacket.get(TcpPacket.class);
+            gotTcpPacket(packet, sourceIp, destIp, ttl, time);
         } else if (rawPacket.contains(UdpPacket.class)) {
-            gotUdpPacket(rawPacket, time);
+            final UdpPacket packet = rawPacket.get(UdpPacket.class);
+            gotUdpPacket(packet, sourceIp, destIp, ttl, time);
         }
     }
 
-    private void gotTcpPacket(Packet rawPacket, long time) {
-        final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
-        Inet4Address sourceIp = ipHeader.getSrcAddr();
-        Inet4Address destIp = ipHeader.getDstAddr();
-        int ttl = Byte.toUnsignedInt(ipHeader.getTtl());
-
-        final TcpPacket packet = rawPacket.get(TcpPacket.class);
+    private void gotTcpPacket(TcpPacket packet, InetAddress sourceIp, InetAddress destIp, int ttl, long time) {
         final TcpPacket.TcpHeader tcpHeader = packet.getHeader();
         int sourcePort = tcpHeader.getSrcPort().valueAsInt();
         int destPort = tcpHeader.getDstPort().valueAsInt();
@@ -123,13 +126,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
     }
 
-    private void gotUdpPacket(Packet rawPacket, long time) {
-        final IpV4Packet.IpV4Header ipHeader = rawPacket.get(IpV4Packet.class).getHeader();
-        Inet4Address sourceIp = ipHeader.getSrcAddr();
-        Inet4Address destIp = ipHeader.getDstAddr();
-        int ttl = Byte.toUnsignedInt(ipHeader.getTtl());
-
-        final UdpPacket packet = rawPacket.get(UdpPacket.class);
+    private void gotUdpPacket(UdpPacket packet, InetAddress sourceIp, InetAddress destIp, int ttl, long time) {
         final UdpPacket.UdpHeader udpHeader = packet.getHeader();
         int sourcePort = udpHeader.getSrcPort().valueAsInt();
         int destPort = udpHeader.getDstPort().valueAsInt();
@@ -158,7 +155,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
     }
 
-    private UnfinishedStream addNewPacket(Inet4Address sourceIp, Inet4Address destIp, long time,
+    private UnfinishedStream addNewPacket(InetAddress sourceIp, InetAddress destIp, long time,
                                           int sourcePort, int destPort, int ttl, byte[] content, Protocol protocol) {
         var incoming = destIp.equals(localIp);
         var stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
@@ -185,8 +182,8 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
      * Udp не имеет фазы закрытия, поэтому закрывается только по таймауту
      */
     private void checkTcpTermination(boolean ack, boolean fin, boolean rst,
-                                     ImmutablePair<Inet4Address, Integer> sourceIpAndPort,
-                                     ImmutablePair<Inet4Address, Integer> destIpAndPort,
+                                     ImmutablePair<InetAddress, Integer> sourceIpAndPort,
+                                     ImmutablePair<InetAddress, Integer> destIpAndPort,
                                      UnfinishedStream stream) {
 
         if (fin) {
