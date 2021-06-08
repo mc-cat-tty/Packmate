@@ -2,6 +2,7 @@ package ru.serega6531.packmate.service.optimization;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.exceptions.InvalidDataException;
 import org.java_websocket.exceptions.InvalidHandshakeException;
@@ -11,25 +12,27 @@ import org.java_websocket.framing.Framedata;
 import org.java_websocket.handshake.HandshakeImpl1Client;
 import org.java_websocket.handshake.HandshakeImpl1Server;
 import ru.serega6531.packmate.model.Packet;
+import ru.serega6531.packmate.utils.BytesUtils;
 import ru.serega6531.packmate.utils.PacketUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class WebSocketsParser {
 
     private static final java.util.regex.Pattern WEBSOCKET_KEY_PATTERN =
-            java.util.regex.Pattern.compile("Sec-WebSocket-Key: (.+)\\r\\n");
+            Pattern.compile("Sec-WebSocket-Key: (.+)\\r\\n");
     private static final java.util.regex.Pattern WEBSOCKET_EXTENSIONS_PATTERN =
-            java.util.regex.Pattern.compile("Sec-WebSocket-Extensions?: (.+)\\r\\n");
+            Pattern.compile("Sec-WebSocket-Extensions?: (.+)\\r\\n");
     private static final java.util.regex.Pattern WEBSOCKET_VERSION_PATTERN =
-            java.util.regex.Pattern.compile("Sec-WebSocket-Version: (\\d+)\\r\\n");
+            Pattern.compile("Sec-WebSocket-Version: (\\d+)\\r\\n");
     private static final java.util.regex.Pattern WEBSOCKET_ACCEPT_PATTERN =
-            java.util.regex.Pattern.compile("Sec-WebSocket-Accept: (.+)\\r\\n");
+            Pattern.compile("Sec-WebSocket-Accept: (.+)\\r\\n");
 
     private static final String WEBSOCKET_UPGRADE_HEADER = "upgrade: websocket\r\n";
     private static final String WEBSOCKET_CONNECTION_HEADER = "connection: upgrade\r\n";
@@ -57,7 +60,20 @@ public class WebSocketsParser {
 
         int httpEnd = -1;
         for (int i = clientHandshakePackets.size(); i < packets.size(); i++) {
-            if (packets.get(i).getContentString().endsWith("\r\n\r\n")) {
+            Packet packet = packets.get(i);
+            byte[] content = packet.getContent();
+            if (BytesUtils.startsWith(content, "HTTP/1.1 101 Switching Protocols".getBytes())) {
+                int endPos = BytesUtils.indexOf(content, "\r\n\r\n".getBytes()) + "\r\n\r\n".length();
+                if (endPos != content.length) {
+                    byte[] handshakePart = ArrayUtils.subarray(content, 0, endPos);
+                    byte[] payloadPart = ArrayUtils.subarray(content, endPos, content.length);
+
+                    Packet handshakePacket = mimicPacket(packet, handshakePart, false);
+                    Packet payloadPacket = mimicPacket(packet, payloadPart, true);
+
+                    packets.add(i, handshakePacket);
+                    packets.set(i + 1, payloadPacket);
+                }
                 httpEnd = i + 1;
                 break;
             }
@@ -94,13 +110,25 @@ public class WebSocketsParser {
                 httpEnd,
                 packets.size());
 
-        if(wsPackets.isEmpty()) {
+        if (wsPackets.isEmpty()) {
             return;
         }
 
         final List<Packet> handshakes = packets.subList(0, httpEnd);
 
         parse(wsPackets, handshakes, draft);
+    }
+
+    private Packet mimicPacket(Packet packet, byte[] content, boolean ws) {
+        return Packet.builder()
+                .content(content)
+                .incoming(packet.isIncoming())
+                .timestamp(packet.getTimestamp())
+                .ttl(packet.getTtl())
+                .ungzipped(packet.isUngzipped())
+                .webSocketParsed(ws)
+                .tlsDecrypted(packet.isTlsDecrypted())
+                .build();
     }
 
     private void parse(final List<Packet> wsPackets, final List<Packet> handshakes, Draft_6455 draft) {
@@ -124,7 +152,7 @@ public class WebSocketsParser {
             }
 
             for (Framedata frame : frames) {
-                if(frame instanceof DataFrame) {
+                if (frame instanceof DataFrame) {
                     parsedPackets.add(Packet.builder()
                             .content(frame.getPayloadData().array())
                             .incoming(lastPacket.isIncoming())
@@ -190,7 +218,7 @@ public class WebSocketsParser {
         clientHandshakeImpl.put("Sec-WebSocket-Version", version);
         clientHandshakeImpl.put("Sec-WebSocket-Key", key);
 
-        if(extensions != null) {
+        if (extensions != null) {
             clientHandshakeImpl.put("Sec-WebSocket-Extensions", extensions);
         }
 

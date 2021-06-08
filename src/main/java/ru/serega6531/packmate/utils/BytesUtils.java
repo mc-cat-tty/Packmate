@@ -11,10 +11,10 @@ import static org.pcap4j.util.ByteArrays.BYTE_SIZE_IN_BITS;
 @UtilityClass
 public class BytesUtils {
 
-    /**
-     * @param array  где ищем
-     * @param target что ищем
-     */
+    public int indexOf(byte[] array, byte[] target) {
+        return indexOf(array, target, 0, array.length);
+    }
+
     public int indexOf(byte[] array, byte[] target, int start, int end) {
         if (target.length == 0) {
             return 0;
@@ -30,6 +30,20 @@ public class BytesUtils {
             return i;
         }
         return -1;
+    }
+
+    public boolean startsWith(byte[] array, byte[] prefix) {
+        if (prefix.length > array.length) {
+            return false;
+        }
+
+        for (int i = 0; i < prefix.length; i++) {
+            if (array[i] != prefix[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
