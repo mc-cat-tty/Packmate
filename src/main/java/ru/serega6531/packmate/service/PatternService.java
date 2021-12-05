@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.service;
 
-import com.google.common.collect.Iterables;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,9 +63,8 @@ public class PatternService {
         return new PatternMatcher(bytes, list).findMatches();
     }
 
-    public Optional<FoundPattern> tryMatch(byte[] bytes, Pattern pattern) {
-        Set<FoundPattern> matches = new PatternMatcher(bytes, List.of(pattern)).findMatches();
-        return Optional.ofNullable(Iterables.getOnlyElement(matches, null));
+    public Set<FoundPattern> matchOne(byte[] bytes, Pattern pattern) {
+        return new PatternMatcher(bytes, List.of(pattern)).findMatches();
     }
 
     public void enable(int id, boolean enabled) {

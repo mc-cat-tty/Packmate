@@ -1,7 +1,7 @@
-FROM node:current-alpine
+FROM node:17-alpine
 WORKDIR /tmp/build/
 COPY ./frontend/ .
-RUN npm install && npm run build
+RUN export NODE_OPTIONS=--openssl-legacy-provider && npm install && npm run build
 
 FROM adoptopenjdk/openjdk15:alpine
 WORKDIR /tmp/compile/

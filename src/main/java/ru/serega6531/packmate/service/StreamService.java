@@ -200,12 +200,11 @@ public class StreamService {
                 continue;
             }
 
-            final Optional<FoundPattern> matchOpt = patternService.tryMatch(packet.getContent(), pattern);
+            final Set<FoundPattern> matches = patternService.matchOne(packet.getContent(), pattern);
 
-            if (matchOpt.isPresent()) {
-                FoundPattern match = matchOpt.get();
-                packet.getMatches().add(match);
-                match.setPacket(packet);
+            if (!matches.isEmpty()) {
+                packet.getMatches().addAll(matches);
+                matches.forEach(m -> m.setPacket(packet));
 
                 matched = true;
             }
