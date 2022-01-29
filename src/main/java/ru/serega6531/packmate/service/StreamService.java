@@ -20,6 +20,7 @@ import ru.serega6531.packmate.repository.StreamRepository;
 import ru.serega6531.packmate.service.optimization.RsaKeysHolder;
 import ru.serega6531.packmate.service.optimization.StreamOptimizer;
 
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -90,6 +91,15 @@ public class StreamService {
             }
         }
 
+        countingService.countStream(service.getPort(), packets.size());
+
+        List<Packet> optimizedPackets = new StreamOptimizer(keysHolder, service, packets).optimizeStream();
+
+        if (isStreamIgnored(optimizedPackets, service)) {
+            log.debug("New stream is ignored");
+            return false;
+        }
+
         Optional<Packet> firstIncoming = packets.stream()
                 .filter(Packet::isIncoming)
                 .findFirst();
@@ -101,26 +111,14 @@ public class StreamService {
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
         stream.setService(service.getPort());
 
-        countingService.countStream(service.getPort(), packets.size());
+        String userAgentHash = getUserAgentHash(optimizedPackets);
+        stream.setUserAgentHash(userAgentHash);
 
-        packets = new StreamOptimizer(keysHolder, service, packets).optimizeStream();
+        Set<Pattern> foundPatterns = matchPatterns(optimizedPackets, service);
+        stream.setFoundPatterns(foundPatterns);
+        stream.setPackets(optimizedPackets);
 
-        if (isStreamIgnored(packets, service)) {
-            log.debug("New stream is ignored");
-            return false;
-        }
-
-        processUserAgent(packets, stream);
         Stream savedStream = save(stream);
-
-        for (Packet packet : packets) {
-            packet.setStream(savedStream);
-        }
-
-        Set<Pattern> foundPatterns = matchPatterns(packets, service);
-        savedStream.setFoundPatterns(foundPatterns);
-        savedStream.setPackets(packets);
-        savedStream = save(savedStream);
 
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, streamToDto(savedStream)));
         return true;
@@ -143,7 +141,7 @@ public class StreamService {
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.FINISH_LOOKBACK, pattern.getId()));
     }
 
-    private void processUserAgent(List<Packet> packets, Stream stream) {
+    private String getUserAgentHash(List<Packet> packets) {
         String ua = null;
         for (Packet packet : packets) {
             String content = packet.getContentString();
@@ -155,7 +153,9 @@ public class StreamService {
         }
 
         if (ua != null) {
-            stream.setUserAgentHash(calculateUserAgentHash(ua));
+            return calculateUserAgentHash(ua);
+        } else {
+            return null;
         }
     }
 
@@ -240,6 +240,14 @@ public class StreamService {
 
     public Optional<Stream> find(long id) {
         return repository.findById(id);
+    }
+
+    /**
+     * @return Number of deleted rows
+     */
+    @Transactional
+    public long cleanupOldStreams(ZonedDateTime before) {
+        return repository.deleteByEndTimestampBeforeAndFavoriteIsFalse(before.toEpochSecond() * 1000);
     }
 
     @Transactional

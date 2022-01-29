@@ -1,9 +1,11 @@
 package ru.serega6531.packmate.model;
 
 import lombok.*;
+import org.hibernate.Hibernate;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
 @GenericGenerator(
@@ -20,12 +22,11 @@ import javax.persistence.*;
 @Builder
 @Getter
 @ToString
-@EqualsAndHashCode(exclude = "packet")
 public class FoundPattern {
 
     @Id
     @GeneratedValue(generator = "found_pattern_generator")
-    private int id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "packet_id", nullable = false)
@@ -38,6 +39,18 @@ public class FoundPattern {
 
     private int endPosition;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        FoundPattern that = (FoundPattern) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
 
 

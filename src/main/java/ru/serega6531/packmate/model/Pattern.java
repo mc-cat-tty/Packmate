@@ -1,17 +1,21 @@
 package ru.serega6531.packmate.model;
 
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
+import org.hibernate.Hibernate;
 import org.hibernate.annotations.GenericGenerator;
 import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 
-import javax.persistence.*;
-import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import java.util.Objects;
 
-@Data
-@ToString(exclude = "matchedStreams")
+@Getter
+@Setter
+@RequiredArgsConstructor
+@ToString
 @Entity
 @GenericGenerator(
         name = "pattern_generator",
@@ -26,7 +30,7 @@ public class Pattern {
 
     @Id
     @GeneratedValue(generator = "pattern_generator")
-    private int id;
+    private Integer id;
 
     private boolean enabled;
 
@@ -46,8 +50,16 @@ public class Pattern {
 
     private long searchStartTimestamp;
 
-    @ManyToMany(mappedBy = "foundPatterns", fetch = FetchType.LAZY)
-    private List<Stream> matchedStreams;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        Pattern pattern = (Pattern) o;
+        return id != null && Objects.equals(id, pattern.id);
+    }
 
-
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

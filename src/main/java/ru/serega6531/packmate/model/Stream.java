@@ -1,17 +1,20 @@
 package ru.serega6531.packmate.model;
 
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
+import org.hibernate.Hibernate;
 import org.hibernate.annotations.GenericGenerator;
 import ru.serega6531.packmate.model.enums.Protocol;
 
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
-@Data
-@ToString(exclude = "packets")
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 @Entity
 @GenericGenerator(
         name = "stream_generator",
@@ -33,8 +36,10 @@ public class Stream {
 
     private Protocol protocol;
 
-    @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "stream_id")
     @OrderBy("id")
+    @ToString.Exclude
     private List<Packet> packets;
 
     private long startTimestamp;
@@ -42,6 +47,12 @@ public class Stream {
     private long endTimestamp;
 
     @ManyToMany
+    @JoinTable(
+            name = "stream_found_patterns",
+            joinColumns = @JoinColumn(name = "stream_id"),
+            inverseJoinColumns = @JoinColumn(name = "pattern_id")
+    )
+    @ToString.Exclude
     private Set<Pattern> foundPatterns = new HashSet<>();
 
     private boolean favorite;
@@ -52,4 +63,16 @@ public class Stream {
     @Column(columnDefinition = "char(3)")
     private String userAgentHash;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        Stream stream = (Stream) o;
+        return id != null && Objects.equals(id, stream.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

@@ -15,13 +15,16 @@ spring:
 
 
 enable-capture: true
-capture-mode: LIVE  # LIVE, FILE
+capture-mode: LIVE  # LIVE, FILE, VIEW
 interface-name: enp0s31f6
 pcap-file: file.pcap
 local-ip: "192.168.0.125"
 account-login: BinaryBears
 account-password: 123456
-udp-stream-timeout: 20 # секунд
-tcp-stream-timeout: 40 # секунд
-timeout-stream-check-interval: 10 # секунд
+udp-stream-timeout: 20 # seconds
+tcp-stream-timeout: 40 # seconds
+timeout-stream-check-interval: 10 # seconds
+old-streams-cleanup-enabled: true
+old-streams-threshold: 240 # minutes
+cleanup-interval: 5 # minutes
 ignore-empty-packets: true

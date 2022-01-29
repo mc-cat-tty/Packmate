@@ -12,4 +12,6 @@ public interface StreamRepository extends JpaRepository<Stream, Long>, JpaSpecif
     @Modifying
     void setFavorite(long id, boolean favorite);
 
+    long deleteByEndTimestampBeforeAndFavoriteIsFalse(long threshold);
+
 }
