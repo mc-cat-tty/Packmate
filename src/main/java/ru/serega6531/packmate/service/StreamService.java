@@ -118,6 +118,10 @@ public class StreamService {
         stream.setFoundPatterns(foundPatterns);
         stream.setPackets(optimizedPackets);
 
+        for (Packet packet : optimizedPackets) {
+            packet.setStream(stream);
+        }
+
         Stream savedStream = save(stream);
 
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.NEW_STREAM, streamToDto(savedStream)));

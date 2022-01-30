@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.pcap4j.core.BpfProgram;
 import org.pcap4j.core.PacketListener;
 import org.pcap4j.core.PcapHandle;
@@ -46,8 +47,8 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     private final ListMultimap<UnfinishedStream, ru.serega6531.packmate.model.Packet> unfinishedUdpStreams = ArrayListMultimap.create();
 
     // в следующих мапах в значениях находится srcIp соответствующего пакета
-    private final SetMultimap<UnfinishedStream, ImmutablePair<InetAddress, Integer>> fins = HashMultimap.create();
-    private final SetMultimap<UnfinishedStream, ImmutablePair<InetAddress, Integer>> acks = HashMultimap.create();
+    private final SetMultimap<UnfinishedStream, Pair<InetAddress, Integer>> fins = HashMultimap.create();
+    private final SetMultimap<UnfinishedStream, Pair<InetAddress, Integer>> acks = HashMultimap.create();
 
     protected AbstractPcapWorker(ServicesService servicesService,
                               StreamService streamService,
@@ -182,8 +183,8 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
      * Udp не имеет фазы закрытия, поэтому закрывается только по таймауту
      */
     private void checkTcpTermination(boolean ack, boolean fin, boolean rst,
-                                     ImmutablePair<InetAddress, Integer> sourceIpAndPort,
-                                     ImmutablePair<InetAddress, Integer> destIpAndPort,
+                                     Pair<InetAddress, Integer> sourceIpAndPort,
+                                     Pair<InetAddress, Integer> destIpAndPort,
                                      UnfinishedStream stream) {
 
         if (fin) {

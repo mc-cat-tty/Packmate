@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.GenericGenerator;
@@ -37,11 +36,11 @@ public class Packet {
     @Transient
     private int ttl;
 
-    @Column(name = "stream_id")
-    @JsonIgnore
-    private Long streamId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "stream_id", nullable = false)
+    private Stream stream;
 
-    @OneToMany(mappedBy = "packet", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "packet", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<FoundPattern> matches;
 
     private long timestamp;

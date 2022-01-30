@@ -6,10 +6,7 @@ import org.hibernate.annotations.GenericGenerator;
 import ru.serega6531.packmate.model.enums.Protocol;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 @Setter
@@ -36,8 +33,7 @@ public class Stream {
 
     private Protocol protocol;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "stream_id")
+    @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id")
     @ToString.Exclude
     private List<Packet> packets;

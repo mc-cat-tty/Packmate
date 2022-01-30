@@ -28,7 +28,7 @@ public class FoundPattern {
     @GeneratedValue(generator = "found_pattern_generator")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "packet_id", nullable = false)
     @Setter
     private Packet packet;

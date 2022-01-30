@@ -26,7 +26,7 @@ public class OldStreamsCleanupTask {
     @Scheduled(fixedDelayString = "PT${cleanup-interval}M", initialDelayString = "PT1M")
     public void cleanup() {
         ZonedDateTime before = ZonedDateTime.now().minus(oldStreamsThreshold, ChronoUnit.MINUTES);
-        log.info("Cleaning up old streams (before {})", before);
+        log.info("Cleaning up old non-favorite streams (before {})", before);
         long deleted = service.cleanupOldStreams(before);
         log.info("Deleted {} rows", deleted);
     }
