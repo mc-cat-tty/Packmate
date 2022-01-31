@@ -5,13 +5,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.serega6531.packmate.model.Stream;
+import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.model.pojo.PacketDto;
 import ru.serega6531.packmate.service.StreamService;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -27,14 +25,10 @@ public class PacketController {
 
     @PostMapping("/{streamId}")
     public List<PacketDto> getPacketsForStream(@PathVariable long streamId) {
-        final Optional<Stream> stream = streamService.find(streamId);
-        if (stream.isPresent()) {
-            return stream.get().getPackets().stream()
-                    .map(streamService::packetToDto)
-                    .collect(Collectors.toList());
-        } else {
-            return Collections.emptyList();
-        }
+        List<Packet> packets = streamService.getPackets(streamId);
+        return packets.stream()
+                .map(streamService::packetToDto)
+                .collect(Collectors.toList());
     }
 
 }

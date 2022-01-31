@@ -36,7 +36,7 @@ public class Packet {
     @Transient
     private int ttl;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "stream_id", nullable = false)
     private Stream stream;
 
