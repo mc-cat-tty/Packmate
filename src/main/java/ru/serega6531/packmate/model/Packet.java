@@ -19,7 +19,7 @@ import java.util.Set;
         parameters = {
                 @Parameter(name = "sequence_name", value = "packet_seq"),
                 @Parameter(name = "initial_value", value = "1"),
-                @Parameter(name = "increment_size", value = "5"),
+                @Parameter(name = "increment_size", value = "20000"),
                 @Parameter(name = "optimizer", value = "hilo")
         }
 )

@@ -20,7 +20,8 @@ import java.util.*;
         parameters = {
                 @Parameter(name = "sequence_name", value = "stream_seq"),
                 @Parameter(name = "initial_value", value = "1"),
-                @Parameter(name = "increment_size", value = "1")
+                @Parameter(name = "increment_size", value = "1000"),
+                @Parameter(name = "optimizer", value = "hilo")
         }
 )
 public class Stream {
