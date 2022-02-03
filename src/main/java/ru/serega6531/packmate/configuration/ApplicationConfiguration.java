@@ -1,25 +1,14 @@
 package ru.serega6531.packmate.configuration;
 
-import lombok.extern.slf4j.Slf4j;
 import org.pcap4j.core.PcapNativeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
-import ru.serega6531.packmate.WebSocketHandler;
 import ru.serega6531.packmate.model.enums.CaptureMode;
 import ru.serega6531.packmate.pcap.FilePcapWorker;
 import ru.serega6531.packmate.pcap.LivePcapWorker;
@@ -32,25 +21,9 @@ import ru.serega6531.packmate.service.SubscriptionService;
 import java.net.UnknownHostException;
 
 @Configuration
-@EnableWebSecurity
 @EnableScheduling
-@EnableWebSocket
 @EnableAsync
-@Slf4j
-public class ApplicationConfiguration extends WebSecurityConfigurerAdapter implements WebSocketConfigurer {
-
-    @Value("${account-login}")
-    private String login;
-
-    @Value("${account-password}")
-    private String password;
-
-    private final WebSocketHandler webSocketHandler;
-
-    @Autowired
-    public ApplicationConfiguration(WebSocketHandler webSocketHandler) {
-        this.webSocketHandler = webSocketHandler;
-    }
+public class ApplicationConfiguration {
 
     @Bean(destroyMethod = "stop")
     @Autowired
@@ -64,32 +37,8 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
         return switch (captureMode) {
             case LIVE -> new LivePcapWorker(servicesService, streamService, localIpString, interfaceName);
             case FILE -> new FilePcapWorker(servicesService, streamService, subscriptionService, localIpString, filename);
-            default -> new NoOpPcapWorker();
+            case VIEW -> new NoOpPcapWorker();
         };
-    }
-
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-                .withUser(login)
-                .password(passwordEncoder().encode(password))
-                .authorities("ROLE_USER");
-    }
-
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.csrf()
-                .disable()
-                .authorizeRequests()
-                .antMatchers("/site.webmanifest")
-                .permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .httpBasic()
-                .and()
-                .headers()
-                .frameOptions()
-                .sameOrigin();
     }
 
     @Bean
@@ -97,15 +46,4 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter imple
         return new BCryptPasswordEncoder();
     }
 
-    @EventListener
-    public void authenticationFailed(AuthenticationFailureBadCredentialsEvent e) {
-        log.info("Login failed for user {}, password {}",
-                e.getAuthentication().getPrincipal(), e.getAuthentication().getCredentials());
-    }
-
-    @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(webSocketHandler, "/api/ws")
-                .withSockJS();
-    }
 }
