@@ -1,7 +1,7 @@
 package ru.serega6531.packmate;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.util.Assert;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
@@ -27,13 +27,14 @@ public class PatternMatcherTest {
                         .build());
 
         final Pattern pattern = new Pattern();
+        pattern.setId(1);
         pattern.setValue("[a-f]{3}");
         pattern.setSearchType(PatternSearchType.REGEX);
 
         final PatternMatcher matcher = new PatternMatcher(content.getBytes(), List.of(pattern));
         final Set<FoundPattern> matches = matcher.findMatches();
 
-        Assert.isTrue(matches.equals(correctMatches), "Incorrect search: " + matches.toString());
+        assertMatchesAreCorrect(correctMatches, matches);
     }
 
     @Test
@@ -50,13 +51,14 @@ public class PatternMatcherTest {
                         .build());
 
         final Pattern pattern = new Pattern();
+        pattern.setId(1);
         pattern.setValue("bbb");
         pattern.setSearchType(PatternSearchType.SUBSTRING);
 
         final PatternMatcher matcher = new PatternMatcher(content.getBytes(), List.of(pattern));
         final Set<FoundPattern> matches = matcher.findMatches();
 
-        Assert.isTrue(matches.equals(correctMatches), "Incorrect search: " + matches.toString());
+        assertMatchesAreCorrect(correctMatches, matches);
     }
 
     @Test
@@ -73,13 +75,27 @@ public class PatternMatcherTest {
                         .build());
 
         final Pattern pattern = new Pattern();
+        pattern.setId(1);
         pattern.setValue("AAaa");
         pattern.setSearchType(PatternSearchType.SUBBYTES);
 
         final PatternMatcher matcher = new PatternMatcher(content, List.of(pattern));
         final Set<FoundPattern> matches = matcher.findMatches();
 
-        Assert.isTrue(matches.equals(correctMatches), "Incorrect search: " + matches.toString());
+        assertMatchesAreCorrect(correctMatches, matches);
+    }
+
+    private void assertMatchesAreCorrect(Set<FoundPattern> correctMatches, Set<FoundPattern> foundMatches) {
+        Assertions.assertEquals(correctMatches.size(), foundMatches.size());
+
+        Assertions.assertTrue(correctMatches.stream().allMatch(correct ->
+                foundMatches.stream().anyMatch(found -> matchesEqual(correct, found))
+        ));
+    }
+
+    private boolean matchesEqual(FoundPattern one, FoundPattern two) {
+        return one.getStartPosition() == two.getStartPosition() &&
+                one.getEndPosition() == two.getEndPosition();
     }
 
 }
