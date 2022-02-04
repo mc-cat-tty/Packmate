@@ -17,7 +17,7 @@ public interface StreamRepository extends JpaRepository<Stream, Long>, JpaSpecif
     long deleteByEndTimestampBeforeAndFavoriteIsFalse(long threshold);
 
     @Query("SELECT s FROM Stream s " +
-            "LEFT JOIN FETCH s.packets AS packets " +
+            "JOIN FETCH s.packets AS packets " +
             "LEFT JOIN FETCH packets.matches " +
             "WHERE s.id = :id"
     )

@@ -247,6 +247,7 @@ public class StreamService {
     public List<Packet> getPackets(long streamId) {
         return repository.getStreamWithPackets(streamId)
                 .map(Stream::getPackets)
+                .map(packets -> packets.stream().distinct().collect(Collectors.toList()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
