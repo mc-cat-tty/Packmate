@@ -1,12 +1,11 @@
 package ru.serega6531.packmate.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
+import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.model.Stream;
 
-import java.util.Optional;
+import javax.persistence.QueryHint;
+import java.util.List;
 
 public interface StreamRepository extends JpaRepository<Stream, Long>, JpaSpecificationExecutor<Stream> {
 
@@ -16,11 +15,12 @@ public interface StreamRepository extends JpaRepository<Stream, Long>, JpaSpecif
 
     long deleteByEndTimestampBeforeAndFavoriteIsFalse(long threshold);
 
-    @Query("SELECT s FROM Stream s " +
-            "JOIN FETCH s.packets AS packets " +
-            "LEFT JOIN FETCH packets.matches " +
-            "WHERE s.id = :id"
+    @Query("SELECT DISTINCT p FROM Packet p " +
+            "LEFT JOIN FETCH p.matches " +
+            "WHERE p.stream.id = :streamId " +
+            "ORDER BY p.id"
     )
-    Optional<Stream> getStreamWithPackets(long id);
+    @QueryHints(@QueryHint(name = org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false"))
+    List<Packet> getPackets(long streamId);
 
 }

@@ -37,6 +37,7 @@ dependencies {
     implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.69'
     implementation group: 'org.bouncycastle', name: 'bctls-jdk15on', version: '1.70'
     implementation group: 'org.modelmapper', name: 'modelmapper', version: '2.4.5'
+    compileOnly 'org.jetbrains:annotations:22.0.0'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'

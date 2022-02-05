@@ -7,12 +7,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import ru.serega6531.packmate.model.*;
 import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
@@ -245,10 +243,7 @@ public class StreamService {
     }
 
     public List<Packet> getPackets(long streamId) {
-        return repository.getStreamWithPackets(streamId)
-                .map(Stream::getPackets)
-                .map(packets -> packets.stream().distinct().collect(Collectors.toList()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return repository.getPackets(streamId);
     }
 
     /**
@@ -267,11 +262,14 @@ public class StreamService {
     public List<Stream> findAll(Pagination pagination, Optional<Integer> service, boolean onlyFavorites) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
 
-        Specification<Stream> spec;
-        if (pagination.getDirection() == Sort.Direction.ASC) {
-            spec = streamIdGreaterThan(pagination.getStartingFrom());
-        } else {
-            spec = streamIdLessThan(pagination.getStartingFrom());
+        Specification<Stream> spec = Specification.where(null);
+
+        if (pagination.getStartingFrom() != null) {
+            if (pagination.getDirection() == Sort.Direction.ASC) {
+                spec = spec.and(streamIdGreaterThan(pagination.getStartingFrom()));
+            } else {
+                spec = spec.and(streamIdLessThan(pagination.getStartingFrom()));
+            }
         }
 
         if (service.isPresent()) {

@@ -1,13 +1,19 @@
 package ru.serega6531.packmate.model;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.Hibernate;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
 import ru.serega6531.packmate.model.enums.Protocol;
 
 import javax.persistence.*;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -24,6 +30,7 @@ import java.util.*;
                 @Parameter(name = "optimizer", value = "hilo")
         }
 )
+@Table(indexes = {@Index(name = "stream_id_desc_index", columnList = "id DESC")})
 public class Stream {
 
     @Id

@@ -24,6 +24,7 @@ import java.util.Objects;
 @Builder
 @Getter
 @ToString
+@Table(indexes = { @Index(name = "found_pattern_packet_id_index", columnList = "packet_id DESC") })
 public class FoundPattern {
 
     @Id
