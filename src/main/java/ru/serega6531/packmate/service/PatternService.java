@@ -15,6 +15,7 @@ import ru.serega6531.packmate.model.pojo.PatternDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.PatternRepository;
 
+import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +41,10 @@ public class PatternService {
         this.streamService = streamService;
         this.subscriptionService = subscriptionService;
         this.modelMapper = modelMapper;
+    }
 
+    @PostConstruct
+    public void init() {
         repository.findAll().forEach(p -> patterns.put(p.getId(), p));
         log.info("Loaded {} patterns", patterns.size());
     }

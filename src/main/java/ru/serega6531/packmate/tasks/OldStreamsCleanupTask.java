@@ -1,4 +1,4 @@
-package ru.serega6531.packmate;
+package ru.serega6531.packmate.tasks;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

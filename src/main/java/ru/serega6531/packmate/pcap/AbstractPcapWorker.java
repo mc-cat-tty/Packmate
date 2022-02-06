@@ -257,7 +257,6 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
     }
 
     @Override
-    @SneakyThrows
     public void setFilter(String filter) {
         this.filter = filter;
         applyFilter();

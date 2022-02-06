@@ -54,4 +54,8 @@ public class PcapService {
         worker.setFilter(filter);
     }
 
+    public String getExecutorState() {
+        return worker.getExecutorState();
+    }
+
 }
