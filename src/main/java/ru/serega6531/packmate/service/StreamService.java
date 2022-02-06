@@ -1,10 +1,12 @@
 package ru.serega6531.packmate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Async;
@@ -242,8 +244,9 @@ public class StreamService {
         return saved;
     }
 
-    public List<Packet> getPackets(long streamId) {
-        return repository.getPackets(streamId);
+    public List<Packet> getPackets(long streamId, @Nullable Long startingFrom, int pageSize) {
+//        long safeStartingFrom = startingFrom != null ? startingFrom : 0;
+        return repository.getPackets(streamId, startingFrom, Pageable.ofSize(pageSize));
     }
 
     /**
@@ -259,17 +262,13 @@ public class StreamService {
         repository.setFavorite(id, favorite);
     }
 
-    public List<Stream> findAll(Pagination pagination, Optional<Integer> service, boolean onlyFavorites) {
-        PageRequest page = PageRequest.of(0, pagination.getPageSize(), pagination.getDirection(), "id");
+    public List<Stream> findAll(StreamPagination pagination, Optional<Integer> service, boolean onlyFavorites) {
+        PageRequest page = PageRequest.of(0, pagination.getPageSize(), Sort.Direction.DESC, "id");
 
         Specification<Stream> spec = Specification.where(null);
 
         if (pagination.getStartingFrom() != null) {
-            if (pagination.getDirection() == Sort.Direction.ASC) {
-                spec = spec.and(streamIdGreaterThan(pagination.getStartingFrom()));
-            } else {
-                spec = spec.and(streamIdLessThan(pagination.getStartingFrom()));
-            }
+            spec = spec.and(streamIdLessThan(pagination.getStartingFrom()));
         }
 
         if (service.isPresent()) {
