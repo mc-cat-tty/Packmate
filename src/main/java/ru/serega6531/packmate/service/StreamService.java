@@ -307,10 +307,6 @@ public class StreamService {
         return (root, query, cb) -> cb.equal(root.get("favorite"), true);
     }
 
-    private Specification<Stream> streamIdGreaterThan(long id) {
-        return (root, query, cb) -> cb.greaterThan(root.get("id"), id);
-    }
-
     private Specification<Stream> streamIdLessThan(long id) {
         return (root, query, cb) -> cb.lessThan(root.get("id"), id);
     }
