@@ -3,6 +3,7 @@ package ru.serega6531.packmate.model;
 import lombok.*;
 import org.hibernate.Hibernate;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -19,6 +20,7 @@ public class CtfService {
     @Id
     private Integer port;
 
+    @Column(nullable = false)
     private String name;
 
     private boolean decryptTls;

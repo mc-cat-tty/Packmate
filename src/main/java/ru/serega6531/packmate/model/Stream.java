@@ -37,9 +37,11 @@ public class Stream {
     @GeneratedValue(generator = "stream_generator")
     private Long id;
 
-    @Column(name = "service_id")
+    @Column(name = "service_id", nullable = false)
     private int service;
 
+    @Enumerated
+    @Column(nullable = false)
     private Protocol protocol;
 
     @OneToMany(mappedBy = "stream", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -62,7 +64,7 @@ public class Stream {
 
     private boolean favorite;
 
-    @Column(columnDefinition = "smallint")
+    @Column(nullable = false, columnDefinition = "smallint")
     private int ttl;
 
     @Column(columnDefinition = "char(3)")

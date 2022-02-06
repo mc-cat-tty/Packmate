@@ -55,6 +55,7 @@ public class Packet {
 
     private boolean tlsDecrypted;
 
+    @Column(nullable = false)
     private byte[] content;
 
     @Transient

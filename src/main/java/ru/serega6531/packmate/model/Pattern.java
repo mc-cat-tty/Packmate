@@ -11,9 +11,7 @@ import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Objects;
 
 @Getter
@@ -38,16 +36,25 @@ public class Pattern {
 
     private boolean enabled;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String value;
 
+    @Column(nullable = false)
     private String color;  // для вставки в css
 
+    @Enumerated
+    @Column(nullable = false)
     private PatternSearchType searchType;
 
+    @Enumerated
+    @Column(nullable = false)
     private PatternDirectionType directionType;
 
+    @Enumerated
+    @Column(nullable = false)
     private PatternActionType actionType;
 
     private Integer serviceId;
