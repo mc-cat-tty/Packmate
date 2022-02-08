@@ -1,4 +1,4 @@
-package ru.serega6531.packmate;
+package ru.serega6531.packmate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

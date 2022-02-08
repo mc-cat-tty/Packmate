@@ -79,4 +79,9 @@ public class FilePcapWorker extends AbstractPcapWorker {
 
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.PCAP_STOPPED, null));
     }
+
+    @Override
+    public String getExecutorState() {
+        return "inline";
+    }
 }

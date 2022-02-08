@@ -10,7 +10,9 @@ import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.net.UnknownHostException;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class LivePcapWorker extends AbstractPcapWorker {
@@ -30,7 +32,7 @@ public class LivePcapWorker extends AbstractPcapWorker {
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
                 .namingPattern("pcap-processor").build();
-        processorExecutorService = Executors.newSingleThreadExecutor(factory);
+        processorExecutorService = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), factory);
     }
 
     public void start() throws PcapNativeException {
@@ -63,4 +65,8 @@ public class LivePcapWorker extends AbstractPcapWorker {
         log.info("Intercept stopped");
     }
 
+    @Override
+    public String getExecutorState() {
+        return processorExecutorService.toString();
+    }
 }

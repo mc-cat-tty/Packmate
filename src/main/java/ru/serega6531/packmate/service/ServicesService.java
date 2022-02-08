@@ -12,12 +12,10 @@ import ru.serega6531.packmate.model.pojo.ServiceDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.ServiceRepository;
 
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -43,7 +41,10 @@ public class ServicesService {
         this.pcapService = pcapService;
         this.modelMapper = modelMapper;
         this.localIp = InetAddress.getByName(localIpString);
+    }
 
+    @PostConstruct
+    public void init() {
         repository.findAll().forEach(s -> services.put(s.getPort(), s));
         log.info("Loaded {} services", services.size());
     }
@@ -78,7 +79,7 @@ public class ServicesService {
 
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DELETE_SERVICE, port));
 
-        pcapService.updateFilter(findAll());
+        updateFilter();
     }
 
     public CtfService save(CtfService service) {
@@ -89,9 +90,13 @@ public class ServicesService {
 
         subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_SERVICE, toDto(saved)));
 
-        pcapService.updateFilter(findAll());
+        updateFilter();
 
         return saved;
+    }
+
+    public void updateFilter() {
+        pcapService.updateFilter(findAll());
     }
 
     public ServiceDto toDto(CtfService service) {

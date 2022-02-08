@@ -5,12 +5,15 @@ services:
       DB_USER: ${PACKMATE_DB_USER:-packmate}
       DB_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}
       DB_NAME: ${PACKMATE_DB_NAME:-packmate}
-      INTERFACE: ${PACKMATE_INTERFACE}
+      INTERFACE: ${PACKMATE_INTERFACE:-}
       LOCAL_IP: ${PACKMATE_LOCAL_IP}
       MODE: ${PACKMATE_MODE:-LIVE}
-      PCAP_FILE: ${PACKMATE_PCAP_FILE}
+      PCAP_FILE: ${PACKMATE_PCAP_FILE:-}
       WEB_LOGIN: ${PACKMATE_WEB_LOGIN:-BinaryBears}
       WEB_PASSWORD: ${PACKMATE_WEB_PASSWORD:-123456}
+      OLD_STREAMS_CLEANUP_ENABLED: ${PACKMATE_OLD_STREAMS_CLEANUP_ENABLED:-false}
+      OLD_STREAMS_CLEANUP_INTERVAL: ${PACKMATE_OLD_STREAMS_CLEANUP_INTERVAL:-5}
+      OLD_STREAMS_CLEANUP_THRESHOLD: ${PACKMATE_OLD_STREAMS_CLEANUP_THRESHOLD:-240}
     env_file:
       - .env
     container_name: packmate-app
@@ -25,11 +28,12 @@ services:
       "--spring.datasource.username=$${DB_USER}", "--spring.datasource.password=$${DB_PASSWORD}",
       "--capture-mode=$${MODE}", "--pcap-file=$${PCAP_FILE}",
       "--interface-name=$${INTERFACE}", "--local-ip=$${LOCAL_IP}", "--account-login=$${WEB_LOGIN}",
+      "--old-streams-cleanup-enabled=$${OLD_STREAMS_CLEANUP_ENABLED}", "--cleanup-interval=$${OLD_STREAMS_CLEANUP_INTERVAL}",
+      "--old-streams-threshold=$${OLD_STREAMS_CLEANUP_THRESHOLD}",
       "--account-password=$${WEB_PASSWORD}", "--server.port=65000", "--server.address=0.0.0.0"
     ]
     depends_on:
       - db
-    restart: unless-stopped
   db:
     container_name: packmate-db
     build:
@@ -45,4 +49,3 @@ services:
     - "./data/postgres_data:/var/lib/postgresql/data"
     network_mode: "host"
     image: packmate-db:v1
-    restart: unless-stopped

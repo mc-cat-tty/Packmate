@@ -24,4 +24,9 @@ public class NoOpPcapWorker implements PcapWorker {
     @Override
     public void setFilter(String filter) {
     }
+
+    @Override
+    public String getExecutorState() {
+        return "none";
+    }
 }

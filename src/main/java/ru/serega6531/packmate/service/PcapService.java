@@ -41,17 +41,27 @@ public class PcapService {
     }
 
     public void updateFilter(Collection<CtfService> services) {
-        final String ports = services.stream()
-                .map(CtfService::getPort)
-                .map(p -> "port " + p)
-                .collect(Collectors.joining(" or "));
+        String filter;
 
-        final String format = "(tcp or udp) and (%s)";
-        String filter = String.format(format, ports);
+        if (services.isEmpty()) {
+            filter = "tcp or udp";
+        } else {
+            final String ports = services.stream()
+                    .map(CtfService::getPort)
+                    .map(p -> "port " + p)
+                    .collect(Collectors.joining(" or "));
+
+            final String format = "(tcp or udp) and (%s)";
+            filter = String.format(format, ports);
+        }
 
         log.debug("New filter: " + filter);
 
         worker.setFilter(filter);
+    }
+
+    public String getExecutorState() {
+        return worker.getExecutorState();
     }
 
 }

@@ -20,4 +20,5 @@ public interface PcapWorker {
 
     void setFilter(String filter);
 
+    String getExecutorState();
 }

@@ -2,7 +2,7 @@ package ru.serega6531.packmate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.serega6531.packmate.model.pojo.Pagination;
+import ru.serega6531.packmate.model.pojo.StreamPagination;
 import ru.serega6531.packmate.model.pojo.StreamDto;
 import ru.serega6531.packmate.service.StreamService;
 
@@ -22,14 +22,14 @@ public class StreamController {
     }
 
     @PostMapping("/all")
-    public List<StreamDto> getStreams(@RequestBody Pagination pagination) {
+    public List<StreamDto> getStreams(@RequestBody StreamPagination pagination) {
         return service.findAll(pagination, Optional.empty(), pagination.isFavorites()).stream()
                 .map(service::streamToDto)
                 .collect(Collectors.toList());
     }
 
     @PostMapping("/{port}")
-    public List<StreamDto> getStreams(@PathVariable int port, @RequestBody Pagination pagination) {
+    public List<StreamDto> getStreams(@PathVariable int port, @RequestBody StreamPagination pagination) {
         return service.findAll(pagination, Optional.of(port), pagination.isFavorites()).stream()
                 .map(service::streamToDto)
                 .collect(Collectors.toList());

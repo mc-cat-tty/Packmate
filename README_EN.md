@@ -76,6 +76,17 @@ PACKMATE_MODE=FILE
 PACKMATE_PCAP_FILE=dump.pcap
 ```
 
+When capturing live traffic it's better to turn on old streams removal. Otherwise, after some time Packmate 
+will start working slower.
+```dotenv
+PACKMATE_OLD_STREAMS_CLEANUP_ENABLED=true
+# Old streams removal interval (in minutes).
+# It's better to use small numbers so the streams are removed in small chunks and don't overload the server.
+PACKMATE_OLD_STREAMS_CLEANUP_INTERVAL=1
+# How old the stream must be to be removed (in minutes before current time)
+PACKMATE_OLD_STREAMS_CLEANUP_THRESHOLD=240
+```
+
 To decrypt TLS, put the private key used to generate a certificate into the `rsa_keys` folder.
 
 ### Launch
