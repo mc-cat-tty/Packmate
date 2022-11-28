@@ -31,7 +31,7 @@ public class HttpUrldecodeProcessor {
 
                 if (httpStarted) {
                     try {
-                        content = URLDecoder.decode(content, StandardCharsets.UTF_8.toString());
+                        content = URLDecoder.decode(content, StandardCharsets.UTF_8);
                         packet.setContent(content.getBytes());
                     } catch (IllegalArgumentException e) {
                         log.warn("urldecode", e);

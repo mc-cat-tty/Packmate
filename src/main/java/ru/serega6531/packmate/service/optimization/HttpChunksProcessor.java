@@ -19,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class HttpChunksProcessor {
 
+    private static final String CHUNKED_HTTP_HEADER = "transfer-encoding: chunked\r\n";
     private final List<Packet> packets;
 
     private int position;
@@ -38,7 +39,7 @@ public class HttpChunksProcessor {
 
                 if (http && contentPos != -1) {   // начало body
                     String headers = content.substring(0, contentPos + 2);  // захватываем первые \r\n
-                    boolean chunked = headers.contains("Transfer-Encoding: chunked\r\n");
+                    boolean chunked = headers.toLowerCase().contains(CHUNKED_HTTP_HEADER);
                     if (chunked) {
                         chunkStarted = true;
                         start = position;

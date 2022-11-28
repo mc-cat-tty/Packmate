@@ -1,6 +1,6 @@
 src/main/resources/static/*
 *.pcap
-docker/postgres_data
+data
 
 HELP.md
 .gradle

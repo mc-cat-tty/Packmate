@@ -27,6 +27,7 @@ public class LivePcapWorker extends AbstractPcapWorker {
         device = Pcaps.getDevByName(interfaceName);
 
         if(device == null) {
+            log.info("Existing devices: {}", Pcaps.findAllDevs().stream().map(PcapNetworkInterface::getName).toList());
             throw new IllegalArgumentException("Device " + interfaceName + " does not exist");
         }
 

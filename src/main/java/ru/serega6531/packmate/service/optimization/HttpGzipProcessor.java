@@ -20,6 +20,7 @@ import java.util.zip.ZipException;
 @RequiredArgsConstructor
 public class HttpGzipProcessor {
 
+    private static final String GZIP_HTTP_HEADER = "content-encoding: gzip\r\n";
     private static final byte[] GZIP_HEADER = {0x1f, (byte) 0x8b, 0x08};
 
     private final List<Packet> packets;
@@ -54,7 +55,7 @@ public class HttpGzipProcessor {
 
                 if (contentPos != -1) {   // начало body
                     String headers = content.substring(0, contentPos + 2);  // захватываем первые \r\n
-                    boolean gziped = headers.contains("Content-Encoding: gzip\r\n");
+                    boolean gziped = headers.toLowerCase().contains(GZIP_HTTP_HEADER);
                     if (gziped) {
                         gzipStarted = true;
                         gzipStartPacket = position;
