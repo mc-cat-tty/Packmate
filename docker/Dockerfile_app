@@ -1,16 +1,16 @@
-FROM node:17-alpine
+FROM node:19-alpine
 WORKDIR /tmp/build/
 COPY ./frontend/ .
 RUN export NODE_OPTIONS=--openssl-legacy-provider && npm install && npm run build
 
-FROM adoptopenjdk/openjdk15:alpine
+FROM eclipse-temurin:17-jdk
 WORKDIR /tmp/compile/
 COPY ./ .
 COPY --from=0 /tmp/build/dist/ ./src/main/resources/static/
 RUN ./gradlew --no-daemon build -x test
 
-FROM adoptopenjdk/openjdk15:alpine-jre
+FROM eclipse-temurin:17-jre
 WORKDIR /app
-RUN apk --no-cache add libpcap
+RUN apt update && apt install -y libpcap0.8
 COPY --from=1 /tmp/compile/build/libs/packmate-*-SNAPSHOT.jar app.jar
-EXPOSE 65000:65000
+EXPOSE 65000
