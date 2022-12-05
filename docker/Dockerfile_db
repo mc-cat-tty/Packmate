@@ -1,4 +1,4 @@
-FROM postgres:14.1-alpine
+FROM postgres:15.1
 
 ARG POSTGRES_USER
 ARG POSTGRES_PASSWORD
@@ -11,4 +11,4 @@ ENV POSTGRES_DB ${POSTGRES_DB}
 COPY docker/postgresql.conf /tmp/postgresql.conf
 COPY docker/update_db_config.sh /docker-entrypoint-initdb.d/_update_db_config.sh
 
-EXPOSE 65001:65001
+EXPOSE 65001
