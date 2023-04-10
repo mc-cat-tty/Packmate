@@ -1,8 +1,6 @@
-version: "3.4"
 services:
-  packmate:
+  packmate: # port = 65000
     environment:
-      DB_USER: ${PACKMATE_DB_USER:-packmate}
       DB_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}
       DB_NAME: ${PACKMATE_DB_NAME:-packmate}
       INTERFACE: ${PACKMATE_INTERFACE:-}
@@ -21,11 +19,11 @@ services:
       context: .
       dockerfile: docker/Dockerfile_app
     network_mode: "host"
-    image: packmate-app:v1
+    image: registry.gitlab.com/packmate/packmate:${BUILD_TAG:-latest}
     command: [
       "java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true",
       "-jar", "/app/app.jar", "--spring.datasource.url=jdbc:postgresql://127.0.0.1:65001/$${DB_NAME}",
-      "--spring.datasource.username=$${DB_USER}", "--spring.datasource.password=$${DB_PASSWORD}",
+      "--spring.datasource.password=$${DB_PASSWORD}",
       "--capture-mode=$${MODE}", "--pcap-file=$${PCAP_FILE}",
       "--interface-name=$${INTERFACE}", "--local-ip=$${LOCAL_IP}", "--account-login=$${WEB_LOGIN}",
       "--old-streams-cleanup-enabled=$${OLD_STREAMS_CLEANUP_ENABLED}", "--cleanup-interval=$${OLD_STREAMS_CLEANUP_INTERVAL}",
@@ -33,19 +31,24 @@ services:
       "--account-password=$${WEB_PASSWORD}", "--server.port=65000", "--server.address=0.0.0.0"
     ]
     depends_on:
-      - db
-  db:
+      db:
+        condition: service_healthy
+  db: # port = 65001
     container_name: packmate-db
-    build:
-      context: .
-      dockerfile: docker/Dockerfile_db
-      args:
-        POSTGRES_USER: ${PACKMATE_DB_USER:-packmate}
-        POSTGRES_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}
-        POSTGRES_DB: ${PACKMATE_DB_NAME:-packmate}
+    environment:
+      POSTGRES_USER: packmate
+      POSTGRES_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}
+      POSTGRES_DB: ${PACKMATE_DB_NAME:-packmate}
     env_file:
       - .env
     volumes:
     - "./data/postgres_data:/var/lib/postgresql/data"
+    - "./docker/postgresql.conf:/tmp/postgresql.conf:ro"
+    - "./docker/update_db_config.sh:/docker-entrypoint-initdb.d/_update_db_config.sh:ro"
     network_mode: "host"
-    image: packmate-db:v1
+    image: postgres:15.2
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U packmate -p 65001" ]
+      interval: 2s
+      timeout: 5s
+      retries: 15
