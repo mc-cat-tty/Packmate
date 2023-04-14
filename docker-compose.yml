@@ -2,7 +2,6 @@ services:
   packmate: # port = 65000
     environment:
       DB_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}
-      DB_NAME: ${PACKMATE_DB_NAME:-packmate}
       INTERFACE: ${PACKMATE_INTERFACE:-}
       LOCAL_IP: ${PACKMATE_LOCAL_IP}
       MODE: ${PACKMATE_MODE:-LIVE}
@@ -20,16 +19,9 @@ services:
       dockerfile: docker/Dockerfile_app
     network_mode: "host"
     image: registry.gitlab.com/packmate/packmate:${BUILD_TAG:-latest}
-    command: [
-      "java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true",
-      "-jar", "/app/app.jar", "--spring.datasource.url=jdbc:postgresql://127.0.0.1:65001/$${DB_NAME}",
-      "--spring.datasource.password=$${DB_PASSWORD}",
-      "--capture-mode=$${MODE}", "--pcap-file=$${PCAP_FILE}",
-      "--interface-name=$${INTERFACE}", "--local-ip=$${LOCAL_IP}", "--account-login=$${WEB_LOGIN}",
-      "--old-streams-cleanup-enabled=$${OLD_STREAMS_CLEANUP_ENABLED}", "--cleanup-interval=$${OLD_STREAMS_CLEANUP_INTERVAL}",
-      "--old-streams-threshold=$${OLD_STREAMS_CLEANUP_THRESHOLD}",
-      "--account-password=$${WEB_PASSWORD}", "--server.port=65000", "--server.address=0.0.0.0"
-    ]
+    volumes:
+      - "./pcaps/:/app/pcaps/:ro"
+      - "./rsa_keys/:/app/rsa_keys/:ro"
     depends_on:
       db:
         condition: service_healthy
@@ -38,7 +30,7 @@ services:
     environment:
       POSTGRES_USER: packmate
       POSTGRES_PASSWORD: ${PACKMATE_DB_PASSWORD:-K604YnL3G1hp2RDkCZNjGpxbyNpNHTRb}
-      POSTGRES_DB: ${PACKMATE_DB_NAME:-packmate}
+      POSTGRES_DB: packmate
     env_file:
       - .env
     volumes:

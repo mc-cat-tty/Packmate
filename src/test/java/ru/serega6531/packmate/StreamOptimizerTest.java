@@ -3,6 +3,7 @@ package ru.serega6531.packmate;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import ru.serega6531.packmate.model.Packet;
+import ru.serega6531.packmate.service.optimization.HttpChunksProcessor;
 import ru.serega6531.packmate.service.optimization.HttpGzipProcessor;
 import ru.serega6531.packmate.service.optimization.HttpUrldecodeProcessor;
 import ru.serega6531.packmate.service.optimization.PacketsMerger;
@@ -65,6 +66,18 @@ class StreamOptimizerTest {
         assertEquals(2, list.get(1).getContent().length);
         assertEquals(1, list.get(2).getContent().length);
         assertEquals(2, list.get(3).getContent().length);
+    }
+
+    @Test
+    void testChunkedTransferEncoding() {
+        String content = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n" +
+                         "6\r\nChunk1\r\n6\r\nChunk2\r\n0\r\n\r\n";
+
+        List<Packet> packets = new ArrayList<>(List.of(createPacket(content.getBytes(), false)));
+        new HttpChunksProcessor(packets).processChunkedEncoding();
+
+        assertEquals(1, packets.size());
+        assertTrue(packets.get(0).getContentString().contains("Chunk1Chunk2"));
     }
 
     private Packet createPacket(int content, boolean incoming) {

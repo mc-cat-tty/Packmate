@@ -2,7 +2,7 @@ package ru.serega6531.packmate.tasks;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import ru.serega6531.packmate.service.StreamService;
@@ -12,7 +12,7 @@ import java.time.temporal.ChronoUnit;
 
 @Component
 @Slf4j
-@ConditionalOnProperty(name = "old-streams-cleanup-enabled", havingValue = "true")
+@ConditionalOnExpression("${old-streams-cleanup-enabled:false} && '${capture-mode}' == 'LIVE'")
 public class OldStreamsCleanupTask {
 
     private final StreamService service;
