@@ -13,4 +13,15 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 RUN apt update && apt install -y libpcap0.8 && rm -rf /var/lib/apt/lists/*
 COPY --from=1 /tmp/compile/build/libs/packmate-*-SNAPSHOT.jar app.jar
+
+CMD [ "java", "-Djava.net.preferIPv4Stack=true", "-Djava.net.preferIPv4Addresses=true",  \
+      "-jar", "/app/app.jar", "--spring.datasource.url=jdbc:postgresql://127.0.0.1:65001/packmate", \
+      "--spring.datasource.password=${DB_PASSWORD}", \
+      "--capture-mode=${MODE}", "--pcap-file=${PCAP_FILE}", \
+      "--interface-name=${INTERFACE}", "--local-ip=${LOCAL_IP}", "--account-login=${WEB_LOGIN}", \
+      "--old-streams-cleanup-enabled=${OLD_STREAMS_CLEANUP_ENABLED}", "--cleanup-interval=${OLD_STREAMS_CLEANUP_INTERVAL}", \
+      "--old-streams-threshold=${OLD_STREAMS_CLEANUP_THRESHOLD}", \
+      "--account-password=${WEB_PASSWORD}", "--server.port=65000", "--server.address=0.0.0.0" \
+]
+
 EXPOSE 65000

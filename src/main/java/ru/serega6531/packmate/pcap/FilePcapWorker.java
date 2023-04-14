@@ -16,6 +16,7 @@ import ru.serega6531.packmate.service.SubscriptionService;
 import java.io.EOFException;
 import java.io.File;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 @Slf4j
 public class FilePcapWorker extends AbstractPcapWorker {
@@ -31,8 +32,9 @@ public class FilePcapWorker extends AbstractPcapWorker {
         super(servicesService, streamService, localIpString);
         this.subscriptionService = subscriptionService;
 
-        file = new File(filename);
+        file = new File("pcaps", filename);
         if (!file.exists()) {
+            log.info("Existing files: " + Arrays.toString(new File("pcaps").listFiles()));
             throw new IllegalArgumentException("File " + file.getAbsolutePath() + " does not exist");
         }
 

@@ -107,7 +107,7 @@ public class TlsDecryptor {
         int blockCipherSize = Integer.parseInt(blockCipherParts[1]);
         String blockCipherMode = blockCipherParts[2];
 
-        if (!blockCipherAlgo.equals("AES")) {  //TODO использовать не только AES256
+        if (!blockCipherAlgo.equals("AES")) {
             return;
         }
 
