@@ -60,7 +60,7 @@ public class PatternService {
     public Set<FoundPattern> findMatches(byte[] bytes, CtfService service, PatternDirectionType directionType, PatternActionType actionType) {
         final List<Pattern> list = patterns.values().stream()
                 .filter(Pattern::isEnabled)
-                .filter(p -> p.getServiceId() == null || p.getServiceId() == service.getPort())
+                .filter(p -> p.getServiceId() == null || p.getServiceId().equals(service.getPort()))
                 .filter(p -> p.getActionType() == actionType)
                 .filter(p -> p.getDirectionType() == directionType || p.getDirectionType() == PatternDirectionType.BOTH)
                 .collect(Collectors.toList());
