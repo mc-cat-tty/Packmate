@@ -6,6 +6,7 @@ import org.apache.tomcat.util.threads.InlineExecutorService;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
+import ru.serega6531.packmate.exception.PcapFileNotFoundException;
 import ru.serega6531.packmate.model.enums.Protocol;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
@@ -16,7 +17,6 @@ import ru.serega6531.packmate.service.SubscriptionService;
 import java.io.EOFException;
 import java.io.File;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 
 @Slf4j
 public class FilePcapWorker extends AbstractPcapWorker {
@@ -32,10 +32,10 @@ public class FilePcapWorker extends AbstractPcapWorker {
         super(servicesService, streamService, localIpString);
         this.subscriptionService = subscriptionService;
 
-        file = new File("pcaps", filename);
+        File directory = new File("pcaps");
+        file = new File(directory, filename);
         if (!file.exists()) {
-            log.info("Existing files: " + Arrays.toString(new File("pcaps").listFiles()));
-            throw new IllegalArgumentException("File " + file.getAbsolutePath() + " does not exist");
+            throw new PcapFileNotFoundException(file, directory);
         }
 
         processorExecutorService = new InlineExecutorService();
