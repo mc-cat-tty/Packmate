@@ -1,21 +1,24 @@
 package ru.serega6531.packmate.configuration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
 @Slf4j
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class SecurityConfiguration {
 
     @Value("${account-login}")
     private String login;
@@ -23,35 +26,39 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Value("${account-password}")
     private String password;
 
-    private final PasswordEncoder passwordEncoder;
-
-    @Autowired
-    public SecurityConfiguration(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-                .withUser(login)
+    @Bean
+    public InMemoryUserDetailsManager userDetailsService(PasswordEncoder passwordEncoder) {
+        UserDetails user = User.builder()
+                .username(login)
                 .password(passwordEncoder.encode(password))
-                .authorities("ROLE_USER");
+                .roles("USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(user);
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.csrf()
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http.csrf()
                 .disable()
-                .authorizeRequests()
-                .antMatchers("/site.webmanifest")
-                .permitAll()
-                .anyRequest().authenticated()
-                .and()
+                .authorizeHttpRequests((auth) ->
+                        auth.requestMatchers("/site.webmanifest")
+                                .permitAll()
+                                .anyRequest()
+                                .authenticated()
+                )
                 .httpBasic()
                 .and()
                 .headers()
                 .frameOptions()
-                .sameOrigin();
+                .sameOrigin()
+                .and()
+                .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @EventListener

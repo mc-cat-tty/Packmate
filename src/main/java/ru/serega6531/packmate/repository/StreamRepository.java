@@ -1,11 +1,13 @@
 package ru.serega6531.packmate.repository;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.model.Stream;
 
-import javax.persistence.QueryHint;
 import java.util.List;
 
 public interface StreamRepository extends JpaRepository<Stream, Long>, JpaSpecificationExecutor<Stream> {
@@ -22,7 +24,6 @@ public interface StreamRepository extends JpaRepository<Stream, Long>, JpaSpecif
             "AND (:startingFrom IS NULL OR p.id > :startingFrom) " +
             "ORDER BY p.id"
     )
-    @QueryHints(@QueryHint(name = org.hibernate.jpa.QueryHints.HINT_PASS_DISTINCT_THROUGH, value = "false"))
     List<Packet> getPackets(long streamId, Long startingFrom, Pageable pageable);
 
 }
