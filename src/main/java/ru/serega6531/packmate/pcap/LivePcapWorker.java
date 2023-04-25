@@ -6,10 +6,12 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.core.Pcaps;
+import ru.serega6531.packmate.exception.PcapInterfaceNotFoundException;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -26,9 +28,9 @@ public class LivePcapWorker extends AbstractPcapWorker {
         super(servicesService, streamService, localIpString);
         device = Pcaps.getDevByName(interfaceName);
 
-        if(device == null) {
-            log.info("Existing devices: {}", Pcaps.findAllDevs().stream().map(PcapNetworkInterface::getName).toList());
-            throw new IllegalArgumentException("Device " + interfaceName + " does not exist");
+        if (device == null) {
+            List<String> existingInterfaces = Pcaps.findAllDevs().stream().map(PcapNetworkInterface::getName).toList();
+            throw new PcapInterfaceNotFoundException(interfaceName, existingInterfaces);
         }
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
