@@ -14,7 +14,6 @@ public class PcapFileNotFoundFailureAnalyzer extends AbstractFailureAnalyzer<Pca
         String description = "The file " + cause.getFile().getAbsolutePath() + " was not found";
         String existingFilesMessage;
 
-
         File[] existingFiles = cause.getDirectory().listFiles();
 
         if (existingFiles == null) {
@@ -25,7 +24,6 @@ public class PcapFileNotFoundFailureAnalyzer extends AbstractFailureAnalyzer<Pca
                     cause
             );
         }
-
 
         if (existingFiles.length == 0) {
             existingFilesMessage = "The pcaps directory is currently empty";
