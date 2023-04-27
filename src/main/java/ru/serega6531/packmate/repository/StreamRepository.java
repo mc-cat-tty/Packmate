@@ -18,7 +18,7 @@ public interface StreamRepository extends JpaRepository<Stream, Long>, JpaSpecif
 
     long deleteByEndTimestampBeforeAndFavoriteIsFalse(long threshold);
 
-    @Query("SELECT DISTINCT p FROM Packet p " +
+    @Query("SELECT p FROM Packet p " +
             "LEFT JOIN FETCH p.matches " +
             "WHERE p.stream.id = :streamId " +
             "AND (:startingFrom IS NULL OR p.id > :startingFrom) " +
