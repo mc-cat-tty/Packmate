@@ -62,7 +62,7 @@ public class PatternService {
 
     public Set<FoundPattern> findMatches(byte[] bytes, CtfService service, PatternDirectionType directionType, PatternActionType actionType) {
         final List<Pattern> list = patterns.values().stream()
-                .filter(Pattern::isEnabled)
+                .filter(pattern -> pattern.isEnabled() && !pattern.isDeleted())
                 .filter(p -> p.getServiceId() == null || p.getServiceId().equals(service.getPort()))
                 .filter(p -> p.getActionType() == actionType)
                 .filter(p -> p.getDirectionType() == directionType || p.getDirectionType() == PatternDirectionType.BOTH)
@@ -88,6 +88,18 @@ public class PatternService {
                 log.info("Disabled pattern '{}' with value '{}'", pattern.getName(), pattern.getValue());
                 subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.DISABLE_PATTERN, id));
             }
+        }
+    }
+
+    public void delete(int id) {
+        final Pattern pattern = find(id);
+        if (pattern != null) {
+            pattern.setDeleted(true);
+            final Pattern saved = repository.save(pattern);
+            patterns.put(id, saved);
+
+            log.info("Deleted pattern '{}' with value '{}'", pattern.getName(), pattern.getValue());
+            subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.SAVE_PATTERN, toDto(saved)));
         }
     }
 
