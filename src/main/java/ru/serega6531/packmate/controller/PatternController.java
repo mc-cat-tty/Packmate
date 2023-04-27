@@ -1,6 +1,7 @@
 package ru.serega6531.packmate.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,9 +33,14 @@ public class PatternController {
                 .toList();
     }
 
-    @PostMapping("/{id}")
+    @PostMapping("/{id}/enable")
     public void enable(@PathVariable int id, @RequestParam boolean enabled) {
         service.enable(id, enabled);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable int id) {
+        service.delete(id);
     }
 
     @PostMapping("/{id}/lookback")

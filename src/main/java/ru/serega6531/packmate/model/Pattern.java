@@ -1,5 +1,10 @@
 package ru.serega6531.packmate.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -11,14 +16,13 @@ import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.PatternSearchType;
 
-import jakarta.persistence.*;
 import java.util.Objects;
 
 @Getter
 @Setter
 @RequiredArgsConstructor
 @ToString
-@Entity
+@Entity(name = "pattern")
 @GenericGenerator(
         name = "pattern_generator",
         strategy = "org.hibernate.id.enhanced.SequenceStyleGenerator",
@@ -34,7 +38,11 @@ public class Pattern {
     @GeneratedValue(generator = "pattern_generator")
     private Integer id;
 
+    @Column(nullable = false)
     private boolean enabled;
+
+    @Column(nullable = false)
+    private boolean deleted = false;
 
     @Column(nullable = false)
     private String name;

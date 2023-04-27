@@ -10,6 +10,7 @@ public class PatternDto {
 
     private int id;
     private boolean enabled;
+    private boolean deleted;
     private String name;
     private String value;
     private String color;
