@@ -13,11 +13,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import ru.serega6531.packmate.model.*;
+import ru.serega6531.packmate.model.CtfService;
+import ru.serega6531.packmate.model.FoundPattern;
+import ru.serega6531.packmate.model.Packet;
+import ru.serega6531.packmate.model.Pattern;
+import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
-import ru.serega6531.packmate.model.pojo.*;
+import ru.serega6531.packmate.model.pojo.PacketDto;
+import ru.serega6531.packmate.model.pojo.StreamDto;
+import ru.serega6531.packmate.model.pojo.StreamPagination;
+import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
+import ru.serega6531.packmate.model.pojo.UnfinishedStream;
 import ru.serega6531.packmate.repository.StreamRepository;
 import ru.serega6531.packmate.service.optimization.RsaKeysHolder;
 import ru.serega6531.packmate.service.optimization.StreamOptimizer;
@@ -28,7 +36,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -71,15 +78,15 @@ public class StreamService {
     @Transactional(propagation = Propagation.NEVER)
     public boolean saveNewStream(UnfinishedStream unfinishedStream, List<Packet> packets) {
         final var serviceOptional = servicesService.findService(
-                unfinishedStream.getFirstIp(),
-                unfinishedStream.getFirstPort(),
-                unfinishedStream.getSecondIp(),
-                unfinishedStream.getSecondPort()
+                unfinishedStream.firstIp(),
+                unfinishedStream.firstPort(),
+                unfinishedStream.secondIp(),
+                unfinishedStream.secondPort()
         );
 
         if (serviceOptional.isEmpty()) {
             log.warn("Failed to save the stream: service at port {} or {} does not exist",
-                    unfinishedStream.getFirstPort(), unfinishedStream.getSecondPort());
+                    unfinishedStream.firstPort(), unfinishedStream.secondPort());
             return false;
         }
         CtfService service = serviceOptional.get();
@@ -107,7 +114,7 @@ public class StreamService {
                 .findFirst();
 
         final Stream stream = new Stream();
-        stream.setProtocol(unfinishedStream.getProtocol());
+        stream.setProtocol(unfinishedStream.protocol());
         stream.setTtl(firstIncoming.map(Packet::getTtl).orElse(0));
         stream.setStartTimestamp(packets.get(0).getTimestamp());
         stream.setEndTimestamp(packets.get(packets.size() - 1).getTimestamp());
@@ -190,7 +197,7 @@ public class StreamService {
             foundPatterns.addAll(matches.stream()
                     .map(FoundPattern::getPatternId)
                     .map(patternService::find)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         return foundPatterns;
@@ -245,7 +252,6 @@ public class StreamService {
     }
 
     public List<Packet> getPackets(long streamId, @Nullable Long startingFrom, int pageSize) {
-//        long safeStartingFrom = startingFrom != null ? startingFrom : 0;
         return repository.getPackets(streamId, startingFrom, Pageable.ofSize(pageSize));
     }
 

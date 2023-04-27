@@ -1,11 +1,10 @@
 package ru.serega6531.packmate.pcap;
 
-import org.pcap4j.core.PcapNativeException;
 import ru.serega6531.packmate.model.enums.Protocol;
 
 public class NoOpPcapWorker implements PcapWorker {
     @Override
-    public void start() throws PcapNativeException {
+    public void start() {
     }
 
     @Override

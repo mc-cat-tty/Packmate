@@ -1,5 +1,6 @@
 package ru.serega6531.packmate.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +16,13 @@ import ru.serega6531.packmate.model.pojo.PatternDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.PatternRepository;
 
-import jakarta.annotation.PostConstruct;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -63,7 +66,7 @@ public class PatternService {
                 .filter(p -> p.getServiceId() == null || p.getServiceId().equals(service.getPort()))
                 .filter(p -> p.getActionType() == actionType)
                 .filter(p -> p.getDirectionType() == directionType || p.getDirectionType() == PatternDirectionType.BOTH)
-                .collect(Collectors.toList());
+                .toList();
         return new PatternMatcher(bytes, list).findMatches();
     }
 
