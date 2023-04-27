@@ -1,28 +1,17 @@
 package ru.serega6531.packmate.model.pojo;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import ru.serega6531.packmate.model.enums.Protocol;
 
 import java.net.InetAddress;
 
-@AllArgsConstructor
-@Getter
-public class UnfinishedStream {
-
-    private final InetAddress firstIp;
-    private final InetAddress secondIp;
-    private final int firstPort;
-    private final int secondPort;
-    private final Protocol protocol;
+public record UnfinishedStream(InetAddress firstIp, InetAddress secondIp, int firstPort, int secondPort,
+                               Protocol protocol) {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof UnfinishedStream)) {
+        if (!(obj instanceof UnfinishedStream o)) {
             return false;
         }
-
-        UnfinishedStream o = (UnfinishedStream) obj;
 
         boolean ipEq1 = firstIp.equals(o.firstIp) && secondIp.equals(o.secondIp);
         boolean ipEq2 = firstIp.equals(o.secondIp) && secondIp.equals(o.firstIp);

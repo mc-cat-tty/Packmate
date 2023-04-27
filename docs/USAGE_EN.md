@@ -68,9 +68,9 @@ you can switch between binary and text representation using the button in the si
 
 Tip: Sometimes during CTFs, admins forget to overwrite the TTL of packets inside the network. In such cases, you can differentiate requests from checkers and other teams based on TTL.
 
-Tip #2: User-Agent can be used to differentiate requests from different sources. For example, in the screenshot above, requests 4 and 5 may have come from different sources.
+Tip #&#8203;2: User-Agent can be used to differentiate requests from different sources. For example, in the screenshot above, requests 4 and 5 may have come from different sources.
 
-Tip #3: Click on the star icon to add an interesting stream to your favorites. This stream will be highlighted in the list and will appear in the list of favorite streams.
+Tip #&#8203;3: Click on the star icon to add an interesting stream to your favorites. This stream will be highlighted in the list and will appear in the list of favorite streams.
 
 #### Control Panel
 
@@ -94,7 +94,7 @@ Tip #3: Click on the star icon to add an interesting stream to your favorites. T
 
 Tip: Create separate patterns for incoming and outgoing flags to easily distinguish between flag checkers and exploits.
 
-Tip #2: Use Lookback to investigate discovered exploits.
+Tip #&#8203;2: Use Lookback to investigate discovered exploits.
 
 Example: You found that the service just handed out a flag to user `abc123` without an apparent reason.
 You can assume that the attacking team created this user and prepared an exploit in another stream.
