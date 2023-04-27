@@ -30,8 +30,17 @@ dependencies {
     implementation("org.springframework.session:spring-session-core")
     implementation(group = "org.apache.commons", name = "commons-lang3", version = "3.12.0")
     implementation(group = "commons-io", name = "commons-io", version = "2.11.0")
+
     implementation("org.pcap4j:pcap4j-core:1.8.2")
     implementation("org.pcap4j:pcap4j-packetfactory-static:1.8.2")
+
+    constraints {
+        implementation("net.java.dev.jna:jna:5.13.0") {
+            because("upgraded version required to run on MacOS")
+            // https://stackoverflow.com/questions/70368863/unsatisfiedlinkerror-for-m1-macs-while-running-play-server-locally
+        }
+    }
+
     implementation(group = "com.google.guava", name = "guava", version = "31.1-jre")
     implementation(group = "org.java-websocket", name = "Java-WebSocket", version = "1.5.3")
     implementation(group = "org.bouncycastle", name = "bcprov-jdk15on", version = "1.70")
