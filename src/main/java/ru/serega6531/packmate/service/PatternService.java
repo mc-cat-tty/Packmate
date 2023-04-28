@@ -6,13 +6,16 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Pattern;
 import ru.serega6531.packmate.model.enums.PatternActionType;
 import ru.serega6531.packmate.model.enums.PatternDirectionType;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
+import ru.serega6531.packmate.model.pojo.PatternCreateDto;
 import ru.serega6531.packmate.model.pojo.PatternDto;
+import ru.serega6531.packmate.model.pojo.PatternUpdateDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.PatternRepository;
 
@@ -103,14 +106,34 @@ public class PatternService {
         }
     }
 
-    public Pattern save(Pattern pattern) {
+    @Transactional
+    public PatternDto create(PatternCreateDto dto) {
+        Pattern pattern = fromDto(dto);
+
+        pattern.setEnabled(true);
+        pattern.setDeleted(false);
+        pattern.setSearchStartTimestamp(System.currentTimeMillis());
+
+        Pattern saved = save(pattern);
+        return toDto(saved);
+    }
+
+    @Transactional
+    public PatternDto update(int id, PatternUpdateDto dto) {
+        Pattern pattern = repository.findById(id).orElseThrow();
+
+        modelMapper.map(dto, pattern);
+
+        Pattern saved = save(pattern);
+        return toDto(saved);
+    }
+
+    private Pattern save(Pattern pattern) {
         try {
             PatternMatcher.compilePattern(pattern);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
-
-        pattern.setSearchStartTimestamp(System.currentTimeMillis());
 
         final Pattern saved = repository.save(pattern);
         patterns.put(saved.getId(), saved);
@@ -136,12 +159,11 @@ public class PatternService {
         }
     }
 
-    public Pattern fromDto(PatternDto dto) {
+    public Pattern fromDto(PatternCreateDto dto) {
         return modelMapper.map(dto, Pattern.class);
     }
 
     public PatternDto toDto(Pattern pattern) {
         return modelMapper.map(pattern, PatternDto.class);
     }
-
 }

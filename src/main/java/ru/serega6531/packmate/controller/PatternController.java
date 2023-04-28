@@ -9,8 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.serega6531.packmate.model.Pattern;
+import ru.serega6531.packmate.model.pojo.PatternCreateDto;
 import ru.serega6531.packmate.model.pojo.PatternDto;
+import ru.serega6531.packmate.model.pojo.PatternUpdateDto;
 import ru.serega6531.packmate.service.PatternService;
 
 import java.util.List;
@@ -53,11 +54,14 @@ public class PatternController {
     }
 
     @PostMapping
-    public PatternDto addPattern(@RequestBody PatternDto dto) {
-        dto.setEnabled(true);
-        Pattern pattern = service.fromDto(dto);
-        Pattern saved = service.save(pattern);
-        return service.toDto(saved);
+    public PatternDto addPattern(@RequestBody PatternCreateDto dto) {
+        return service.create(dto);
+
+    }
+
+    @PostMapping("/{id}")
+    public PatternDto updatePattern(@PathVariable int id, @RequestBody PatternUpdateDto dto) {
+        return service.update(id, dto);
     }
 
 }
