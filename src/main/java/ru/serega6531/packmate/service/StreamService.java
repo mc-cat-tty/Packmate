@@ -1,5 +1,6 @@
 package ru.serega6531.packmate.service;
 
+import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 import org.modelmapper.ModelMapper;
@@ -49,6 +50,8 @@ public class StreamService {
     private final RsaKeysHolder keysHolder;
     private final ModelMapper modelMapper;
 
+    private final EntityManager entityManager;
+
     private final boolean ignoreEmptyPackets;
 
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\r\\n");
@@ -61,7 +64,7 @@ public class StreamService {
                          SubscriptionService subscriptionService,
                          RsaKeysHolder keysHolder,
                          ModelMapper modelMapper,
-                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
+                         EntityManager entityManager, @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
@@ -69,6 +72,7 @@ public class StreamService {
         this.subscriptionService = subscriptionService;
         this.keysHolder = keysHolder;
         this.modelMapper = modelMapper;
+        this.entityManager = entityManager;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
@@ -251,8 +255,12 @@ public class StreamService {
         return saved;
     }
 
-    public List<Packet> getPackets(long streamId, @Nullable Long startingFrom, int pageSize) {
-        return repository.getPackets(streamId, startingFrom, Pageable.ofSize(pageSize));
+    @Transactional
+    public List<PacketDto> getPackets(long streamId, @Nullable Long startingFrom, int pageSize) {
+        return repository.getPackets(streamId, startingFrom, Pageable.ofSize(pageSize))
+                .stream()
+                .map(this::packetToDto)
+                .toList();
     }
 
     /**
@@ -268,7 +276,8 @@ public class StreamService {
         repository.setFavorite(id, favorite);
     }
 
-    public List<Stream> findAll(StreamPagination pagination, Optional<Integer> service, boolean onlyFavorites) {
+    @Transactional
+    public List<StreamDto> findAll(StreamPagination pagination, Optional<Integer> service, boolean onlyFavorites) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), Sort.Direction.DESC, "id");
 
         Specification<Stream> spec = Specification.where(null);
@@ -289,7 +298,11 @@ public class StreamService {
             spec = spec.and(streamPatternsContains(pagination.getPattern()));
         }
 
-        return repository.findAll(spec, page).getContent();
+        return repository.findAll(spec, page)
+                .getContent()
+                .stream()
+                .map(this::streamToDto)
+                .toList();
     }
 
      public List<Stream> findAllBetweenTimestamps(long start, long end) {

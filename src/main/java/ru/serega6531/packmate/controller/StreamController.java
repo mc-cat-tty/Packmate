@@ -26,16 +26,12 @@ public class StreamController {
 
     @PostMapping("/all")
     public List<StreamDto> getStreams(@RequestBody StreamPagination pagination) {
-        return service.findAll(pagination, Optional.empty(), pagination.isFavorites()).stream()
-                .map(service::streamToDto)
-                .toList();
+        return service.findAll(pagination, Optional.empty(), pagination.isFavorites());
     }
 
     @PostMapping("/{port}")
     public List<StreamDto> getStreams(@PathVariable int port, @RequestBody StreamPagination pagination) {
-        return service.findAll(pagination, Optional.of(port), pagination.isFavorites()).stream()
-                .map(service::streamToDto)
-                .toList();
+        return service.findAll(pagination, Optional.of(port), pagination.isFavorites());
     }
 
     @PostMapping("/{id}/favorite")
