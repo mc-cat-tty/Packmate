@@ -13,7 +13,7 @@ public class StreamDto {
     private Protocol protocol;
     private long startTimestamp;
     private long endTimestamp;
-    private Set<PatternDto> foundPatterns;
+    private Set<Integer> foundPatternsIds;
     private boolean favorite;
     private int ttl;
     private String userAgentHash;

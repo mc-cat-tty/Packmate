@@ -1,6 +1,8 @@
 package ru.serega6531.packmate.configuration;
 
+import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeMap;
 import org.pcap4j.core.PcapNativeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +10,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import ru.serega6531.packmate.model.Pattern;
+import ru.serega6531.packmate.model.Stream;
 import ru.serega6531.packmate.model.enums.CaptureMode;
+import ru.serega6531.packmate.model.pojo.StreamDto;
 import ru.serega6531.packmate.pcap.FilePcapWorker;
 import ru.serega6531.packmate.pcap.LivePcapWorker;
 import ru.serega6531.packmate.pcap.NoOpPcapWorker;
@@ -18,6 +23,8 @@ import ru.serega6531.packmate.service.StreamService;
 import ru.serega6531.packmate.service.SubscriptionService;
 
 import java.net.UnknownHostException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableScheduling
@@ -35,14 +42,33 @@ public class ApplicationConfiguration {
                                  @Value("${capture-mode}") CaptureMode captureMode) throws PcapNativeException, UnknownHostException {
         return switch (captureMode) {
             case LIVE -> new LivePcapWorker(servicesService, streamService, localIpString, interfaceName);
-            case FILE -> new FilePcapWorker(servicesService, streamService, subscriptionService, localIpString, filename);
+            case FILE ->
+                    new FilePcapWorker(servicesService, streamService, subscriptionService, localIpString, filename);
             case VIEW -> new NoOpPcapWorker();
         };
     }
 
     @Bean
     public ModelMapper modelMapper() {
-        return new ModelMapper();
+        ModelMapper modelMapper = new ModelMapper();
+
+        addStreamMapper(modelMapper);
+
+        return modelMapper;
+    }
+
+    private void addStreamMapper(ModelMapper modelMapper) {
+        TypeMap<Stream, StreamDto> streamMapper = modelMapper.createTypeMap(Stream.class, StreamDto.class);
+
+        Converter<Set<Pattern>, Set<Integer>> patternSetToIdSet = ctx -> ctx.getSource()
+                .stream()
+                .map(Pattern::getId)
+                .collect(Collectors.toSet());
+
+        streamMapper.addMappings(mapping ->
+                mapping.using(patternSetToIdSet)
+                        .map(Stream::getFoundPatterns, StreamDto::setFoundPatternsIds)
+        );
     }
 
 }
