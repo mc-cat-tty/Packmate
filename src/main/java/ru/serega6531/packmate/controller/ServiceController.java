@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.serega6531.packmate.model.CtfService;
+import ru.serega6531.packmate.model.pojo.ServiceCreateDto;
 import ru.serega6531.packmate.model.pojo.ServiceDto;
+import ru.serega6531.packmate.model.pojo.ServiceUpdateDto;
 import ru.serega6531.packmate.service.ServicesService;
 
 import java.util.List;
@@ -27,9 +28,7 @@ public class ServiceController {
 
     @GetMapping
     public List<ServiceDto> getServices() {
-        return service.findAll().stream()
-                .map(service::toDto)
-                .toList();
+        return service.findAll();
     }
 
     @DeleteMapping("/{port}")
@@ -38,9 +37,13 @@ public class ServiceController {
     }
 
     @PostMapping
-    public CtfService addService(@RequestBody ServiceDto dto) {
-        CtfService newService = this.service.fromDto(dto);
-        return this.service.save(newService);
+    public ServiceDto addService(@RequestBody ServiceCreateDto dto) {
+        return this.service.create(dto);
+    }
+
+    @PostMapping("/{port}")
+    public ServiceDto updateService(@PathVariable int port, @RequestBody ServiceUpdateDto dto) {
+        return this.service.update(port, dto);
     }
 
 }

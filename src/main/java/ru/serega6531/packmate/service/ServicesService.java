@@ -6,9 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
+import ru.serega6531.packmate.model.pojo.ServiceCreateDto;
 import ru.serega6531.packmate.model.pojo.ServiceDto;
+import ru.serega6531.packmate.model.pojo.ServiceUpdateDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.ServiceRepository;
 
@@ -67,8 +70,11 @@ public class ServicesService {
         return Optional.ofNullable(services.get(port));
     }
 
-    public Collection<CtfService> findAll() {
-        return services.values();
+    public List<ServiceDto> findAll() {
+        return services.values()
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     public void deleteByPort(int port) {
@@ -82,9 +88,27 @@ public class ServicesService {
         updateFilter();
     }
 
-    public CtfService save(CtfService service) {
-        log.info("Added or edited service '{}' at port {}", service.getName(), service.getPort());
+    @Transactional
+    public ServiceDto create(ServiceCreateDto dto) {
+        CtfService service = fromDto(dto);
 
+        log.info("Added service '{}' at port {}", service.getName(), service.getPort());
+
+        return save(service);
+    }
+
+    @Transactional
+    public ServiceDto update(int port, ServiceUpdateDto dto) {
+        CtfService service = repository.findById(port).orElseThrow();
+
+        log.info("Edited service '{}' at port {}", service.getName(), service.getPort());
+
+        modelMapper.map(dto, service);
+        service.setPort(port);
+        return save(service);
+    }
+
+    private ServiceDto save(CtfService service) {
         final CtfService saved = repository.save(service);
         services.put(saved.getPort(), saved);
 
@@ -92,18 +116,18 @@ public class ServicesService {
 
         updateFilter();
 
-        return saved;
+        return toDto(saved);
     }
 
     public void updateFilter() {
         pcapService.updateFilter(findAll());
     }
 
-    public ServiceDto toDto(CtfService service) {
+    private ServiceDto toDto(CtfService service) {
         return modelMapper.map(service, ServiceDto.class);
     }
 
-    public CtfService fromDto(ServiceDto dto) {
+    private CtfService fromDto(ServiceCreateDto dto) {
         return modelMapper.map(dto, CtfService.class);
     }
 
