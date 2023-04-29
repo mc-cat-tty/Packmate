@@ -90,6 +90,10 @@ public class ServicesService {
 
     @Transactional
     public ServiceDto create(ServiceCreateDto dto) {
+        if (repository.existsById(dto.getPort())) {
+            throw new IllegalArgumentException("Service already exists");
+        }
+
         CtfService service = fromDto(dto);
 
         log.info("Added service '{}' at port {}", service.getName(), service.getPort());

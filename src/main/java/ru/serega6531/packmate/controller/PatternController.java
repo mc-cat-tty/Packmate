@@ -56,7 +56,6 @@ public class PatternController {
     @PostMapping
     public PatternDto addPattern(@RequestBody PatternCreateDto dto) {
         return service.create(dto);
-
     }
 
     @PostMapping("/{id}")
