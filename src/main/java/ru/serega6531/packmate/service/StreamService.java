@@ -1,6 +1,5 @@
 package ru.serega6531.packmate.service;
 
-import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 import org.modelmapper.ModelMapper;
@@ -49,9 +48,6 @@ public class StreamService {
     private final SubscriptionService subscriptionService;
     private final RsaKeysHolder keysHolder;
     private final ModelMapper modelMapper;
-
-    private final EntityManager entityManager;
-
     private final boolean ignoreEmptyPackets;
 
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\r\\n");
@@ -64,7 +60,7 @@ public class StreamService {
                          SubscriptionService subscriptionService,
                          RsaKeysHolder keysHolder,
                          ModelMapper modelMapper,
-                         EntityManager entityManager, @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
+                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
@@ -72,7 +68,6 @@ public class StreamService {
         this.subscriptionService = subscriptionService;
         this.keysHolder = keysHolder;
         this.modelMapper = modelMapper;
-        this.entityManager = entityManager;
         this.ignoreEmptyPackets = ignoreEmptyPackets;
     }
 
