@@ -17,5 +17,7 @@ public class StreamDto {
     private boolean favorite;
     private int ttl;
     private String userAgentHash;
+    private int sizeBytes;
+    private int packetsCount;
 
 }

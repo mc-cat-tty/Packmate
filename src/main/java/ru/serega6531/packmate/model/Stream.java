@@ -70,6 +70,12 @@ public class Stream {
     @Column(columnDefinition = "char(3)")
     private String userAgentHash;
 
+    @Column(name = "size_bytes", nullable = false)
+    private Integer sizeBytes;
+
+    @Column(name = "packets_count", nullable = false)
+    private Integer packetsCount;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
