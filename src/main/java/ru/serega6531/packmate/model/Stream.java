@@ -53,7 +53,7 @@ public class Stream {
 
     private long endTimestamp;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     @JoinTable(
             name = "stream_found_patterns",
             joinColumns = @JoinColumn(name = "stream_id"),

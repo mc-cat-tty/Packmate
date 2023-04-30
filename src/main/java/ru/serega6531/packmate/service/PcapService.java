@@ -4,8 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.pcap4j.core.PcapNativeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
+import ru.serega6531.packmate.model.pojo.ServiceDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.pcap.NoOpPcapWorker;
 import ru.serega6531.packmate.pcap.PcapWorker;
@@ -40,14 +40,14 @@ public class PcapService {
         }
     }
 
-    public void updateFilter(Collection<CtfService> services) {
+    public void updateFilter(Collection<ServiceDto> services) {
         String filter;
 
         if (services.isEmpty()) {
             filter = "tcp or udp";
         } else {
             final String ports = services.stream()
-                    .map(CtfService::getPort)
+                    .map(ServiceDto::getPort)
                     .map(p -> "port " + p)
                     .collect(Collectors.joining(" or "));
 

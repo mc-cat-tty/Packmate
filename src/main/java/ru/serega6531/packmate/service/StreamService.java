@@ -48,7 +48,6 @@ public class StreamService {
     private final SubscriptionService subscriptionService;
     private final RsaKeysHolder keysHolder;
     private final ModelMapper modelMapper;
-
     private final boolean ignoreEmptyPackets;
 
     private final java.util.regex.Pattern userAgentPattern = java.util.regex.Pattern.compile("User-Agent: (.+)\\r\\n");
@@ -251,8 +250,12 @@ public class StreamService {
         return saved;
     }
 
-    public List<Packet> getPackets(long streamId, @Nullable Long startingFrom, int pageSize) {
-        return repository.getPackets(streamId, startingFrom, Pageable.ofSize(pageSize));
+    @Transactional
+    public List<PacketDto> getPackets(long streamId, @Nullable Long startingFrom, int pageSize) {
+        return repository.getPackets(streamId, startingFrom, Pageable.ofSize(pageSize))
+                .stream()
+                .map(this::packetToDto)
+                .toList();
     }
 
     /**
@@ -268,7 +271,8 @@ public class StreamService {
         repository.setFavorite(id, favorite);
     }
 
-    public List<Stream> findAll(StreamPagination pagination, Optional<Integer> service, boolean onlyFavorites) {
+    @Transactional
+    public List<StreamDto> findAll(StreamPagination pagination, Optional<Integer> service, boolean onlyFavorites) {
         PageRequest page = PageRequest.of(0, pagination.getPageSize(), Sort.Direction.DESC, "id");
 
         Specification<Stream> spec = Specification.where(null);
@@ -289,7 +293,11 @@ public class StreamService {
             spec = spec.and(streamPatternsContains(pagination.getPattern()));
         }
 
-        return repository.findAll(spec, page).getContent();
+        return repository.findAll(spec, page)
+                .getContent()
+                .stream()
+                .map(this::streamToDto)
+                .toList();
     }
 
      public List<Stream> findAllBetweenTimestamps(long start, long end) {
