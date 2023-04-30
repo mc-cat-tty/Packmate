@@ -101,6 +101,9 @@ public class StreamService {
 
         countingService.countStream(service.getPort(), packets.size());
 
+        int packetsSize = packets.stream().mapToInt(p -> p.getContent().length).sum();
+        int packetsCount = packets.size();
+
         List<Packet> optimizedPackets = new StreamOptimizer(keysHolder, service, packets).optimizeStream();
 
         if (isStreamIgnored(optimizedPackets, service)) {
@@ -121,6 +124,9 @@ public class StreamService {
 
         String userAgentHash = getUserAgentHash(optimizedPackets);
         stream.setUserAgentHash(userAgentHash);
+
+        stream.setSizeBytes(packetsSize);
+        stream.setPacketsCount(packetsCount);
 
         Set<Pattern> foundPatterns = matchPatterns(optimizedPackets, service);
         stream.setFoundPatterns(foundPatterns);
