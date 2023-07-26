@@ -1,31 +1,30 @@
 package ru.serega6531.packmate.tasks;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import ru.serega6531.packmate.properties.PackmateProperties;
 import ru.serega6531.packmate.service.StreamService;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 
 @Component
 @Slf4j
-@ConditionalOnExpression("${old-streams-cleanup-enabled:false} && '${capture-mode}' == 'LIVE'")
+@ConditionalOnExpression("${packmate.cleanup.enabled:false} && '${packmate.capture-mode}' == 'LIVE'")
 public class OldStreamsCleanupTask {
 
     private final StreamService service;
     private final int oldStreamsThreshold;
 
-    public OldStreamsCleanupTask(StreamService service, @Value("${old-streams-threshold}") int oldStreamsThreshold) {
+    public OldStreamsCleanupTask(StreamService service, PackmateProperties properties) {
         this.service = service;
-        this.oldStreamsThreshold = oldStreamsThreshold;
+        this.oldStreamsThreshold = properties.cleanup().threshold();
     }
 
-    @Scheduled(fixedDelayString = "PT${cleanup-interval}M", initialDelayString = "PT1M")
+    @Scheduled(fixedDelayString = "PT${packmate.cleanup.interval}M", initialDelayString = "PT1M")
     public void cleanup() {
-        ZonedDateTime before = ZonedDateTime.now().minus(oldStreamsThreshold, ChronoUnit.MINUTES);
+        ZonedDateTime before = ZonedDateTime.now().minusMinutes(oldStreamsThreshold);
         log.info("Cleaning up old non-favorite streams (before {})", before);
         long deleted = service.cleanupOldStreams(before);
         log.info("Deleted {} rows", deleted);

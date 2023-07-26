@@ -1,12 +1,13 @@
 package ru.serega6531.packmate.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.serega6531.packmate.properties.PackmateProperties;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.ServiceCreateDto;
@@ -15,10 +16,11 @@ import ru.serega6531.packmate.model.pojo.ServiceUpdateDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.repository.ServiceRepository;
 
-import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -38,12 +40,12 @@ public class ServicesService {
                            SubscriptionService subscriptionService,
                            @Lazy PcapService pcapService,
                            ModelMapper modelMapper,
-                           @Value("${local-ip}") String localIpString) throws UnknownHostException {
+                           PackmateProperties properties) {
         this.repository = repository;
         this.subscriptionService = subscriptionService;
         this.pcapService = pcapService;
         this.modelMapper = modelMapper;
-        this.localIp = InetAddress.getByName(localIpString);
+        this.localIp = properties.localIp();
     }
 
     @PostConstruct

@@ -16,6 +16,7 @@ import ru.serega6531.packmate.service.SubscriptionService;
 
 import java.io.EOFException;
 import java.io.File;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 @Slf4j
@@ -27,9 +28,9 @@ public class FilePcapWorker extends AbstractPcapWorker {
     public FilePcapWorker(ServicesService servicesService,
                           StreamService streamService,
                           SubscriptionService subscriptionService,
-                          String localIpString,
+                          InetAddress localIp,
                           String filename) throws UnknownHostException {
-        super(servicesService, streamService, localIpString);
+        super(servicesService, streamService, localIp);
         this.subscriptionService = subscriptionService;
 
         File directory = new File("pcaps");

@@ -10,6 +10,7 @@ import ru.serega6531.packmate.exception.PcapInterfaceNotFoundException;
 import ru.serega6531.packmate.service.ServicesService;
 import ru.serega6531.packmate.service.StreamService;
 
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,9 +24,9 @@ public class LivePcapWorker extends AbstractPcapWorker {
 
     public LivePcapWorker(ServicesService servicesService,
                           StreamService streamService,
-                          String localIpString,
+                          InetAddress localIp,
                           String interfaceName) throws PcapNativeException, UnknownHostException {
-        super(servicesService, streamService, localIpString);
+        super(servicesService, streamService, localIp);
         device = Pcaps.getDevByName(interfaceName);
 
         if (device == null) {

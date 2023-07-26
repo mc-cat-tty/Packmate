@@ -1,7 +1,6 @@
 package ru.serega6531.packmate.configuration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
@@ -14,23 +13,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import ru.serega6531.packmate.properties.PackmateProperties;
 
 @Configuration
 @EnableWebSecurity
 @Slf4j
 public class SecurityConfiguration {
 
-    @Value("${account-login}")
-    private String login;
-
-    @Value("${account-password}")
-    private String password;
-
     @Bean
-    public InMemoryUserDetailsManager userDetailsService(PasswordEncoder passwordEncoder) {
+    public InMemoryUserDetailsManager userDetailsService(PackmateProperties properties, PasswordEncoder passwordEncoder) {
         UserDetails user = User.builder()
-                .username(login)
-                .password(passwordEncoder.encode(password))
+                .username(properties.web().accountLogin())
+                .password(passwordEncoder.encode(properties.web().accountPassword()))
                 .roles("USER")
                 .build();
 

@@ -52,11 +52,11 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
 
     protected AbstractPcapWorker(ServicesService servicesService,
                               StreamService streamService,
-                              String localIpString) throws UnknownHostException {
+                              InetAddress localIp) throws UnknownHostException {
         this.servicesService = servicesService;
         this.streamService = streamService;
 
-        this.localIp = InetAddress.getByName(localIpString);
+        this.localIp = localIp;
 
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
                 .namingPattern("pcap-loop").build();

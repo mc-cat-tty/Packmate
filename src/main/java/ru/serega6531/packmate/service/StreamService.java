@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -13,6 +12,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import ru.serega6531.packmate.properties.PackmateProperties;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Packet;
@@ -60,7 +60,7 @@ public class StreamService {
                          SubscriptionService subscriptionService,
                          RsaKeysHolder keysHolder,
                          ModelMapper modelMapper,
-                         @Value("${ignore-empty-packets}") boolean ignoreEmptyPackets) {
+                         PackmateProperties properties) {
         this.repository = repository;
         this.patternService = patternService;
         this.servicesService = servicesService;
@@ -68,7 +68,7 @@ public class StreamService {
         this.subscriptionService = subscriptionService;
         this.keysHolder = keysHolder;
         this.modelMapper = modelMapper;
-        this.ignoreEmptyPackets = ignoreEmptyPackets;
+        this.ignoreEmptyPackets = properties.ignoreEmptyPackets();
     }
 
     /**
