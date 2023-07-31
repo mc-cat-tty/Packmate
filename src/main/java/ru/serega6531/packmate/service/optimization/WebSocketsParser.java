@@ -120,14 +120,9 @@ public class WebSocketsParser {
     }
 
     private Packet mimicPacket(Packet packet, byte[] content, boolean ws) {
-        return Packet.builder()
+        return packet.toBuilder()
                 .content(content)
-                .incoming(packet.isIncoming())
-                .timestamp(packet.getTimestamp())
-                .ttl(packet.getTtl())
-                .ungzipped(packet.isUngzipped())
                 .webSocketParsed(ws)
-                .tlsDecrypted(packet.isTlsDecrypted())
                 .build();
     }
 
@@ -138,8 +133,7 @@ public class WebSocketsParser {
         for (List<Packet> side : sides) {
             final Packet lastPacket = side.get(0);
 
-            //noinspection OptionalGetWithoutIsPresent
-            final byte[] wsContent = PacketUtils.mergePackets(side).get();
+            final byte[] wsContent = PacketUtils.mergePackets(side);
 
             final ByteBuffer buffer = ByteBuffer.wrap(wsContent);
             List<Framedata> frames;
@@ -153,15 +147,11 @@ public class WebSocketsParser {
 
             for (Framedata frame : frames) {
                 if (frame instanceof DataFrame) {
-                    parsedPackets.add(Packet.builder()
-                            .content(frame.getPayloadData().array())
-                            .incoming(lastPacket.isIncoming())
-                            .timestamp(lastPacket.getTimestamp())
-                            .ttl(lastPacket.getTtl())
-                            .ungzipped(lastPacket.isUngzipped())
-                            .webSocketParsed(true)
-                            .tlsDecrypted(lastPacket.isTlsDecrypted())
-                            .build()
+                    parsedPackets.add(
+                            lastPacket.toBuilder()
+                                    .content(frame.getPayloadData().array())
+                                    .webSocketParsed(true)
+                                    .build()
                     );
                 }
             }
@@ -179,13 +169,10 @@ public class WebSocketsParser {
     }
 
     private String getHandshake(final List<Packet> packets) {
-        final String handshake = PacketUtils.mergePackets(packets)
-                .map(String::new)
-                .orElse(null);
+        final String handshake = new String(PacketUtils.mergePackets(packets));
 
-        if (handshake == null ||
-                !handshake.toLowerCase().contains(WEBSOCKET_CONNECTION_HEADER) ||
-                !handshake.toLowerCase().contains(WEBSOCKET_UPGRADE_HEADER)) {
+        if (!handshake.toLowerCase().contains(WEBSOCKET_CONNECTION_HEADER)
+                || !handshake.toLowerCase().contains(WEBSOCKET_UPGRADE_HEADER)) {
             return null;
         }
 

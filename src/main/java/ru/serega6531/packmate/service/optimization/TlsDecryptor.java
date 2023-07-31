@@ -182,15 +182,12 @@ public class TlsDecryptor {
 
                     decoded = clearDecodedData(decoded);
 
-                    result.add(Packet.builder()
-                            .content(decoded)
-                            .incoming(packet.isIncoming())
-                            .timestamp(packet.getTimestamp())
-                            .ungzipped(false)
-                            .webSocketParsed(false)
-                            .tlsDecrypted(true)
-                            .ttl(packet.getTtl())
-                            .build());
+                    result.add(
+                            packet.toBuilder()
+                                    .content(decoded)
+                                    .tlsDecrypted(true)
+                                    .build()
+                    );
                 }
             }
         }

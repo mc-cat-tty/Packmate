@@ -25,9 +25,7 @@ public class CtfService {
 
     private boolean decryptTls;
 
-    private boolean processChunkedEncoding;
-
-    private boolean ungzipHttp;
+    private boolean http;
 
     private boolean urldecodeHttpRequests;
 

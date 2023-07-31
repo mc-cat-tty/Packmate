@@ -22,6 +22,8 @@ import java.net.UnknownHostException;
 @Slf4j
 public class FilePcapWorker extends AbstractPcapWorker {
 
+    private final File directory = new File("pcaps");
+
     private final SubscriptionService subscriptionService;
     private final File file;
 
@@ -33,11 +35,8 @@ public class FilePcapWorker extends AbstractPcapWorker {
         super(servicesService, streamService, localIp);
         this.subscriptionService = subscriptionService;
 
-        File directory = new File("pcaps");
         file = new File(directory, filename);
-        if (!file.exists()) {
-            throw new PcapFileNotFoundException(file, directory);
-        }
+        validateFileExists();
 
         processorExecutorService = new InlineExecutorService();
     }
@@ -86,5 +85,11 @@ public class FilePcapWorker extends AbstractPcapWorker {
     @Override
     public String getExecutorState() {
         return "inline";
+    }
+
+    private void validateFileExists() {
+        if (!file.exists()) {
+            throw new PcapFileNotFoundException(file, directory);
+        }
     }
 }

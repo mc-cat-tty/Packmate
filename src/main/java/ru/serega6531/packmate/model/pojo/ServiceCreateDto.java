@@ -8,8 +8,7 @@ public class ServiceCreateDto {
     private int port;
     private String name;
     private boolean decryptTls;
-    private boolean processChunkedEncoding;
-    private boolean ungzipHttp;
+    private boolean http;
     private boolean urldecodeHttpRequests;
     private boolean mergeAdjacentPackets;
     private boolean parseWebSockets;

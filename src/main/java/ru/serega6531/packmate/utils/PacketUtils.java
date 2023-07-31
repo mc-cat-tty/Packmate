@@ -1,20 +1,28 @@
 package ru.serega6531.packmate.utils;
 
 import lombok.experimental.UtilityClass;
-import org.apache.commons.lang3.ArrayUtils;
 import ru.serega6531.packmate.model.Packet;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @UtilityClass
 public class PacketUtils {
 
-    public Optional<byte[]> mergePackets(List<Packet> cut) {
-        return cut.stream()
+    public byte[] mergePackets(List<Packet> cut) {
+        int size = cut.stream()
                 .map(Packet::getContent)
-                .reduce(ArrayUtils::addAll);
+                .mapToInt(c -> c.length)
+                .sum();
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream(size);
+
+        cut.stream()
+                .map(Packet::getContent)
+                .forEach(os::writeBytes);
+
+        return os.toByteArray();
     }
 
     public List<List<Packet>> sliceToSides(List<Packet> packets) {

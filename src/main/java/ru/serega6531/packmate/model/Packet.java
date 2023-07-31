@@ -24,7 +24,7 @@ import java.util.Set;
         }
 )
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @Table(indexes = { @Index(name = "stream_id_index", columnList = "stream_id") })
 public class Packet {
 
@@ -49,11 +49,13 @@ public class Packet {
 
     private boolean incoming; // true если от клиента к серверу, иначе false
 
-    private boolean ungzipped;
+    private boolean httpProcessed = false;
 
-    private boolean webSocketParsed;
+    private boolean webSocketParsed = false;
 
-    private boolean tlsDecrypted;
+    private boolean tlsDecrypted = false;
+
+    private boolean hasHttpBody = false;
 
     @Column(nullable = false)
     private byte[] content;

@@ -1,30 +1,25 @@
 package ru.serega6531.packmate.service.optimization;
 
-import lombok.AllArgsConstructor;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.utils.PacketUtils;
 
 import java.util.List;
 
-@AllArgsConstructor
 public class PacketsMerger {
 
-    private final List<Packet> packets;
-
     /**
-     * Сжать соседние пакеты в одном направлении в один.
-     * Выполняется после других оптимизаций чтобы правильно определять границы пакетов.
+     * Сжать соседние пакеты в одном направлении в один. Не склеивает WS и не-WS пакеты.
      */
-    public void mergeAdjacentPackets() {
+    public void mergeAdjacentPackets(List<Packet> packets) {
         int start = 0;
         int packetsInRow = 0;
-        boolean incoming = true;
+        Packet previous = null;
 
         for (int i = 0; i < packets.size(); i++) {
             Packet packet = packets.get(i);
-            if (packet.isIncoming() != incoming) {
+            if (previous == null || !shouldBeInSameBatch(packet, previous)) {
                 if (packetsInRow > 1) {
-                    compress(start, i);
+                    compress(packets, start, i);
 
                     i = start + 1;  // продвигаем указатель на следующий после склеенного блок
                 }
@@ -34,36 +29,40 @@ public class PacketsMerger {
                 packetsInRow++;
             }
 
-            incoming = packet.isIncoming();
+            previous = packet;
         }
 
         if (packetsInRow > 1) {
-            compress(start, packets.size());
+            compress(packets, start, packets.size());
         }
     }
 
     /**
      * Сжать кусок со start по end в один пакет
      */
-    private void compress(int start, int end) {
+    private void compress(List<Packet> packets, int start, int end) {
         final List<Packet> cut = packets.subList(start, end);
         final long timestamp = cut.get(0).getTimestamp();
-        final boolean ungzipped = cut.stream().anyMatch(Packet::isUngzipped);
+        final boolean httpProcessed = cut.stream().anyMatch(Packet::isHttpProcessed);
         final boolean webSocketParsed = cut.stream().anyMatch(Packet::isWebSocketParsed);
         final boolean tlsDecrypted = cut.get(0).isTlsDecrypted();
         final boolean incoming = cut.get(0).isIncoming();
-        //noinspection OptionalGetWithoutIsPresent
-        final byte[] content = PacketUtils.mergePackets(cut).get();
+        final byte[] content = PacketUtils.mergePackets(cut);
 
         packets.removeAll(cut);
         packets.add(start, Packet.builder()
                 .incoming(incoming)
                 .timestamp(timestamp)
-                .ungzipped(ungzipped)
+                .httpProcessed(httpProcessed)
                 .webSocketParsed(webSocketParsed)
                 .tlsDecrypted(tlsDecrypted)
                 .content(content)
                 .build());
+    }
+
+    private boolean shouldBeInSameBatch(Packet p1, Packet p2) {
+        return p1.isIncoming() == p2.isIncoming() &&
+                p1.isWebSocketParsed() == p2.isWebSocketParsed();
     }
 
 }

@@ -3,8 +3,7 @@ package ru.serega6531.packmate;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import ru.serega6531.packmate.model.Packet;
-import ru.serega6531.packmate.service.optimization.HttpChunksProcessor;
-import ru.serega6531.packmate.service.optimization.HttpGzipProcessor;
+import ru.serega6531.packmate.service.optimization.HttpProcessor;
 import ru.serega6531.packmate.service.optimization.HttpUrldecodeProcessor;
 import ru.serega6531.packmate.service.optimization.PacketsMerger;
 
@@ -27,18 +26,18 @@ class StreamOptimizerTest {
         List<Packet> list = new ArrayList<>();
         list.add(p);
 
-        new HttpGzipProcessor(list).unpackGzip();
+        new HttpProcessor().process(list);
         final String processed = list.get(0).getContentString();
         assertTrue(processed.contains("aaabbb"));
     }
 
     @Test
     void testUrldecodeRequests() {
-        Packet p = createPacket("GET /?q=%D0%B0+%D0%B1 HTTP/1.1\r\n\r\n".getBytes(), true);
+        Packet p = createPacket("GET /?q=%D0%B0+%D0%B1 HTTP/1.1\r\nHost: localhost:8080\r\n\r\n".getBytes(), true);
         List<Packet> list = new ArrayList<>();
         list.add(p);
 
-        new HttpUrldecodeProcessor(list).urldecodeRequests();
+        new HttpUrldecodeProcessor().urldecodeRequests(list);
         final String processed = list.get(0).getContentString();
         assertTrue(processed.contains("а б"));
     }
@@ -60,7 +59,7 @@ class StreamOptimizerTest {
         list.add(p5);
         list.add(p6);
 
-        new PacketsMerger(list).mergeAdjacentPackets();
+        new PacketsMerger().mergeAdjacentPackets(list);
 
         assertEquals(4, list.size());
         assertEquals(2, list.get(1).getContent().length);
@@ -74,7 +73,7 @@ class StreamOptimizerTest {
                          "6\r\nChunk1\r\n6\r\nChunk2\r\n0\r\n\r\n";
 
         List<Packet> packets = new ArrayList<>(List.of(createPacket(content.getBytes(), false)));
-        new HttpChunksProcessor(packets).processChunkedEncoding();
+        new HttpProcessor().process(packets);
 
         assertEquals(1, packets.size());
         assertTrue(packets.get(0).getContentString().contains("Chunk1Chunk2"));

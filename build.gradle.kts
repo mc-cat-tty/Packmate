@@ -46,6 +46,8 @@ dependencies {
     implementation(group = "org.bouncycastle", name = "bcprov-jdk15on", version = "1.70")
     implementation(group = "org.bouncycastle", name = "bctls-jdk15on", version = "1.70")
     implementation(group = "org.modelmapper", name = "modelmapper", version = "3.1.1")
+    implementation("com.athaydes.rawhttp:rawhttp-core:2.5.2")
+
     compileOnly("org.jetbrains:annotations:24.0.1")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("org.springframework.boot:spring-boot-devtools")
