@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import ru.serega6531.packmate.model.enums.CaptureMode;
 
 import java.net.InetAddress;
+import java.time.Duration;
 
 @ConfigurationProperties("packmate")
 public record PackmateProperties(
@@ -24,8 +25,8 @@ public record PackmateProperties(
     ) {}
 
     public record TimeoutProperties(
-            int udpStreamTimeout,
-            int tcpStreamTimeout,
+            Duration udpStreamTimeout,
+            Duration tcpStreamTimeout,
             int checkInterval
     ){}
 

@@ -10,6 +10,8 @@ import org.hibernate.annotations.Parameter;
 import ru.serega6531.packmate.model.enums.Protocol;
 
 import jakarta.persistence.*;
+
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -49,9 +51,9 @@ public class Stream {
     @ToString.Exclude
     private List<Packet> packets;
 
-    private long startTimestamp;
+    private Instant startTimestamp;
 
-    private long endTimestamp;
+    private Instant endTimestamp;
 
     @ManyToMany
     @JoinTable(

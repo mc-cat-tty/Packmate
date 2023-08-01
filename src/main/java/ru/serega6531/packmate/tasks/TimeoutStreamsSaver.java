@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import ru.serega6531.packmate.properties.PackmateProperties;
 import ru.serega6531.packmate.model.enums.Protocol;
 import ru.serega6531.packmate.pcap.PcapWorker;
+import ru.serega6531.packmate.properties.PackmateProperties;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Component
 @Slf4j
@@ -17,15 +17,15 @@ import java.util.concurrent.TimeUnit;
 public class TimeoutStreamsSaver {
 
     private final PcapWorker pcapWorker;
-    private final long udpStreamTimeoutMillis;
-    private final long tcpStreamTimeoutMillis;
+    private final Duration udpStreamTimeoutMillis;
+    private final Duration tcpStreamTimeoutMillis;
 
     @Autowired
     public TimeoutStreamsSaver(PcapWorker pcapWorker,
                                PackmateProperties properties) {
         this.pcapWorker = pcapWorker;
-        this.udpStreamTimeoutMillis = TimeUnit.SECONDS.toMillis(properties.timeout().udpStreamTimeout());
-        this.tcpStreamTimeoutMillis = TimeUnit.SECONDS.toMillis(properties.timeout().tcpStreamTimeout());
+        this.udpStreamTimeoutMillis = properties.timeout().udpStreamTimeout();
+        this.tcpStreamTimeoutMillis = properties.timeout().tcpStreamTimeout();
     }
 
     @Scheduled(fixedRateString = "PT${packmate.timeout.check-interval}S", initialDelayString = "PT${packmate.timeout.check-interval}S")

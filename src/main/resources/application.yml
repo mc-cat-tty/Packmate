@@ -28,8 +28,8 @@ packmate:
     account-login: BinaryBears
     account-password: 123456
   timeout:
-    udp-stream-timeout: 20 # seconds
-    tcp-stream-timeout: 40 # seconds
+    udp-stream-timeout: 20S
+    tcp-stream-timeout: 40S
     check-interval: 10 # seconds
   cleanup:
     enabled: true

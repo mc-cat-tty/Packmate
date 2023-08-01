@@ -2,6 +2,8 @@ package ru.serega6531.packmate.pcap;
 
 import ru.serega6531.packmate.model.enums.Protocol;
 
+import java.time.Duration;
+
 public class NoOpPcapWorker implements PcapWorker {
     @Override
     public void start() {
@@ -16,7 +18,7 @@ public class NoOpPcapWorker implements PcapWorker {
     }
 
     @Override
-    public int closeTimeoutStreams(Protocol protocol, long timeoutMillis) {
+    public int closeTimeoutStreams(Protocol protocol, Duration timeout) {
         return 0;
     }
 

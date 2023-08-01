@@ -6,6 +6,8 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
 
 import jakarta.persistence.*;
+
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 
@@ -45,7 +47,7 @@ public class Packet {
     @OneToMany(mappedBy = "packet", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<FoundPattern> matches;
 
-    private long timestamp;
+    private Instant timestamp;
 
     private boolean incoming; // true если от клиента к серверу, иначе false
 

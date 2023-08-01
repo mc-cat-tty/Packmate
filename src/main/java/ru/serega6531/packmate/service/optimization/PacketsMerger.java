@@ -3,6 +3,7 @@ package ru.serega6531.packmate.service.optimization;
 import ru.serega6531.packmate.model.Packet;
 import ru.serega6531.packmate.utils.PacketUtils;
 
+import java.time.Instant;
 import java.util.List;
 
 public class PacketsMerger {
@@ -42,7 +43,7 @@ public class PacketsMerger {
      */
     private void compress(List<Packet> packets, int start, int end) {
         final List<Packet> cut = packets.subList(start, end);
-        final long timestamp = cut.get(0).getTimestamp();
+        final Instant timestamp = cut.get(0).getTimestamp();
         final boolean httpProcessed = cut.stream().anyMatch(Packet::isHttpProcessed);
         final boolean webSocketParsed = cut.stream().anyMatch(Packet::isWebSocketParsed);
         final boolean tlsDecrypted = cut.get(0).isTlsDecrypted();

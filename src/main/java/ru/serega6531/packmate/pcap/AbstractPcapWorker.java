@@ -18,6 +18,8 @@ import ru.serega6531.packmate.service.StreamService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -82,7 +84,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
             return;
         }
 
-        final long time = pcap.getTimestamp().getTime();
+        final Instant time = pcap.getTimestamp().toInstant();
 
         if (rawPacket.contains(TcpPacket.class)) {
             final TcpPacket packet = rawPacket.get(TcpPacket.class);
@@ -93,7 +95,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
     }
 
-    private void gotTcpPacket(TcpPacket packet, InetAddress sourceIp, InetAddress destIp, int ttl, long time) {
+    private void gotTcpPacket(TcpPacket packet, InetAddress sourceIp, InetAddress destIp, int ttl, Instant time) {
         final TcpPacket.TcpHeader tcpHeader = packet.getHeader();
         int sourcePort = tcpHeader.getSrcPort().valueAsInt();
         int destPort = tcpHeader.getDstPort().valueAsInt();
@@ -127,7 +129,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
     }
 
-    private void gotUdpPacket(UdpPacket packet, InetAddress sourceIp, InetAddress destIp, int ttl, long time) {
+    private void gotUdpPacket(UdpPacket packet, InetAddress sourceIp, InetAddress destIp, int ttl, Instant time) {
         final UdpPacket.UdpHeader udpHeader = packet.getHeader();
         int sourcePort = udpHeader.getSrcPort().valueAsInt();
         int destPort = udpHeader.getDstPort().valueAsInt();
@@ -156,7 +158,7 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
         }
     }
 
-    private UnfinishedStream addNewPacket(InetAddress sourceIp, InetAddress destIp, long time,
+    private UnfinishedStream addNewPacket(InetAddress sourceIp, InetAddress destIp, Instant time,
                                           int sourcePort, int destPort, int ttl, byte[] content, Protocol protocol) {
         var incoming = destIp.equals(localIp);
         var stream = new UnfinishedStream(sourceIp, destIp, sourcePort, destPort, protocol);
@@ -222,17 +224,17 @@ public abstract class AbstractPcapWorker implements PcapWorker, PacketListener {
 
     @Override
     @SneakyThrows
-    public int closeTimeoutStreams(Protocol protocol, long timeoutMillis) {
+    public int closeTimeoutStreams(Protocol protocol, Duration timeout) {
         return processorExecutorService.submit(() -> {
             int streamsClosed = 0;
 
-            final long time = System.currentTimeMillis();
+            final Instant time = Instant.now();
             final var streams = (protocol == Protocol.TCP) ? this.unfinishedTcpStreams : this.unfinishedUdpStreams;
 
             final var oldStreams = Multimaps.asMap(streams).entrySet().stream()
                     .filter(entry -> {
                         final var packets = entry.getValue();
-                        return time - packets.get(packets.size() - 1).getTimestamp() > timeoutMillis;
+                        return Duration.between(packets.get(packets.size() - 1).getTimestamp(), time).compareTo(timeout) > 0;
                     })
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
