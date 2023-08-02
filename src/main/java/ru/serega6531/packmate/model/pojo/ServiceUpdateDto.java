@@ -7,7 +7,6 @@ public class ServiceUpdateDto {
 
     private int port;
     private String name;
-    private boolean decryptTls;
     private boolean http;
     private boolean urldecodeHttpRequests;
     private boolean mergeAdjacentPackets;
