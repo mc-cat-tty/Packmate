@@ -23,8 +23,6 @@ public class CtfService {
     @Column(nullable = false)
     private String name;
 
-    private boolean decryptTls;
-
     private boolean http;
 
     private boolean urldecodeHttpRequests;

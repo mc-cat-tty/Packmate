@@ -53,8 +53,6 @@ public class Packet {
 
     private boolean webSocketParsed = false;
 
-    private boolean tlsDecrypted = false;
-
     private boolean hasHttpBody = false;
 
     @Column(nullable = false)

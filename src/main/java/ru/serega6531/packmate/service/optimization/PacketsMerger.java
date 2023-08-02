@@ -45,7 +45,6 @@ public class PacketsMerger {
         final long timestamp = cut.get(0).getTimestamp();
         final boolean httpProcessed = cut.stream().anyMatch(Packet::isHttpProcessed);
         final boolean webSocketParsed = cut.stream().anyMatch(Packet::isWebSocketParsed);
-        final boolean tlsDecrypted = cut.get(0).isTlsDecrypted();
         final boolean incoming = cut.get(0).isIncoming();
         final byte[] content = PacketUtils.mergePackets(cut);
 
@@ -55,7 +54,6 @@ public class PacketsMerger {
                 .timestamp(timestamp)
                 .httpProcessed(httpProcessed)
                 .webSocketParsed(webSocketParsed)
-                .tlsDecrypted(tlsDecrypted)
                 .content(content)
                 .build());
     }

@@ -24,15 +24,6 @@ public class StreamOptimizer {
      * Вызвать для выполнения оптимизаций на переданном списке пакетов.
      */
     public List<Packet> optimizeStream() {
-        if (service.isDecryptTls()) {
-            try {
-                decryptTls();
-            } catch (Exception e) {
-                log.warn("Error optimizing stream (tls)", e);
-                return packets;
-            }
-        }
-
         if (service.isParseWebSockets()) {
             try {
                 parseWebSockets();
@@ -70,15 +61,6 @@ public class StreamOptimizer {
         }
 
         return packets;
-    }
-
-    private void decryptTls() {
-        final TlsDecryptor tlsDecryptor = new TlsDecryptor(packets, keysHolder);
-        tlsDecryptor.decryptTls();
-
-        if (tlsDecryptor.isParsed()) {
-            packets = tlsDecryptor.getParsedPackets();
-        }
     }
 
     private void parseWebSockets() {

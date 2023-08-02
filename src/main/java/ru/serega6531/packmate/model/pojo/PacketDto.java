@@ -13,7 +13,6 @@ public class PacketDto {
     private boolean incoming;
     private boolean ungzipped;
     private boolean webSocketParsed;
-    private boolean tlsDecrypted;
     private boolean hasHttpBody;
     private byte[] content;
 
