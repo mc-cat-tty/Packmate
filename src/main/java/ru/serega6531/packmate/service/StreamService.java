@@ -12,7 +12,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import ru.serega6531.packmate.properties.PackmateProperties;
 import ru.serega6531.packmate.model.CtfService;
 import ru.serega6531.packmate.model.FoundPattern;
 import ru.serega6531.packmate.model.Packet;
@@ -26,8 +25,8 @@ import ru.serega6531.packmate.model.pojo.StreamDto;
 import ru.serega6531.packmate.model.pojo.StreamPagination;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
 import ru.serega6531.packmate.model.pojo.UnfinishedStream;
+import ru.serega6531.packmate.properties.PackmateProperties;
 import ru.serega6531.packmate.repository.StreamRepository;
-import ru.serega6531.packmate.service.optimization.RsaKeysHolder;
 import ru.serega6531.packmate.service.optimization.StreamOptimizer;
 
 import java.time.ZonedDateTime;
@@ -46,7 +45,6 @@ public class StreamService {
     private final ServicesService servicesService;
     private final CountingService countingService;
     private final SubscriptionService subscriptionService;
-    private final RsaKeysHolder keysHolder;
     private final ModelMapper modelMapper;
     private final boolean ignoreEmptyPackets;
 
@@ -58,7 +56,6 @@ public class StreamService {
                          ServicesService servicesService,
                          CountingService countingService,
                          SubscriptionService subscriptionService,
-                         RsaKeysHolder keysHolder,
                          ModelMapper modelMapper,
                          PackmateProperties properties) {
         this.repository = repository;
@@ -66,7 +63,6 @@ public class StreamService {
         this.servicesService = servicesService;
         this.countingService = countingService;
         this.subscriptionService = subscriptionService;
-        this.keysHolder = keysHolder;
         this.modelMapper = modelMapper;
         this.ignoreEmptyPackets = properties.ignoreEmptyPackets();
     }
@@ -104,7 +100,7 @@ public class StreamService {
         int packetsSize = packets.stream().mapToInt(p -> p.getContent().length).sum();
         int packetsCount = packets.size();
 
-        List<Packet> optimizedPackets = new StreamOptimizer(keysHolder, service, packets).optimizeStream();
+        List<Packet> optimizedPackets = new StreamOptimizer(service, packets).optimizeStream();
 
         if (isStreamIgnored(optimizedPackets, service)) {
             log.debug("New stream is ignored");

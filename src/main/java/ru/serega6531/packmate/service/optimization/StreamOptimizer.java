@@ -11,7 +11,6 @@ import java.util.List;
 @Slf4j
 public class StreamOptimizer {
 
-    private final RsaKeysHolder keysHolder;
     private final CtfService service;
     private List<Packet> packets;
 

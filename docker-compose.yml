@@ -21,7 +21,6 @@ services:
     image: registry.gitlab.com/packmate/packmate:${BUILD_TAG:-latest}
     volumes:
       - "./pcaps/:/app/pcaps/:ro"
-      - "./rsa_keys/:/app/rsa_keys/:ro"
     depends_on:
       db:
         condition: service_healthy
