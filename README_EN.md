@@ -22,7 +22,6 @@ Advanced network traffic flow analyzer for A/D CTFs.
 * Can urldecode text automatically
 * Can automatically decompress GZIPed HTTP
 * Can automatically deflate WebSockets with permessages-deflate extension
-* Can automatically decrypt TLS with RSA using given private key (like Wireshark)
 
 ![Main window](screenshots/Screenshot.png)
 
