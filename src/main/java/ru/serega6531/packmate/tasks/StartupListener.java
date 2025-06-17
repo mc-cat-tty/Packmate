@@ -27,7 +27,7 @@ public class StartupListener {
         servicesService.updateFilter();
 
         if (packmateProperties.captureMode() == CaptureMode.LIVE) {
-            pcapService.start();
+            pcapService.start(null);
         }
     }
 

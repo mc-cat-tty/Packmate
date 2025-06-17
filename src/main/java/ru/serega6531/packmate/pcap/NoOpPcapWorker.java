@@ -1,10 +1,11 @@
 package ru.serega6531.packmate.pcap;
 
+import ru.serega6531.packmate.model.pojo.PcapDto;
 import ru.serega6531.packmate.model.enums.Protocol;
 
 public class NoOpPcapWorker implements PcapWorker {
     @Override
-    public void start() {
+    public void start(PcapDto dto) {
     }
 
     @Override

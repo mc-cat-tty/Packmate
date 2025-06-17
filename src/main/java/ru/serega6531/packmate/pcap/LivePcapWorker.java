@@ -2,6 +2,8 @@ package ru.serega6531.packmate.pcap;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import ru.serega6531.packmate.model.pojo.PcapDto;
+
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
@@ -39,7 +41,7 @@ public class LivePcapWorker extends AbstractPcapWorker {
         processorExecutorService = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), factory);
     }
 
-    public void start() throws PcapNativeException {
+    public void start(PcapDto dto) throws PcapNativeException {
         log.info("Using interface " + device.getName());
         pcap = device.openLive(65536, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, 100);
 

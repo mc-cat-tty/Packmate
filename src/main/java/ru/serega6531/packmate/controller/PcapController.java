@@ -6,7 +6,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 import ru.serega6531.packmate.service.PcapService;
+import ru.serega6531.packmate.model.pojo.PcapDto;
+
 
 @RestController
 @RequestMapping("/api/pcap/")
@@ -25,8 +28,8 @@ public class PcapController {
     }
 
     @PostMapping("/start")
-    public void start() throws PcapNativeException {
-        service.start();
+    public void start(@RequestBody PcapDto dto) throws PcapNativeException {
+        service.start(dto);
     }
 
 }

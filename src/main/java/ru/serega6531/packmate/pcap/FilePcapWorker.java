@@ -2,6 +2,8 @@ package ru.serega6531.packmate.pcap;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import ru.serega6531.packmate.model.pojo.PcapDto;
+
 import org.apache.tomcat.util.threads.InlineExecutorService;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.Pcaps;
@@ -25,7 +27,7 @@ public class FilePcapWorker extends AbstractPcapWorker {
     private final File directory = new File("pcaps");
 
     private final SubscriptionService subscriptionService;
-    private final File file;
+    private File file;
 
     public FilePcapWorker(ServicesService servicesService,
                           StreamService streamService,
@@ -34,16 +36,23 @@ public class FilePcapWorker extends AbstractPcapWorker {
                           String filename) throws UnknownHostException {
         super(servicesService, streamService, localIp);
         this.subscriptionService = subscriptionService;
+        
+        setFilename(filename);
+        processorExecutorService = new InlineExecutorService();
+    }
 
+    private void setFilename(String filename) {
         file = new File(directory, filename);
         validateFileExists();
-
-        processorExecutorService = new InlineExecutorService();
     }
 
     @SneakyThrows
     @Override
-    public void start() {
+    public void start(PcapDto dto) {
+        if (dto != null && dto.getFilename() != null) {
+            setFilename(dto.getFilename());
+        }
+
         log.info("Using file " + file.getAbsolutePath());
         pcap = Pcaps.openOffline(file.getAbsolutePath());
 

@@ -1,6 +1,8 @@
 package ru.serega6531.packmate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import ru.serega6531.packmate.model.pojo.PcapDto;
+
 import org.pcap4j.core.PcapNativeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,11 +34,11 @@ public class PcapService {
         return started || worker instanceof NoOpPcapWorker;
     }
 
-    public synchronized void start() throws PcapNativeException {
+    public synchronized void start(PcapDto dto) throws PcapNativeException {
         if(!started) {
             started = true;
             subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.PCAP_STARTED, null));
-            worker.start();
+            worker.start(dto);
         }
     }
 
