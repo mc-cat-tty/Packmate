@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import ru.serega6531.packmate.model.enums.SubscriptionMessageType;
 import ru.serega6531.packmate.model.pojo.ServiceDto;
 import ru.serega6531.packmate.model.pojo.SubscriptionMessage;
+import ru.serega6531.packmate.pcap.FilePcapWorker;
 import ru.serega6531.packmate.pcap.NoOpPcapWorker;
 import ru.serega6531.packmate.pcap.PcapWorker;
 
@@ -35,7 +36,7 @@ public class PcapService {
     }
 
     public synchronized void start(PcapDto dto) throws PcapNativeException {
-        if(!started) {
+        if(!started || worker instanceof FilePcapWorker) {
             started = true;
             subscriptionService.broadcast(new SubscriptionMessage(SubscriptionMessageType.PCAP_STARTED, null));
             worker.start(dto);
